@@ -1,0 +1,198 @@
+
+"use client";
+
+
+import React, { useEffect, useState } from "react";
+import Link from "next/link";
+import Footer from '../../components/Footer';
+
+export default function ShopPage() {
+  // Trending Categories section (matches provided image)
+  const trendingCategoriesSection = (
+    <div style={{ background: '#fff', maxWidth: 1200, margin: '0 auto', marginTop: -32, borderRadius: 18, padding: '40px 32px 32px 32px', position: 'relative', zIndex: 2 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
+        <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', letterSpacing: '-0.5px', margin: 0 }}>Trending Categories</h2>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <button style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #e5e7eb', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(16,185,129,0.08)', cursor: 'pointer', outline: 'none' }}>
+            <span style={{ color: '#10b981', fontSize: 20, fontWeight: 700, display: 'inline-block', transform: 'rotate(180deg)' }}>&#8594;</span>
+          </button>
+          <button style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #e5e7eb', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(16,185,129,0.08)', cursor: 'pointer', outline: 'none' }}>
+            <span style={{ color: '#10b981', fontSize: 20, fontWeight: 700 }}>&#8594;</span>
+          </button>
+        </div>
+      </div>
+      <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
+        {[
+          { name: 'Hair Services', count: 80 },
+          { name: 'Body Massage', count: 80 },
+          { name: 'Skincare', count: 80 },
+          { name: 'Facial Treatment', count: 80 }
+        ].map((cat, idx) => (
+          <div key={cat.name} style={{ flex: 1, background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: 12, padding: '22px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(30,41,59,0.02)', position: 'relative', minWidth: 180 }}>
+            <div style={{ fontWeight: 700, fontSize: 18, color: '#111', marginBottom: 4 }}>{cat.name}</div>
+            <div style={{ color: '#6b7280', fontSize: 15, fontWeight: 500 }}>({cat.count} Shops)</div>
+            <div style={{ position: 'absolute', top: 18, right: 18, width: 16, height: 16, background: '#111827', borderRadius: 4 }} />
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', gap: 12, marginBottom: 18 }}>
+        <div style={{ flex: 1, display: 'flex', gap: 8 }}>
+          <button style={{ background: '#f3f4f6', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 18px', fontWeight: 600, color: '#222', fontSize: 15, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <span style={{ width: 16, height: 16, background: '#111827', borderRadius: 4, display: 'inline-block' }}></span>
+            Categories
+          </button>
+          <select style={{ background: '#f3f4f6', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 18px', fontWeight: 600, color: '#222', fontSize: 15, outline: 'none', minWidth: 120 }}>
+            <option>Locations</option>
+          </select>
+          <select style={{ background: '#f3f4f6', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 18px', fontWeight: 600, color: '#222', fontSize: 15, outline: 'none', minWidth: 120 }}>
+            <option>Reviews</option>
+          </select>
+          <button style={{ background: '#f3f4f6', border: '1.5px solid #e5e7eb', borderRadius: 8, padding: '8px 18px', fontWeight: 600, color: '#222', fontSize: 15, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <span style={{ width: 16, height: 16, background: '#111827', borderRadius: 4, display: 'inline-block' }}></span>
+            Seller Details
+          </button>
+        </div>
+        <div style={{ minWidth: 220, display: 'flex', alignItems: 'center', gap: 8 }}>
+          <button style={{ background: '#111827', border: 'none', borderRadius: 6, padding: '8px 18px', fontWeight: 600, color: '#fff', fontSize: 15, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
+            <span style={{ width: 16, height: 16, background: '#111827', borderRadius: 4, display: 'inline-block' }}></span>
+            Sort by: <span style={{ color: '#10b981', fontWeight: 700, marginLeft: 4 }}>Recommended</span>
+            <span style={{ marginLeft: 4, fontSize: 16 }}>&#9660;</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+  // Hero section with transparent image overlay
+  const heroSection = (
+    <div className="shop-hero-section">
+      {/* Background Image */}
+      <div className="hero-background">
+        <img 
+          src="https://images.unsplash.com/photo-1560472355-536de3962603?w=1500&h=600&fit=crop&crop=center" 
+          alt="Shop Background" 
+          className="hero-bg-image"
+        />
+      </div>
+      
+      {/* Transparent Overlay Image */}
+      <div className="hero-transparent-overlay">
+        <img 
+          src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&h=400&fit=crop&crop=center" 
+          alt="Shop Services" 
+          className="transparent-image"
+        />
+      </div>
+      
+      {/* Dark Overlay for text readability */}
+      <div className="hero-dark-overlay"></div>
+      
+      {/* Content */}
+      <div className="hero-content ">
+        <div className="hero-text">
+          <h1 className="hero-title">
+            Discover Amazing 
+            <span className="highlight-green">Local Shops</span>
+            Near You
+          </h1>
+          <p className="hero-subtitle">
+            Find the best beauty salons, spas, barbershops and wellness centers in your area
+          </p>
+          <div className="hero-breadcrumb">
+            <Link href="/" className="breadcrumb-link">Home</Link>
+            <span className="breadcrumb-separator">•</span>
+            <span className="breadcrumb-current">Shops</span>
+          </div>
+        </div>
+      </div>
+      
+      {/* Diagonal cut */}
+      <div className="hero-diagonal-cut"></div>
+    </div>
+  );
+  // Mock shop data
+    const [shops] = useState(
+      Array.from({ length: 20 }).map((_, i) => ({
+      id: i + 1,
+      businessName: [
+        'Urban Cuts', 'Glow Studio', 'Relax Spa', 'Classic Barbers', 'Shear Genius', 'Therapy Touch', 'Fresh Face', 'Beauty Bliss', 'Fade Masters', 'Layered Lounge',
+        'Pompadour Palace', 'Crew HQ', 'Crop Shop', 'Side Part Studio', 'French Crop House', 'Quiff Corner', 'Comb Over Club', 'Taper Town', 'Mohawk Mania', 'Shaggy Shack'
+      ][i % 20],
+      businessDescription: [
+        'Trendy barbershop for men and women.', 'Best facials and skincare treatments.', 'Massage and wellness therapies.', 'Classic and modern haircuts for all ages.', 'Creative hair styling and coloring.',
+        'Deep tissue and relaxing massages.', 'Rejuvenating facial treatments.', 'All-in-one beauty and wellness center.', 'Fade and style experts.', 'Layered hair specialists.',
+        'Pompadour and retro styles.', 'Crew cuts for all ages.', 'Modern crop styles.', 'Side part and classic looks.', 'French crop and sophistication.',
+        'Quiff and volume.', 'Comb over and neat finish.', 'Taper and clean lines.', 'Mohawk and bold looks.', 'Shaggy and relaxed styles.'
+      ][i % 20],
+      businessCity: [
+        'Downtown', 'Beauty Lane', 'Wellness Blvd', 'Main Street', 'Market Ave', 'Elm Street', 'Sunset Ave', 'Central Plaza', 'Fade District', 'Layered City',
+        'Pompadour Park', 'Crew Town', 'Crop Village', 'Side Part Place', 'French Crop Corner', 'Quiff Quarters', 'Comb Over Court', 'Taper Terrace', 'Mohawk Mountain', 'Shaggy Shores'
+      ][i % 20],
+      logoUrl: [
+        'https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993447/pexels-photo-3993447.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3757942/pexels-photo-3757942.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/1813272/pexels-photo-1813272.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993448/pexels-photo-3993448.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3756679/pexels-photo-3756679.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993446/pexels-photo-3993446.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993445/pexels-photo-3993445.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993458/pexels-photo-3993458.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993459/pexels-photo-3993459.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993460/pexels-photo-3993460.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993461/pexels-photo-3993461.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993462/pexels-photo-3993462.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993463/pexels-photo-3993463.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993464/pexels-photo-3993464.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993450/pexels-photo-3993450.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993451/pexels-photo-3993451.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993452/pexels-photo-3993452.jpeg?auto=compress&w=400&h=300',
+        'https://images.pexels.com/photos/3993453/pexels-photo-3993453.jpeg?auto=compress&w=400&h=300'
+      ][i % 20],
+      averageRating: 4.5 + (i % 5) * 0.1,
+      totalReviews: 50 + (i * 7)
+    })
+    )
+  );
+  const [loading] = useState(false);
+
+  return (
+    <>
+  {heroSection}
+  <div style={{ height: 32 }} />
+  {trendingCategoriesSection}
+      <div style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: 'Manrope, sans-serif', padding: '60px 0' }}>
+        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px' }}>
+          <h1 style={{ fontSize: 36, fontWeight: 800, textAlign: 'center', marginBottom: 40, letterSpacing: '-1px', color: '#222' }}>Shops</h1>
+          {loading ? (
+            <div style={{ textAlign: 'center', color: '#6b7280', fontSize: 18 }}>Loading shops...</div>
+          ) : shops.length === 0 ? (
+            <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: 32, textAlign: 'center', color: '#6b7280', fontSize: 18 }}>
+              No shops found.
+            </div>
+          ) : (
+            <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {shops.map((shop) => (
+                <Link key={shop.id} href={`/shop/${shop.id}`} style={{ textDecoration: 'none' }}>
+                  <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(16,185,129,0.10)', width: 320, minHeight: 360, overflow: 'hidden', display: 'flex', flexDirection: 'column', marginBottom: 24, transition: 'transform 0.2s', cursor: 'pointer' }}>
+                    <div style={{ height: 180, width: '100%', background: shop.logoUrl ? `url(${shop.logoUrl}) center/cover no-repeat` : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '2px solid #e5e7eb' }}>
+                      {!shop.logoUrl && (
+                        <span style={{ color: '#9ca3af', fontSize: 48, fontWeight: 700 }}>🛍️</span>
+                      )}
+                    </div>
+                    <div style={{ padding: 24, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                      <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 20, color: '#222', marginBottom: 8 }}>{shop.businessName}</div>
+                      <div style={{ color: '#6b7280', fontSize: 15, marginBottom: 8 }}>{shop.businessDescription}</div>
+                      <div style={{ color: '#6b7280', fontSize: 14, marginBottom: 8 }}>City: {shop.businessCity}</div>
+                      <div style={{ color: '#f59e42', fontWeight: 700, fontSize: 15, marginBottom: 8 }}>Rating: {shop.averageRating?.toFixed(1) ?? 'N/A'} ({shop.totalReviews} reviews)</div>
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+  <Footer />
+    </>
+  );
+}

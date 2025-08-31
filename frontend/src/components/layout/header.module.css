@@ -1,0 +1,35 @@
+:root {
+  --color-green: #10b981;
+  --color-dark-blue: #374151;
+  --color-text-dark: #111827;
+  --color-text-gray: #6b7280;
+  --color-white: #ffffff;
+  --color-border: #e5e7eb;
+}
+
+.top-banner {
+  background-color: var(--color-green);
+  color: var(--color-white);
+  font-size: 13px;
+  padding: 10px 0;
+  font-weight: 500;
+}
+
+.top-banner .container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.sale-timer {
+  display: flex;
+  align-items: baseline;
+  gap: 12px;
+}
+
+
+
+.timer-unit {
+  font-size: 16px;
+  font-weight: 700;
+}

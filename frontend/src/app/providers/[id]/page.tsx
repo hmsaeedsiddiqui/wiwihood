@@ -1,0 +1,76 @@
+"use client";
+
+import React, { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { apiService, Provider } from "@/lib/api";
+import Link from "next/link";
+
+export default function ProviderDetailPage() {
+  const params = useParams();
+  const { id } = params as { id: string };
+  const [provider, setProvider] = useState<Provider | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchProvider() {
+      setLoading(true);
+      try {
+        // There is no getProviderById in apiService, so fetch all and filter (for now)
+        const result = await apiService.getProviders();
+        const found = (result.data || []).find((p: Provider) => p.id === id);
+        setProvider(found || null);
+      } catch (e) {
+        setProvider(null);
+      } finally {
+        setLoading(false);
+      }
+    }
+    if (id) fetchProvider();
+  }, [id]);
+
+  if (loading) {
+    return <div style={{ textAlign: 'center', marginTop: 60 }}>Loading provider...</div>;
+  }
+  if (!provider) {
+    return <div style={{ textAlign: 'center', marginTop: 60, color: '#ef4444' }}>Provider not found.</div>;
+  }
+
+  return (
+    <div style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: 'Manrope, sans-serif', padding: '60px 0' }}>
+      <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px' }}>
+        <Link href="/providers" style={{ color: '#10b981', fontWeight: 600, fontSize: 16, textDecoration: 'none', marginBottom: 24, display: 'inline-block' }}>&larr; Back to Providers</Link>
+        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: 40, display: 'flex', gap: 32, flexWrap: 'wrap' }}>
+          <div style={{ flex: 1, minWidth: 260 }}>
+            <div style={{ height: 180, width: '100%', background: provider.logoUrl ? `url(${provider.logoUrl}) center/cover no-repeat` : '#f3f4f6', borderRadius: 12, marginBottom: 24 }}></div>
+            <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Verified: {provider.isVerified ? 'Yes' : 'No'}</div>
+            <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Rating: {provider.averageRating} ({provider.totalReviews} reviews)</div>
+          </div>
+          <div style={{ flex: 2, minWidth: 260 }}>
+            <h1 style={{ fontSize: 32, fontWeight: 800, color: '#222', marginBottom: 16 }}>{provider.businessName}</h1>
+            <div style={{ color: '#6b7280', fontSize: 18, marginBottom: 16 }}>{provider.businessDescription}</div>
+            <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Address: {provider.businessAddress}, {provider.businessCity}</div>
+            <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Phone: {provider.businessPhoneNumber || 'N/A'}</div>
+            <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Email: {provider.businessEmail || 'N/A'}</div>
+            <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Website: {provider.websiteUrl ? <a href={provider.websiteUrl} target="_blank" rel="noopener noreferrer">{provider.websiteUrl}</a> : 'N/A'}</div>
+            <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 24 }}>Owner: {provider.user?.firstName} {provider.user?.lastName}</div>
+            {/* List services offered by this provider */}
+            <div style={{ marginTop: 24 }}>
+              <h2 style={{ fontSize: 22, fontWeight: 700, color: '#222', marginBottom: 12 }}>Services Offered</h2>
+              {provider.services && provider.services.length > 0 ? (
+                <ul style={{ paddingLeft: 18 }}>
+                  {provider.services.map((service) => (
+                    <li key={service.id} style={{ marginBottom: 8 }}>
+                      <Link href={`/services/${service.id}`} style={{ color: '#10b981', fontWeight: 600, textDecoration: 'none' }}>{service.name}</Link> - ${service.basePrice} ({service.duration} min)
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <div style={{ color: '#6b7280', fontSize: 16 }}>No services listed.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

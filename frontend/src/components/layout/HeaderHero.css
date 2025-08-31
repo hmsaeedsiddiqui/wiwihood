@@ -1,0 +1,9 @@
+.hero-section::after {
+  content: none !important;
+  display: none !important;
+}
+.hero-section::before,
+.hero-section::after {
+  content: none !important;   /* Removes the angled strip */
+  display: none !important;   /* Hides it fully */
+}
