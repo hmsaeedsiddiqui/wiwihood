@@ -1,1 +1,0 @@
-ALTER TABLE users ADD COLUMN postalCode VARCHAR(20) NULL;
