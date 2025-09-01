@@ -1,0 +1,297 @@
+-- First, let's check the categories
+SELECT id, name, slug FROM categories;
+
+-- Create some sample providers first (since services need providers)
+-- First we need to create users for the providers
+INSERT INTO users (
+    id,
+    firstName,
+    lastName,
+    email,
+    passwordHash,
+    role,
+    isActive,
+    isEmailVerified,
+    createdAt,
+    updatedAt
+) VALUES 
+(
+    '550e8400-e29b-41d4-a716-446655440001',
+    'Sarah',
+    'Johnson',
+    'sarah@glamourbeauty.com',
+    '$2b$10$dummy.hash.for.demo.purposes.only',
+    'provider',
+    true,
+    true,
+    NOW(),
+    NOW()
+),
+(
+    '550e8400-e29b-41d4-a716-446655440002',
+    'Mike',
+    'Chen',
+    'mike@zenspa.com',
+    '$2b$10$dummy.hash.for.demo.purposes.only',
+    'provider',
+    true,
+    true,
+    NOW(),
+    NOW()
+),
+(
+    '550e8400-e29b-41d4-a716-446655440003',
+    'Maria',
+    'Rodriguez',
+    'maria@cleanpro.com',
+    '$2b$10$dummy.hash.for.demo.purposes.only',
+    'provider',
+    true,
+    true,
+    NOW(),
+    NOW()
+),
+(
+    '550e8400-e29b-41d4-a716-446655440004',
+    'David',
+    'Wilson',
+    'david@fixit.com',
+    '$2b$10$dummy.hash.for.demo.purposes.only',
+    'provider',
+    true,
+    true,
+    NOW(),
+    NOW()
+);
+
+-- Now create the providers
+INSERT INTO providers (
+    id,
+    "businessName",
+    description,
+    address,
+    city,
+    country,
+    "postalCode",
+    phone,
+    website,
+    "providerType",
+    status,
+    "isVerified",
+    "averageRating",
+    "totalReviews",
+    "totalBookings",
+    "userId",
+    "createdAt",
+    "updatedAt"
+) VALUES 
+(
+    '550e8400-e29b-41d4-a716-446655440011',
+    'Glamour Beauty Salon',
+    'Premium beauty salon offering hair, nail, and skincare services with experienced professionals.',
+    '123 Beauty Street, Downtown',
+    'City',
+    'USA',
+    '12345',
+    '+1-555-0101',
+    'https://glamourbeauty.com',
+    'individual',
+    'active',
+    true,
+    4.8,
+    156,
+    342,
+    '550e8400-e29b-41d4-a716-446655440001',
+    NOW(),
+    NOW()
+),
+(
+    '550e8400-e29b-41d4-a716-446655440012',
+    'Zen Spa & Wellness',
+    'Relaxing spa and wellness center specializing in therapeutic massages and holistic treatments.',
+    '456 Wellness Ave, Spa District',
+    'City',
+    'USA',
+    '12346',
+    '+1-555-0102',
+    'https://zenspa.com',
+    'business',
+    'active',
+    true,
+    4.9,
+    203,
+    478,
+    '550e8400-e29b-41d4-a716-446655440002',
+    NOW(),
+    NOW()
+),
+(
+    '550e8400-e29b-41d4-a716-446655440013',
+    'CleanPro Home Services',
+    'Professional home cleaning services with eco-friendly products and reliable staff.',
+    '789 Service Road, Residential Area',
+    'City',
+    'USA',
+    '12347',
+    '+1-555-0103',
+    'https://cleanpro.com',
+    'business',
+    'active',
+    true,
+    4.7,
+    128,
+    298,
+    '550e8400-e29b-41d4-a716-446655440003',
+    NOW(),
+    NOW()
+),
+(
+    '550e8400-e29b-41d4-a716-446655440014',
+    'FixIt Handyman Services',
+    'Reliable handyman services for plumbing, electrical, and general home repairs.',
+    '321 Repair Street, Service Center',
+    'City',
+    'USA',
+    '12348',
+    '+1-555-0104',
+    'https://fixit.com',
+    'individual',
+    'active',
+    true,
+    4.6,
+    89,
+    167,
+    '550e8400-e29b-41d4-a716-446655440004',
+    NOW(),
+    NOW()
+);
+
+-- Insert 6 sample services
+INSERT INTO services (
+    id,
+    name,
+    description,
+    "shortDescription",
+    "basePrice",
+    "durationMinutes",
+    "categoryId",
+    "providerId",
+    "serviceType",
+    "pricingType",
+    status,
+    "isActive",
+    "isFeatured",
+    "createdAt",
+    "updatedAt"
+) VALUES 
+-- Beauty & Wellness Services
+(
+    uuid_generate_v4(),
+    'Professional Hair Styling',
+    'Transform your look with our professional hair styling services. Includes consultation, wash, cut, style, and finishing touches.',
+    'Professional hair cut and styling service',
+    85.00,
+    90,
+    (SELECT id FROM categories WHERE slug = 'beauty-wellness'),
+    '550e8400-e29b-41d4-a716-446655440011',
+    'appointment',
+    'fixed',
+    'active',
+    true,
+    true,
+    NOW(),
+    NOW()
+),
+(
+    uuid_generate_v4(),
+    'Relaxing Spa Massage',
+    'Unwind with our signature 60-minute full body massage. Perfect for stress relief and muscle tension.',
+    'Full body therapeutic massage',
+    120.00,
+    60,
+    (SELECT id FROM categories WHERE slug = 'beauty-wellness'),
+    '550e8400-e29b-41d4-a716-446655440012',
+    'appointment',
+    'fixed',
+    'active',
+    true,
+    false,
+    NOW(),
+    NOW()
+),
+(
+    uuid_generate_v4(),
+    'Facial Treatment & Skincare',
+    'Rejuvenate your skin with our premium facial treatment including deep cleansing, exfoliation, and moisturizing.',
+    'Premium facial treatment and skincare',
+    95.00,
+    75,
+    (SELECT id FROM categories WHERE slug = 'beauty-wellness'),
+    '550e8400-e29b-41d4-a716-446655440011',
+    'appointment',
+    'fixed',
+    'active',
+    true,
+    true,
+    NOW(),
+    NOW()
+),
+-- Home Services
+(
+    uuid_generate_v4(),
+    'House Cleaning Service',
+    'Professional residential cleaning service including all rooms, kitchen, bathrooms, and common areas.',
+    'Complete house cleaning service',
+    150.00,
+    180,
+    (SELECT id FROM categories WHERE slug = 'home-services'),
+    '550e8400-e29b-41d4-a716-446655440013',
+    'appointment',
+    'hourly',
+    'active',
+    true,
+    true,
+    NOW(),
+    NOW()
+),
+(
+    uuid_generate_v4(),
+    'Plumbing Repair & Maintenance',
+    'Expert plumbing services for repairs, installations, and maintenance. Available for emergency calls.',
+    'Professional plumbing repair services',
+    95.00,
+    120,
+    (SELECT id FROM categories WHERE slug = 'home-services'),
+    '550e8400-e29b-41d4-a716-446655440014',
+    'appointment',
+    'hourly',
+    'active',
+    true,
+    false,
+    NOW(),
+    NOW()
+),
+(
+    uuid_generate_v4(),
+    'Electrical Installation & Repair',
+    'Licensed electrician services for home electrical work, installations, troubleshooting, and safety inspections.',
+    'Licensed electrical installation and repair',
+    110.00,
+    90,
+    (SELECT id FROM categories WHERE slug = 'home-services'),
+    '550e8400-e29b-41d4-a716-446655440014',
+    'appointment',
+    'hourly',
+    'active',
+    true,
+    true,
+    NOW(),
+    NOW()
+);
+
+-- Verify the services were created
+SELECT s.name, s."basePrice", s."durationMinutes", c.name as category_name, p."businessName" as provider_name
+FROM services s 
+JOIN categories c ON s."categoryId" = c.id 
+JOIN providers p ON s."providerId" = p.id
+ORDER BY c.name, s.name;

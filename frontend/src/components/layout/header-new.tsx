@@ -198,48 +198,51 @@ export function Header() {
 
       {/* Hero Section - Only show on home page */}
       {isHomePage && (
-        <section className="hero-section">
-          <div className="container hero-content">
-            <div className="hero-text-area">
-              <h1 className="hero-headline">
-                Find <span className="highlight-green">Trusted Providers</span> &amp;<br/>
-                <span className="highlight-green">Book Services</span> at the<br/>
-                Best Prices
-              </h1>
-              <p className="hero-description">
-                Search for top-rated beauty, wellness, and healthcare providers near you.
-              </p>
-              <div className="search-bar">
-                <div className="input-group">
-                  <i className="fa-regular fa-calendar-days"></i>
-                  <input type="text" placeholder="Search..." />
-                </div>
-                <div className="input-group">
-                  <div className="select-wrapper">
-                    <i className="fa-solid fa-location-dot"></i>
-                    <select>
-                      <option>Select...</option>
-                    </select>
-                    <i className="fa-solid fa-chevron-down"></i>
-                  </div>
-                </div>
-                <button className="btn-find-providers">Find Providers</button>
-              </div>
-              <p className="popular-searches">
-                Popular Searches: <span>Haircuts, Massage, Facials.</span>
-              </p>
-            </div>
-            <div className="hero-video-area">
-              <div className="video-placeholder">
-                <div className="video-overlay">
-                  <div className="play-button">
-                    <i className="fa-solid fa-play"></i>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+        <section>
+          
         </section>
+        // <section className="hero-section">
+        //   <div className="container hero-content">
+        //     <div className="hero-text-area">
+        //       <h1 className="hero-headline">
+        //         Find <span className="highlight-green">Trusted Providers</span> &amp;<br/>
+        //         <span className="highlight-green">Book Services</span> at the<br/>
+        //         Best Prices
+        //       </h1>
+        //       <p className="hero-description">
+        //         Search for top-rated beauty, wellness, and healthcare providers near you.
+        //       </p>
+        //       <div className="search-bar">
+        //         <div className="input-group">
+        //           <i className="fa-regular fa-calendar-days"></i>
+        //           <input type="text" placeholder="Search..." />
+        //         </div>
+        //         <div className="input-group">
+        //           <div className="select-wrapper">
+        //             <i className="fa-solid fa-location-dot"></i>
+        //             <select>
+        //               <option>Select...</option>
+        //             </select>
+        //             <i className="fa-solid fa-chevron-down"></i>
+        //           </div>
+        //         </div>
+        //         <button className="btn-find-providers">Find Providers</button>
+        //       </div>
+        //       <p className="popular-searches">
+        //         Popular Searches: <span>Haircuts, Massage, Facials.</span>
+        //       </p>
+        //     </div>
+        //     <div className="hero-video-area">
+        //       <div className="video-placeholder">
+        //         <div className="video-overlay">
+        //           <div className="play-button">
+        //             <i className="fa-solid fa-play"></i>
+        //           </div>
+        //         </div>
+        //       </div>
+        //     </div>
+        //   </div>
+        // </section>
       )}
     </>
   );

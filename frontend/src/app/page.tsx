@@ -116,8 +116,158 @@ export default function HomePage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Search & Filter UI */}
-      {/* Browse Services Section - 100% Exact Design */}
+      {/* HERO SECTION - 100% MATCHED TO ORIGINAL DESIGN */}
+      <section
+        style={{
+          width: '100%',
+          minHeight: 540,
+          background: `linear-gradient(rgba(34, 40, 49, 0.45), rgba(34, 40, 49, 0.45)), url('https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=1500&q=80') center/cover no-repeat`,
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          padding: '0',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Diagonal White Cut */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            bottom: 0,
+            width: '100%',
+            height: 120,
+            background: '#fff',
+            transform: 'skewY(-4deg)',
+            transformOrigin: 'bottom right',
+            zIndex: 2,
+          }}
+        />
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 3,
+            width: '100%',
+            maxWidth: 1300,
+            margin: '0 auto',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            padding: '60px 0 0 0',
+            minHeight: 540,
+          }}
+        >
+          {/* LEFT: HERO TEXT & SEARCH */}
+          <div
+            style={{
+              flex: 1.2,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              justifyContent: 'center',
+              padding: '0 0 0 60px',
+              minWidth: 0,
+              maxWidth: 600,
+            }}
+          >
+            <h1
+              style={{
+                fontFamily: 'Manrope, sans-serif',
+                fontWeight: 800,
+                fontSize: '2.8rem',
+                lineHeight: 1.13,
+                color: '#fff',
+                marginBottom: 18,
+                textAlign: 'left',
+              }}
+            >
+              Find <span className="highlight-green" style={{ fontStyle: 'italic', fontWeight: 700, fontSize: '2.2rem', background: 'var(--color-green)', color: '#fff', borderRadius: 6, padding: '2px 14px', margin: '0 2px', boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone', border: '2px solid #fff', display: 'inline-block' }}>Trusted Providers</span> &<br />
+              <span className="highlight-green" style={{ fontStyle: 'italic', fontWeight: 700, fontSize: '2.2rem', background: 'var(--color-green)', color: '#fff', borderRadius: 6, padding: '2px 14px', margin: '0 2px', boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone', border: '2px solid #fff', display: 'inline-block' }}>Book Services</span> at the<br />
+              Best Prices
+            </h1>
+            <p style={{ color: '#fff', fontSize: 18, fontWeight: 500, marginBottom: 32, textAlign: 'left', textShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
+              Search for top-rated beauty, wellness, and healthcare providers near you.
+            </p>
+            {/* SEARCH BAR */}
+            <div style={{ width: '100%', maxWidth: 520, marginBottom: 18 }}>
+              <div style={{ display: 'flex', gap: 8, background: '#fff', borderRadius: 12, boxShadow: '0 4px 24px rgba(16,185,129,0.10)', padding: 8, alignItems: 'center' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: '#f3f4f6', borderRadius: 8, padding: '8px 14px' }}>
+                  <i className="fa fa-search" style={{ color: '#9ca3af', fontSize: 18 }}></i>
+                  <input type="text" placeholder="Search..." style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 16, width: '100%' }} />
+                </div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: '#f3f4f6', borderRadius: 8, padding: '8px 14px' }}>
+                  <i className="fa fa-map-marker-alt" style={{ color: '#9ca3af', fontSize: 18 }}></i>
+                  <select style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 16, width: '100%' }}>
+                    <option>Select...</option>
+                  </select>
+                </div>
+                <button style={{ background: 'var(--color-green)', color: '#fff', fontWeight: 700, fontSize: 17, border: 'none', borderRadius: 8, padding: '12px 32px', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 2px 8px rgba(16,185,129,0.10)' }}>Find Providers</button>
+              </div>
+            </div>
+            <div style={{ color: '#fff', fontSize: 15, fontWeight: 500, marginTop: 8, textAlign: 'left', textShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
+              Popular Searches: Haircuts, Massage, Facials.
+            </div>
+          </div>
+          {/* RIGHT: VIDEO/IMAGE CARD */}
+          <div
+            style={{
+              flex: 0.9,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              minWidth: 0,
+              paddingRight: 60,
+              marginTop: 18,
+            }}
+          >
+            <div style={{
+              width: 320,
+              height: 420,
+              background: '#fff',
+              borderRadius: 24,
+              boxShadow: '0 8px 32px rgba(16,185,129,0.13)',
+              overflow: 'hidden',
+              position: 'relative',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '6px solid #fff',
+            }}>
+              <img
+                src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=facearea&w=640&h=800&q=80"
+                alt="Provider Video"
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              />
+              {/* Play button overlay */}
+              <button style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: 64,
+                height: 64,
+                background: '#fff',
+                borderRadius: '50%',
+                border: '4px solid #fff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.10)',
+                cursor: 'pointer',
+                zIndex: 2,
+                transition: 'box-shadow 0.2s',
+              }}>
+                <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <circle cx="14" cy="14" r="14" fill="#fff" />
+                  <polygon points="11,9.5 20,14 11,18.5" fill="#ec4899" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
       <div style={{ height: 56 }} />
       <section style={{ background: '#fff', padding: '48px 0 0 0', margin: '0 auto', maxWidth: 1200 }}>
         <h2 style={{ textAlign: 'center', fontSize: '2.2rem', fontWeight: 800, marginBottom: 12, fontFamily: 'Manrope, sans-serif' }}>Browse Services</h2>
