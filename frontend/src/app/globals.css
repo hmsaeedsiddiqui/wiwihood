@@ -229,25 +229,31 @@ a { text-decoration: none; color: inherit; }
 .highlight-green {
   position: relative;
   display: inline-block;
-  padding: 1px 14px;
-  margin: 0 -4px;
-  color: var(--color-white);
   font-style: italic;
-
-  line-height: 1.4;
+  font-weight: 700;
+  color: #fff;
+  z-index: 1;
+  padding: 6px 22px 4px 22px;
+  margin: 0 2px 8px 2px;
+  line-height: 1.2;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  font-size: inherit;
 }
 
 .highlight-green::before {
   content: "";
   position: absolute;
-  inset: 0;
-  background-color: var(--color-green);
-  transform: skew(-10deg);
-  z-index: 4;
-  text-align: center;
-  color: white;
-  max-width: 800px;
-  padding: 0 20px;
+  left: -8px;
+  top: -4px;
+  width: calc(100% + 16px);
+  height: calc(100% + 8px);
+  background: #10b981;
+  transform: skew(-13deg);
+  z-index: -1;
+  border-radius: 0;
+  box-shadow: 0 2px 8px rgba(16,185,129,0.10);
+  border: 3px solid #fff;
 }
 /* .highlight-green {
     background-color: var(--color-green);
@@ -1595,12 +1601,7 @@ html {
 }
 
 .highlight-green {
-  background: #10b981;
-  color: white !important;
-  padding: 4px 12px;
-  border-radius: 8px;
-  display: inline-block;
-  margin: 0 4px;
+  /* removed duplicate, see above for new style */
 }
 
 .hero-subtitle-new {
