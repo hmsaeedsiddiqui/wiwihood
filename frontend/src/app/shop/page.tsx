@@ -62,45 +62,67 @@ export default function ShopPage() {
       </div>
     </div>
   );
-  // Hero section with transparent image overlay
+  // Hero section matching the design image
   const heroSection = (
     <div className="shop-hero-section">
-      {/* Background Image */}
+      {/* Background Image with dark overlay */}
       <div className="hero-background">
         <img 
           src="https://images.unsplash.com/photo-1560472355-536de3962603?w=1500&h=600&fit=crop&crop=center" 
           alt="Shop Background" 
           className="hero-bg-image"
         />
+        <div className="hero-dark-overlay"></div>
       </div>
       
-      {/* Transparent Overlay Image */}
-      <div className="hero-transparent-overlay">
-        <img 
-          src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=500&h=400&fit=crop&crop=center" 
-          alt="Shop Services" 
-          className="transparent-image"
-        />
-      </div>
-      
-      {/* Dark Overlay for text readability */}
-      <div className="hero-dark-overlay"></div>
-      
-      {/* Content */}
-      <div className="hero-content ">
-        <div className="hero-text">
-          <h1 className="hero-title">
-            Discover Amazing 
-            <span className="highlight-green">Local Shops</span>
-            Near You
-          </h1>
-          <p className="hero-subtitle">
-            Find the best beauty salons, spas, barbershops and wellness centers in your area
-          </p>
-          <div className="hero-breadcrumb">
-            <Link href="/" className="breadcrumb-link">Home</Link>
-            <span className="breadcrumb-separator">•</span>
-            <span className="breadcrumb-current">Shops</span>
+      {/* Content Container */}
+      <div className="hero-content">
+        <div className="hero-layout">
+          {/* Left Side - Text and Search */}
+          <div className="hero-left">
+            <h1 className="hero-main-title">
+              Find <span className="highlight-green">Trusted Providers</span> &<br />
+              <span className="highlight-green">Book Services</span> at the<br />
+              Best Prices
+            </h1>
+            <p className="hero-subtitle-new">
+              Search for top-rated beauty, wellness, and healthcare providers near you.
+            </p>
+            
+            {/* Search Bar */}
+            <div className="hero-search-container">
+              <input 
+                type="text" 
+                placeholder="Search..."
+                className="hero-search-input"
+              />
+              <select className="hero-location-select">
+                <option>Select...</option>
+                <option>New York</option>
+                <option>Los Angeles</option>
+                <option>Chicago</option>
+              </select>
+              <button className="hero-search-button">
+                Find Providers
+              </button>
+            </div>
+            
+            {/* Popular Searches */}
+            <div className="hero-popular-searches">
+              <span className="popular-label">Popular Searches:</span>
+              <span className="popular-items">Haircuts, Massage, Facials.</span>
+            </div>
+          </div>
+          
+          {/* Right Side - Image */}
+          <div className="hero-right">
+            <div className="hero-image-frame">
+              <img 
+                src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=400&fit=crop&crop=center" 
+                alt="Professional Service" 
+                className="hero-feature-image"
+              />
+            </div>
           </div>
         </div>
       </div>
