@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import { apiService, Provider } from "@/lib/api";
 import Link from "next/link";
+import { CloudinaryImage } from "@/components/CloudinaryImage";
 
 export default function ProviderDetailPage() {
   const params = useParams();
@@ -41,7 +42,39 @@ export default function ProviderDetailPage() {
         <Link href="/providers" style={{ color: '#10b981', fontWeight: 600, fontSize: 16, textDecoration: 'none', marginBottom: 24, display: 'inline-block' }}>&larr; Back to Providers</Link>
         <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: 40, display: 'flex', gap: 32, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 260 }}>
-            <div style={{ height: 180, width: '100%', background: provider.logoUrl ? `url(${provider.logoUrl}) center/cover no-repeat` : '#f3f4f6', borderRadius: 12, marginBottom: 24 }}></div>
+            <div style={{ height: 180, width: '100%', borderRadius: 12, marginBottom: 24, overflow: 'hidden', background: '#f3f4f6' }}>
+              {provider.coverImagePublicId ? (
+                <CloudinaryImage
+                  publicId={provider.coverImagePublicId}
+                  alt={`${provider.businessName} cover image`}
+                  width={300}
+                  height={180}
+                  className="w-full h-full object-cover"
+                />
+              ) : provider.logoPublicId ? (
+                <CloudinaryImage
+                  publicId={provider.logoPublicId}
+                  alt={`${provider.businessName} logo`}
+                  width={300}
+                  height={180}
+                  className="w-full h-full object-contain bg-gray-100"
+                />
+              ) : (
+                <div style={{ 
+                  width: '100%', 
+                  height: '100%', 
+                  background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: '#6b7280',
+                  fontSize: '48px',
+                  fontWeight: 'bold'
+                }}>
+                  {provider.businessName.charAt(0)}
+                </div>
+              )}
+            </div>
             <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Verified: {provider.isVerified ? 'Yes' : 'No'}</div>
             <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Rating: {provider.averageRating} ({provider.totalReviews} reviews)</div>
           </div>

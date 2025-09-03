@@ -104,9 +104,17 @@ export class Provider {
   @Column({ nullable: true, length: 500 })
   logo?: string;
 
+  @ApiProperty({ description: 'Business logo Cloudinary public ID', required: false })
+  @Column({ nullable: true, length: 255 })
+  logoPublicId?: string;
+
   @ApiProperty({ description: 'Business cover image URL', required: false })
   @Column({ nullable: true, length: 500 })
   coverImage?: string;
+
+  @ApiProperty({ description: 'Business cover image Cloudinary public ID', required: false })
+  @Column({ nullable: true, length: 255 })
+  coverImagePublicId?: string;
 
   @ApiProperty({ description: 'Provider status', enum: ProviderStatus })
   @Column({

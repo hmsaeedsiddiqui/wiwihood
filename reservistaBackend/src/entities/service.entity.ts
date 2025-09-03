@@ -110,6 +110,10 @@ export class Service {
   @Column({ nullable: true, type: 'json' })
   images?: string[];
 
+  @ApiProperty({ description: 'Service images Cloudinary public IDs (JSON array)', required: false })
+  @Column({ nullable: true, type: 'json' })
+  imagesPublicIds?: string[];
+
   @ApiProperty({ description: 'Service tags for search (JSON array)', required: false })
   @Column({ nullable: true, type: 'json' })
   tags?: string[];

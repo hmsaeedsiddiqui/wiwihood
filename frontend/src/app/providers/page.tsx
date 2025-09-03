@@ -19,6 +19,7 @@ import {
   Heart,
   Share
 } from 'lucide-react'
+import { CloudinaryImage } from '@/components/CloudinaryImage'
 import Link from 'next/link';
 
 import type { Provider } from '@/lib/api';
@@ -80,14 +81,39 @@ export default function ProvidersPage() {
       <Link key={provider.id} href={`/providers/${provider.id}`} style={{ textDecoration: 'none' }}>
         <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-md">
           <div className="relative">
-            <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 p-6 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-md">
-                  <span className="text-2xl font-bold text-blue-600">
-                    {provider.businessName.charAt(0)}
-                  </span>
+            {/* Cover Image */}
+            <div className="h-48 overflow-hidden">
+              {provider.coverImagePublicId ? (
+                <CloudinaryImage
+                  publicId={provider.coverImagePublicId}
+                  alt={`${provider.businessName} cover`}
+                  width={400}
+                  height={192}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                />
+              ) : (
+                <div className="h-full bg-gradient-to-br from-blue-50 to-indigo-100"></div>
+              )}
+              {/* Overlay with provider info */}
+              <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
+                <div className="text-center">
+                  <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-md overflow-hidden">
+                    {provider.logoPublicId ? (
+                      <CloudinaryImage
+                        publicId={provider.logoPublicId}
+                        alt={`${provider.businessName} logo`}
+                        width={80}
+                        height={80}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-2xl font-bold text-blue-600">
+                        {provider.businessName.charAt(0)}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="font-semibold text-white text-lg drop-shadow-md">{provider.businessName}</h3>
                 </div>
-                <h3 className="font-semibold text-gray-800 text-lg">{provider.businessName}</h3>
               </div>
             </div>
             {provider.isVerified && (

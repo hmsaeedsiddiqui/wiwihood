@@ -1,162 +1,81 @@
 'use client';
 
-import React, { useState } from 'react';
 
-const wishlistItems = [
-  {
-    id: 1,
-    name: 'Relaxing Massage',
-    provider: 'Spa Heaven',
-    image: 'https://images.unsplash.com/photo-1544161515-4ab6ce6db874?w=400&h=300&fit=crop&crop=center',
-    price: '$60',
-    rating: 4.8,
-    duration: '60 min',
-    category: 'Massage',
-    description: 'Full body relaxing massage to relieve stress and tension'
-  },
-  {
-    id: 2,
-    name: 'Facial Treatment',
-    provider: 'Glow Clinic',
-    image: 'https://images.unsplash.com/photo-1570172619644-dfd03ed5d881?w=400&h=300&fit=crop&crop=center',
-    price: '$45',
-    rating: 4.9,
-    duration: '45 min',
-    category: 'Facial',
-    description: 'Deep cleansing facial with organic products'
-  },
-  {
-    id: 3,
-    name: 'Hair Styling',
-    provider: 'Style Studio',
-    image: 'https://images.unsplash.com/photo-1562322140-8baeececf3df?w=400&h=300&fit=crop&crop=center',
-    price: '$35',
-    rating: 4.7,
-    duration: '30 min',
-    category: 'Hair',
-    description: 'Professional hair styling and treatment'
-  },
-  {
-    id: 4,
-    name: 'Manicure & Pedicure',
-    provider: 'Nail Art Plus',
-    image: 'https://images.unsplash.com/photo-1604654894610-df63bc536371?w=400&h=300&fit=crop&crop=center',
-    price: '$50',
-    rating: 4.6,
-    duration: '90 min',
-    category: 'Nails',
-    description: 'Complete nail care with premium polish'
-  },
-  {
-    id: 5,
-    name: 'Deep Tissue Massage',
-    provider: 'Wellness Center',
-    image: 'https://images.unsplash.com/photo-1540555700478-4be289fbecef?w=400&h=300&fit=crop&crop=center',
-    price: '$80',
-    rating: 4.9,
-    duration: '75 min',
-    category: 'Massage',
-    description: 'Therapeutic massage for muscle tension relief'
-  },
-  {
-    id: 6,
-    name: 'Anti-Aging Facial',
-    provider: 'Beauty Lounge',
-    image: 'https://images.unsplash.com/photo-1616394584738-fc6e612e71b9?w=400&h=300&fit=crop&crop=center',
-    price: '$95',
-    rating: 4.8,
-    duration: '60 min',
-    category: 'Facial',
-    description: 'Advanced anti-aging treatment with collagen boost'
-  }
-];
+import { useWishlist } from './WishlistContext';
+import { useCart } from './cartContext';
+
 
 export default function Wishlist() {
-  const [items, setItems] = useState(wishlistItems);
-
-  const removeItem = (id: number) => {
-    setItems(items.filter(item => item.id !== id));
-  };
-
-  const addToCart = (item: any) => {
-    // Add to cart functionality
-    console.log('Added to cart:', item);
-  };
+  const { wishlist, removeFromWishlist } = useWishlist();
+  const { addToCart } = useCart();
 
   return (
-    <div className="wishlist-container">
-      <div className="wishlist-header">
-        <h1 className="wishlist-title">
-          <i className="fas fa-heart"></i>
-          My Wishlist
-        </h1>
-        <p className="wishlist-subtitle">
-          {items.length} {items.length === 1 ? 'service' : 'services'} saved for later
-        </p>
+    <div className="max-w-5xl mx-auto py-10 px-4">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-8 gap-4">
+        <div>
+          <h1 className="text-3xl font-bold flex items-center gap-3 text-red-500">
+            <i className="fas fa-heart"></i> My Wishlist
+          </h1>
+          <p className="text-gray-500 mt-1">{wishlist.length} {wishlist.length === 1 ? 'service' : 'services'} saved for later</p>
+        </div>
+        {wishlist.length > 0 && (
+          <button
+            className="bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold px-4 py-2 rounded-lg border border-gray-200 shadow-sm flex items-center gap-2"
+            onClick={() => wishlist.forEach(item => removeFromWishlist(item.id))}
+          >
+            <i className="fas fa-trash"></i> Clear Wishlist
+          </button>
+        )}
       </div>
 
-      {items.length === 0 ? (
-        <div className="empty-wishlist">
-          <i className="fas fa-heart-broken"></i>
-          <h3>Your wishlist is empty</h3>
-          <p>Browse our services and add your favorites here</p>
-          <button className="browse-btn">
-            <i className="fas fa-search"></i>
-            Browse Services
-          </button>
+      {wishlist.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-xl shadow-md border border-gray-100">
+          <i className="fas fa-heart-broken text-5xl text-gray-300 mb-4"></i>
+          <h3 className="text-xl font-semibold mb-2">Your wishlist is empty</h3>
+          <p className="text-gray-500 mb-6">Browse our services and add your favorites here</p>
+          <a href="/shop" className="inline-flex items-center gap-2 px-5 py-2.5 bg-green-600 text-white rounded-lg font-semibold shadow hover:bg-green-700 transition">
+            <i className="fas fa-search"></i> Browse Services
+          </a>
         </div>
       ) : (
-        <div className="wishlist-grid">
-          {items.map((item) => (
-            <div key={item.id} className="wishlist-card">
-              <div className="card-image">
-                <img src={item.image} alt={item.name} />
-                <div className="card-category">{item.category}</div>
-                <button 
-                  className="remove-btn"
-                  onClick={() => removeItem(item.id)}
-                  title="Remove from wishlist"
-                >
-                  <i className="fas fa-times"></i>
-                </button>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7">
+          {wishlist.map((item) => (
+            <div key={item.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 overflow-hidden flex flex-col group hover:shadow-2xl transition relative">
+              <button
+                className="absolute top-3 right-3 z-10 rounded-full p-2 bg-white/80 hover:bg-white shadow border border-gray-200 text-gray-400 hover:text-red-500 transition"
+                onClick={() => removeFromWishlist(item.id)}
+                title="Remove from wishlist"
+              >
+                <i className="fas fa-times"></i>
+              </button>
+              <div className="h-44 w-full bg-gray-100 flex items-center justify-center overflow-hidden">
+                <img
+                  src={item.image || '/blog1.jpg'}
+                  alt={item.name}
+                  className="object-cover w-full h-full group-hover:scale-105 transition"
+                  onError={e => { (e.currentTarget as HTMLImageElement).src = '/blog1.jpg'; }}
+                />
               </div>
-              
-              <div className="card-content">
-                <div className="card-header">
-                  <h3 className="service-name">{item.name}</h3>
-                  <div className="rating">
-                    <i className="fas fa-star"></i>
-                    <span>{item.rating}</span>
-                  </div>
+              <div className="p-5 flex-1 flex flex-col">
+                <div className="font-bold text-lg text-gray-900 mb-1 truncate">{item.name}</div>
+                <div className="text-gray-600 text-sm mb-2 line-clamp-2 min-h-[40px]">{item.description}</div>
+                <div className="flex items-center justify-between mt-auto">
+                  {item.basePrice && <span className="text-green-700 font-bold text-base">${item.basePrice}</span>}
+                  {item.durationMinutes && <span className="text-xs text-gray-500 bg-gray-100 rounded px-2 py-1 ml-2">{item.durationMinutes} min</span>}
                 </div>
-                
-                <p className="provider-name">
-                  <i className="fas fa-map-marker-alt"></i>
-                  {item.provider}
-                </p>
-                
-                <p className="service-description">{item.description}</p>
-                
-                <div className="service-details">
-                  <span className="duration">
-                    <i className="fas fa-clock"></i>
-                    {item.duration}
-                  </span>
-                  <span className="price">{item.price}</span>
-                </div>
-                
-                <div className="card-actions">
-                  <button 
-                    className="book-btn"
-                    onClick={() => addToCart(item)}
-                  >
-                    <i className="fas fa-calendar-plus"></i>
-                    Book Now
-                  </button>
-                  <button className="share-btn">
-                    <i className="fas fa-share"></i>
-                  </button>
-                </div>
+                <button
+                  className="mt-4 w-full bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg flex items-center justify-center gap-2 shadow transition"
+                  onClick={() => addToCart({
+                    id: Number(item.id),
+                    name: item.name,
+                    provider: '',
+                    price: item.basePrice || 0,
+                    imageUrl: item.image || '/blog1.jpg',
+                    quantity: 1,
+                  })}
+                >
+                  <i className="fa-solid fa-cart-plus"></i> Add to Cart
+                </button>
               </div>
             </div>
           ))}

@@ -1,17 +1,61 @@
 // Header and Hero section React component based on provided HTML/CSS
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+import { useWishlist } from '../WishlistContext';
+import { useCart } from '../cartContext';
+import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '../AuthProvider';
+import { apiService } from '@/lib/api';
 
 export function Header() {
+  const { wishlist } = useWishlist();
+  const { cart, addToCart } = useCart();
+  const router = useRouter();
+  const [showWishlistModal, setShowWishlistModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const isHomePage = pathname === '/';
   const { user, logout, isAuthenticated, isLoading } = useAuth();
 
+  // Categories state
+  const [categories, setCategories] = useState<{ id: string, name: string, slug: string }[]>([]);
+
+  useEffect(() => {
+    // Fetch categories from backend using proper API service
+    console.log('Fetching categories...');
+    apiService.getCategories(true)
+      .then(cats => {
+        console.log('Categories fetched:', cats);
+        // Filter for Haircuts, Massages, Facials by name (case-insensitive)
+        const wanted = ['haircuts', 'massages', 'facials'];
+        const filteredCats = cats.filter((cat: any) =>
+          wanted.includes((cat.name || '').toLowerCase())
+        );
+        console.log('Filtered categories:', filteredCats);
+        setCategories(filteredCats);
+      })
+      .catch(error => {
+        console.error('Error fetching categories:', error);
+        setCategories([]);
+      });
+  }, []);
+
+  // Prevent hydration mismatch
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const handleLogout = async () => {
     await logout();
+  };
+
+  const handleCartClick = () => {
+    if (mounted) {
+      router.push('/cart');
+    }
   };
 
   return (
@@ -56,9 +100,9 @@ export function Header() {
             <ul className="nav-links">
               <li><a href="/">Home</a></li>
               <li><a href="/shop">Shop</a></li>
-              <li><a href="/haircuts">Haircuts</a></li>
-              <li><a href="/massages">Massages</a></li>
-              <li><a href="/facials">Facials</a></li>
+              {categories.map(cat => (
+                <li key={cat.id}><a href={`/category/${cat.slug}`}>{cat.name}</a></li>
+              ))}
               <li><a href="/contact">Contact</a></li>
             </ul>
             <div className="user-actions">
@@ -129,67 +173,216 @@ export function Header() {
                   </>
                 )}
                 {/* Wishlist Icon with badge */}
-                <a href="/wishlist" style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#222',
-                  fontSize: 22,
-                  textDecoration: 'none',
-                  position: 'relative',
-                  width: 32,
-                  height: 32,
-                }}>
+                <button
+                  type="button"
+                  onClick={() => setShowWishlistModal(true)}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: '#222',
+                    fontSize: 22,
+                    textDecoration: 'none',
+                    position: 'relative',
+                    width: 32,
+                    height: 32,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                  aria-label="Show wishlist"
+                >
                   <i className="fa-regular fa-heart"></i>
-                  <span style={{
-                    position: 'absolute',
-                    top: -4,
-                    right: -4,
-                    background: '#ef4444',
-                    color: '#fff',
-                    borderRadius: '50%',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    minWidth: 18,
-                    height: 18,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    border: '2px solid #fff',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
-                  }}>2</span>
-                </a>
+                  {mounted && wishlist.length > 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: -4,
+                      right: -4,
+                      background: '#ef4444',
+                      color: '#fff',
+                      borderRadius: '50%',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      minWidth: 18,
+                      height: 18,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '2px solid #fff',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
+                    }}>{wishlist.length}</span>
+                  )}
+                </button>
+      {/* Wishlist Modal */}
+      {showWishlistModal && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.3)',
+            zIndex: 1000,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+          onClick={() => setShowWishlistModal(false)}
+        >
+          <div
+            style={{
+              background: '#fff',
+              borderRadius: 18,
+              boxShadow: '0 8px 48px rgba(0,0,0,0.18)',
+              padding: 40,
+              minWidth: 480,
+              maxWidth: 700,
+              width: '90vw',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              position: 'relative',
+            }}
+            onClick={e => e.stopPropagation()}
+          >
+            <button
+              onClick={() => setShowWishlistModal(false)}
+              style={{
+                position: 'absolute',
+                top: 18,
+                right: 18,
+                background: 'none',
+                border: 'none',
+                fontSize: 26,
+                cursor: 'pointer',
+                color: '#888',
+              }}
+              aria-label="Close wishlist"
+            >
+              <i className="fas fa-times"></i>
+            </button>
+            <h2 style={{ fontWeight: 700, fontSize: 28, marginBottom: 28, display: 'flex', alignItems: 'center', gap: 12, color: '#374151' }}>
+              <i className="fa-regular fa-heart"></i> My Wishlist
+            </h2>
+            {wishlist.length === 0 ? (
+              <div style={{ textAlign: 'center', color: '#888', padding: 40 }}>
+                <i className="fas fa-heart-broken" style={{ fontSize: 40, marginBottom: 12 }}></i>
+                <div style={{ fontWeight: 600, marginBottom: 6, fontSize: 18 }}>Your wishlist is empty</div>
+                <div style={{ fontSize: 15 }}>Browse services and add your favorites here.</div>
+              </div>
+            ) : (
+              <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                {wishlist.map(item => (
+                  <li
+                    key={item.id}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 24,
+                      marginBottom: 28,
+                      background: '#f9fafb',
+                      borderRadius: 12,
+                      padding: 18,
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
+                    }}
+                  >
+                    <img
+                      src={item.image || '/blog1.jpg'}
+                      alt={item.name}
+                      style={{ width: 80, height: 80, borderRadius: 10, objectFit: 'cover', border: '1px solid #eee', background: '#fff' }}
+                      onError={e => { e.currentTarget.src = '/blog1.jpg'; }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 700, fontSize: 18, color: '#222' }}>{item.name}</div>
+                      {item.basePrice && <div style={{ color: '#16a34a', fontWeight: 600, fontSize: 17, marginTop: 2 }}>${item.basePrice}</div>}
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <button
+                        style={{
+                          background: '#16a34a',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 8,
+                          padding: '8px 18px',
+                          fontWeight: 600,
+                          fontSize: 15,
+                          cursor: 'pointer',
+                          marginBottom: 2,
+                        }}
+                        onClick={() => addToCart({
+                          id: item.id.toString(),
+                          name: item.name,
+                          provider: '',
+                          price: item.basePrice || 0,
+                          imageUrl: item.image || '/blog1.jpg',
+                          quantity: 1,
+                        })}
+                      >
+                        <i className="fa-solid fa-cart-plus"></i> Add to Cart
+                      </button>
+                      <button
+                        style={{
+                          background: '#f59e42',
+                          color: '#fff',
+                          border: 'none',
+                          borderRadius: 8,
+                          padding: '8px 18px',
+                          fontWeight: 600,
+                          fontSize: 15,
+                          cursor: 'pointer',
+                        }}
+                        // Add your buy logic here
+                      >
+                        <i className="fa-solid fa-bag-shopping"></i> Buy Now
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        </div>
+      )}
                 {/* Cart Icon with badge */}
-                <a href="/cart" style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: '#222',
-                  fontSize: 22,
-                  textDecoration: 'none',
-                  position: 'relative',
-                  width: 32,
-                  height: 32,
-                }}>
-                  <i className="fa-solid fa-cart-shopping"></i>
-                  <span style={{
-                    position: 'absolute',
-                    top: -4,
-                    right: -4,
-                    background: '#ef4444',
-                    color: '#fff',
-                    borderRadius: '50%',
-                    fontSize: 12,
-                    fontWeight: 700,
-                    minWidth: 18,
-                    height: 18,
+                <button
+                  onClick={handleCartClick}
+                  style={{
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    border: '2px solid #fff',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
-                  }}>9</span>
-                </a>
+                    color: '#222',
+                    fontSize: 22,
+                    textDecoration: 'none',
+                    position: 'relative',
+                    width: 32,
+                    height: 32,
+                    background: 'none',
+                    border: 'none',
+                    cursor: 'pointer',
+                  }}
+                  aria-label="Show cart"
+                >
+                  <i className="fa-solid fa-cart-shopping"></i>
+                  {mounted && cart.length > 0 && (
+                    <span style={{
+                      position: 'absolute',
+                      top: -4,
+                      right: -4,
+                      background: '#ef4444',
+                      color: '#fff',
+                      borderRadius: '50%',
+                      fontSize: 12,
+                      fontWeight: 700,
+                      minWidth: 18,
+                      height: 18,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      border: '2px solid #fff',
+                      boxShadow: '0 1px 4px rgba(0,0,0,0.08)'
+                    }}>{cart.length}</span>
+                  )}
+                </button>
               </div>
             </div>
           </div>

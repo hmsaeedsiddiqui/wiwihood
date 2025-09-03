@@ -20,6 +20,10 @@ import { LogsModule } from './modules/logs/logs.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
+import { CartModule } from './modules/cart/cart.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
@@ -62,6 +66,10 @@ import { SystemSettingsModule } from './modules/system-settings/system-settings.
     AnalyticsModule,
     CalendarModule,
     SystemSettingsModule,
+    CartModule, // Register CartModule
+    FavoritesModule, // Register FavoritesModule
+    CloudinaryModule, // Register CloudinaryModule
+    UploadModule, // Register UploadModule
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiService, Service } from "@/lib/api";
+import { CloudinaryImage } from "@/components/cloudinary/CloudinaryImage";
 
 // Demo/mock data for fallback
 const demoServices: Service[] = [
@@ -95,7 +96,23 @@ export default function ServiceDetailPage() {
         <Link href="/shop" style={{ color: '#10b981', fontWeight: 600, fontSize: 16, textDecoration: 'none', marginBottom: 24, display: 'inline-block' }}>&larr; Back to Shop</Link>
         <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: 40, display: 'flex', gap: 32, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 260 }}>
-            <div style={{ height: 240, width: '100%', background: service.imageUrl ? `url(${service.imageUrl}) center/cover no-repeat` : '#f3f4f6', borderRadius: 12, marginBottom: 24 }}></div>
+            <div style={{ height: 240, width: '100%', borderRadius: 12, marginBottom: 24, overflow: 'hidden', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {service.images && service.images.length > 0 ? (
+                <CloudinaryImage
+                  src={service.images[0]}
+                  alt={service.name}
+                  width={400}
+                  height={240}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : service.imageUrl ? (
+                <img src={service.imageUrl} alt={service.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#d1d5db' }}>
+                  {service.category?.name?.charAt(0) || service.name.charAt(0)}
+                </div>
+              )}
+            </div>
           </div>
           <div style={{ flex: 2, minWidth: 260 }}>
             <h1 style={{ fontSize: 32, fontWeight: 800, color: '#222', marginBottom: 16 }}>{service.name}</h1>

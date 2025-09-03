@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { ImageUpload } from "@/components/cloudinary/ImageUpload";
+import { CloudinaryImage } from "@/components/cloudinary/CloudinaryImage";
 
 interface Category {
   id: string;
@@ -18,7 +20,7 @@ interface Service {
   serviceType: string;
   pricingType: string;
   basePrice: number;
-  duration: number;
+  durationMinutes: number;
   isActive: boolean;
   status: string;
   images?: string[];
@@ -43,8 +45,9 @@ export default function ServicesPage() {
     serviceType: "appointment",
     pricingType: "fixed",
     basePrice: "",
-    duration: "",
-    isActive: true
+    durationMinutes: "",
+    isActive: true,
+    images: [] as string[]
   });
 
   useEffect(() => {
@@ -57,7 +60,7 @@ export default function ServicesPage() {
     try {
       const token = localStorage.getItem('providerToken');
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/profile`,
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/profile`,
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -65,7 +68,12 @@ export default function ServicesPage() {
       );
       
       if (response.data) {
-        setProviderId(response.data.id);
+        // Use provider.id if available, else fallback to id
+        if (response.data.provider && response.data.provider.id) {
+          setProviderId(response.data.provider.id);
+        } else {
+          setProviderId(response.data.id);
+        }
       }
     } catch (error) {
       console.error('Error fetching provider info:', error);
@@ -75,7 +83,7 @@ export default function ServicesPage() {
   const fetchCategories = async () => {
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/categories`
+        `${process.env.NEXT_PUBLIC_API_URL}/categories`
       );
       setCategories(response.data || []);
     } catch (error) {
@@ -89,7 +97,7 @@ export default function ServicesPage() {
       
       const token = localStorage.getItem('providerToken');
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/services/provider/${providerId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/services/provider/${providerId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -124,13 +132,15 @@ export default function ServicesPage() {
       const submitData = {
         ...formData,
         basePrice: parseFloat(formData.basePrice),
-        duration: parseInt(formData.duration)
+        durationMinutes: Math.max(1, Math.min(1440, parseInt(formData.durationMinutes)))
       };
+      // Remove any 'duration' property if present
+  // No need to delete 'duration' as it no longer exists
       
       if (editingService) {
         // Update existing service
         await axios.patch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/services/${editingService.id}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/services/${editingService.id}`,
           submitData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -140,7 +150,7 @@ export default function ServicesPage() {
       } else {
         // Create new service
         await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/services/provider/${providerId}`,
+          `${process.env.NEXT_PUBLIC_API_URL}/services/provider/${providerId}`,
           submitData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -168,8 +178,9 @@ export default function ServicesPage() {
       serviceType: service.serviceType,
       pricingType: service.pricingType,
       basePrice: service.basePrice.toString(),
-      duration: service.duration.toString(),
-      isActive: service.isActive
+  durationMinutes: service.durationMinutes?.toString() || "",
+      isActive: service.isActive,
+      images: service.images || []
     });
     setShowCreateForm(true);
   };
@@ -180,7 +191,7 @@ export default function ServicesPage() {
     try {
       const token = localStorage.getItem('providerToken');
       await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/services/${serviceId}`,
+        `${process.env.NEXT_PUBLIC_API_URL}/services/${serviceId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -197,7 +208,7 @@ export default function ServicesPage() {
     try {
       const token = localStorage.getItem('providerToken');
       await axios.patch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/services/${serviceId}/toggle-active`,
+        `${process.env.NEXT_PUBLIC_API_URL}/services/${serviceId}/toggle-active`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -220,8 +231,9 @@ export default function ServicesPage() {
       serviceType: "appointment",
       pricingType: "fixed",
       basePrice: "",
-      duration: "",
-      isActive: true
+  durationMinutes: "",
+      isActive: true,
+      images: []
     });
     setShowCreateForm(false);
     setEditingService(null);
@@ -430,10 +442,11 @@ export default function ServicesPage() {
                 <input
                   type="number"
                   required
-                  min="5"
-                  step="5"
-                  value={formData.duration}
-                  onChange={(e) => setFormData({...formData, duration: e.target.value})}
+                  min="1"
+                  max="1440"
+                  step="1"
+                  value={formData.durationMinutes}
+                  onChange={(e) => setFormData({...formData, durationMinutes: e.target.value})}
                   style={{
                     width: '100%',
                     padding: '12px',
@@ -501,6 +514,75 @@ export default function ServicesPage() {
                 }}
                 placeholder="Detailed description of your service..."
               />
+            </div>
+
+            {/* Service Images */}
+            <div style={{ marginTop: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>
+                Service Images
+              </label>
+              <div style={{ marginBottom: '12px' }}>
+                <ImageUpload
+                  uploadType="service"
+                  onImageUploaded={(publicId: string) => {
+                    setFormData({
+                      ...formData,
+                      images: [...formData.images, publicId]
+                    });
+                  }}
+                  maxFiles={5}
+                />
+              </div>
+              
+              {/* Display current images */}
+              {formData.images.length > 0 && (
+                <div style={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', 
+                  gap: '12px',
+                  marginTop: '12px'
+                }}>
+                  {formData.images.map((publicId, index) => (
+                    <div key={index} style={{ position: 'relative' }}>
+                      <CloudinaryImage
+                        src={publicId}
+                        alt={`Service image ${index + 1}`}
+                        width={120}
+                        height={120}
+                        style={{ borderRadius: '8px', objectFit: 'cover' }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData({
+                            ...formData,
+                            images: formData.images.filter((_, i) => i !== index)
+                          });
+                        }}
+                        style={{
+                          position: 'absolute',
+                          top: '4px',
+                          right: '4px',
+                          background: 'rgba(239, 68, 68, 0.9)',
+                          color: 'white',
+                          border: 'none',
+                          borderRadius: '50%',
+                          width: '24px',
+                          height: '24px',
+                          cursor: 'pointer',
+                          fontSize: '12px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center'
+                        }}
+                        title="Remove image"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Action Buttons */}
@@ -603,7 +685,7 @@ export default function ServicesPage() {
                     <div>
                       <strong style={{ fontSize: '14px', color: '#374151' }}>Duration:</strong>
                       <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '14px' }}>
-                        {service.duration} minutes
+                        {service.durationMinutes} minutes
                       </p>
                     </div>
                     
@@ -614,6 +696,33 @@ export default function ServicesPage() {
                       </p>
                     </div>
                   </div>
+                  
+                  {/* Service Images */}
+                  {service.images && service.images.length > 0 && (
+                    <div style={{ marginTop: '16px' }}>
+                      <strong style={{ fontSize: '14px', color: '#374151', display: 'block', marginBottom: '8px' }}>
+                        Images:
+                      </strong>
+                      <div style={{ 
+                        display: 'grid', 
+                        gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', 
+                        gap: '8px',
+                        maxHeight: '200px',
+                        overflowY: 'auto'
+                      }}>
+                        {service.images.map((publicId, index) => (
+                          <CloudinaryImage
+                            key={index}
+                            src={publicId}
+                            alt={`${service.name} image ${index + 1}`}
+                            width={100}
+                            height={100}
+                            style={{ borderRadius: '6px', objectFit: 'cover' }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
                 
                 <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>

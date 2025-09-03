@@ -3,6 +3,8 @@ import { usePathname } from 'next/navigation';
 import { Header } from './layout/header-new';
 import { CartProvider } from './cartContext';
 import { AuthProvider } from './AuthProvider';
+import { WishlistProvider } from './WishlistContext';
+import NoSSR from './NoSSR';
 
 export default function ConditionalLayout({
   children,
@@ -21,11 +23,15 @@ export default function ConditionalLayout({
   // Customer pages - show original customer header with auth
   // AuthProvider only applies to customer pages
   return (
-    <AuthProvider>
-      <CartProvider>
-        <Header />
-        {children}
-      </CartProvider>
-    </AuthProvider>
+    <NoSSR fallback={<div className="min-h-screen bg-gray-50" />}>
+      <AuthProvider>
+        <CartProvider>
+          <WishlistProvider>
+            <Header />
+            {children}
+          </WishlistProvider>
+        </CartProvider>
+      </AuthProvider>
+    </NoSSR>
   );
 }

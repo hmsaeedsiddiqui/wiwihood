@@ -31,3 +31,4 @@ export { Analytics } from './analytics.entity';
 export { CalendarEvent } from './calendar-event.entity';
 export { SystemSetting } from './system-setting.entity';
 export { Log } from './log.entity';
+export { CartItem } from './cart-item.entity';

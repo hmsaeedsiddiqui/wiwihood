@@ -27,7 +27,7 @@ export default function ProviderSignupPage() {
     if (token) {
       // Verify token is for provider
       axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/profile`,
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/profile`,
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -57,7 +57,7 @@ export default function ProviderSignupPage() {
 
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/register`,
+        `${process.env.NEXT_PUBLIC_API_URL}/auth/register`,
         {
           email: formData.email,
           password: formData.password,
@@ -92,201 +92,90 @@ export default function ProviderSignupPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="flex justify-center">
-            <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">R</span>
-            </div>
-          </div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
-            Join as a Service Provider
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Start offering your services on Reservista
-          </p>
-          <p className="mt-1 text-center text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link href="/auth/provider/login" className="font-medium text-green-600 hover:text-green-500">
-              Sign in here
-            </Link>
+    <div className="provider-signup-bg">
+      <div className="provider-signup-card">
+        <div className="provider-signup-header">
+          <div className="provider-signup-logo"><span>R</span></div>
+          <h2>Join as a Service Provider</h2>
+          <p className="provider-signup-sub">Start offering your services on Reservista</p>
+          <p className="provider-signup-link">Already have an account?{' '}
+            <Link href="/auth/provider/login">Sign in here</Link>
           </p>
         </div>
-
-        <div className="bg-white py-8 px-6 shadow rounded-lg">
-          <form className="space-y-6" onSubmit={handleSubmit}>
+        <div className="provider-signup-formwrap">
+          <form className="provider-signup-form" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
+              <div className="provider-signup-error">
                 {Array.isArray(error) ? (
-                  <ul className="list-disc list-inside">
+                  <ul>
                     {error.map((msg, i) => <li key={i}>{msg}</li>)}
                   </ul>
                 ) : error}
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700">
-                  First Name
-                </label>
-                <input
-                  id="firstName"
-                  name="firstName"
-                  type="text"
-                  required
-                  value={formData.firstName}
-                  onChange={handleChange}
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                  placeholder="First name"
-                />
+            <div className="provider-signup-row">
+              <div className="provider-signup-field">
+                <label htmlFor="firstName">First Name</label>
+                <input id="firstName" name="firstName" type="text" required value={formData.firstName} onChange={handleChange} placeholder="First name" />
               </div>
-
-              <div>
-                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700">
-                  Last Name
-                </label>
-                <input
-                  id="lastName"
-                  name="lastName"
-                  type="text"
-                  required
-                  value={formData.lastName}
-                  onChange={handleChange}
-                  className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                  placeholder="Last name"
-                />
+              <div className="provider-signup-field">
+                <label htmlFor="lastName">Last Name</label>
+                <input id="lastName" name="lastName" type="text" required value={formData.lastName} onChange={handleChange} placeholder="Last name" />
               </div>
             </div>
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={formData.email}
-                onChange={handleChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your email"
-              />
+            <div className="provider-signup-field">
+              <label htmlFor="email">Email address</label>
+              <input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange} placeholder="Enter your email" />
             </div>
 
-            <div>
-              <label htmlFor="phone" className="block text-sm font-medium text-gray-700">
-                Phone Number (optional)
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
-                value={formData.phone}
-                onChange={handleChange}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your phone number"
-              />
+            <div className="provider-signup-field">
+              <label htmlFor="phone">Phone Number (optional)</label>
+              <input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="Enter your phone number" />
             </div>
 
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={formData.password}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                  placeholder="Create a password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
+            <div className="provider-signup-field">
+              <label htmlFor="password">Password</label>
+              <div className="provider-signup-password-wrap">
+                <input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required value={formData.password} onChange={handleChange} placeholder="Create a password" />
+                <button type="button" className="provider-signup-eye" onClick={() => setShowPassword(!showPassword)}>
                   {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
+                    <EyeOff className="provider-signup-eye-icon" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
+                    <Eye className="provider-signup-eye-icon" />
                   )}
                 </button>
               </div>
-              <p className="mt-1 text-xs text-gray-500">
-                Must contain uppercase, lowercase, number or special character (min. 8 chars)
-              </p>
+              <p className="provider-signup-password-hint">Must contain uppercase, lowercase, number or special character (min. 8 chars)</p>
             </div>
 
-            <div>
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700">
-                Confirm Password
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="confirmPassword"
-                  name="confirmPassword"
-                  type={showConfirmPassword ? 'text' : 'password'}
-                  autoComplete="new-password"
-                  required
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                  placeholder="Confirm your password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
+            <div className="provider-signup-field">
+              <label htmlFor="confirmPassword">Confirm Password</label>
+              <div className="provider-signup-password-wrap">
+                <input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password" required value={formData.confirmPassword} onChange={handleChange} placeholder="Confirm your password" />
+                <button type="button" className="provider-signup-eye" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
                   {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
+                    <EyeOff className="provider-signup-eye-icon" />
                   ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
+                    <Eye className="provider-signup-eye-icon" />
                   )}
                 </button>
               </div>
             </div>
 
             <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
-              >
-                {loading && <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />}
+              <button type="submit" disabled={loading} className="provider-signup-btn">
+                {loading && <Loader2 className="provider-signup-btn-loader" />}
                 Create Provider Account
               </button>
             </div>
 
-            <div className="text-center">
-              <Link href="/auth/register" className="font-medium text-sm text-gray-600 hover:text-gray-900">
-                Looking to book services? Sign up as a customer
-              </Link>
+            <div className="provider-signup-customer-link">
+              <Link href="/auth/register">Looking to book services? Sign up as a customer</Link>
             </div>
-
-            <div className="text-xs text-gray-500 text-center">
-              By creating an account, you agree to our{' '}
-              <Link href="/terms" className="text-green-600 hover:text-green-500">
-                Terms of Service
-              </Link>{' '}
-              and{' '}
-              <Link href="/privacy" className="text-green-600 hover:text-green-500">
-                Privacy Policy
-              </Link>
-            </div>
-
-            <div className="text-center mt-4">
-              <Link href="/auth/customer/register" className="font-medium text-sm text-gray-600 hover:text-gray-900">
-                Want to book services? Sign up as a customer
-              </Link>
+            <div className="provider-signup-terms">
+              By creating an account, you agree to our <Link href="/terms">Terms of Service</Link> and <Link href="/privacy">Privacy Policy</Link>
             </div>
           </form>
         </div>

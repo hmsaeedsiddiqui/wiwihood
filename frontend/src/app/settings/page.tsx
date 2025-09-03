@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { useAuthStore } from '@/store/authStore'
 import { UserRole } from '@/types'
+import { ImageUpload } from '@/components/cloudinary/ImageUpload'
+import { CloudinaryImage } from '@/components/cloudinary/CloudinaryImage'
 import { 
   User, 
   Mail, 
@@ -41,7 +43,8 @@ export default function SettingsPage() {
     address: '',
     city: '',
     country: '',
-    postalCode: ''
+    postalCode: '',
+    profileImage: ''
   })
 
   const [passwordData, setPasswordData] = useState({
@@ -191,28 +194,46 @@ export default function SettingsPage() {
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Profile Picture */}
-                    <div className="flex items-center space-x-6">
-                      <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center">
-                        {user?.profileImageUrl ? (
-                          <img 
-                            src={user.profileImageUrl} 
-                            alt="Profile" 
-                            className="w-24 h-24 rounded-full object-cover"
+                    <div className="space-y-4">
+                      <h3 className="text-lg font-medium">Profile Picture</h3>
+                      <div className="flex items-start space-x-6">
+                        <div className="flex-shrink-0">
+                          {profileData.profileImage ? (
+                            <CloudinaryImage
+                              src={profileData.profileImage}
+                              width={96}
+                              height={96}
+                              alt="Profile picture"
+                              style={{ width: '96px', height: '96px', borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                          ) : (
+                            <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-full flex items-center justify-center">
+                              <span className="text-2xl font-bold text-blue-600">
+                                {profileData.firstName?.charAt(0)}{profileData.lastName?.charAt(0)}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 max-w-lg">
+                          <ImageUpload
+                            uploadType="profile"
+                            onImageUploaded={(publicId: string) => {
+                              setProfileData({...profileData, profileImage: publicId});
+                            }}
+                            maxFiles={1}
                           />
-                        ) : (
-                          <span className="text-2xl font-bold text-blue-600">
-                            {user?.firstName?.charAt(0)}{user?.lastName?.charAt(0)}
-                          </span>
-                        )}
-                      </div>
-                      <div>
-                        <Button variant="outline" size="sm">
-                          <Camera className="w-4 h-4 mr-2" />
-                          Change Photo
-                        </Button>
-                        <p className="text-sm text-gray-500 mt-2">
-                          JPG, GIF or PNG. Max size 2MB.
-                        </p>
+                          {profileData.profileImage && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setProfileData({...profileData, profileImage: ''});
+                              }}
+                              className="mt-2 text-sm text-red-600 hover:text-red-800"
+                            >
+                              Remove Photo
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
 

@@ -50,7 +50,7 @@ export default function HomePage() {
   };
 
   const handleCategoryClick = (category: Category) => {
-    router.push(`/category/${category.slug}`);
+    router.push(`/category/api/v1${category.slug}`);
   };
 
   const features = [

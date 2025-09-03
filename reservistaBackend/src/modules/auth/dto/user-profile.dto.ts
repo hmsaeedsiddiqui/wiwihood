@@ -1,6 +1,8 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class UserProfileDto {
+  @ApiPropertyOptional({ type: 'object', description: 'Provider profile if user is a provider' })
+  provider?: any;
   @ApiProperty({
     description: 'User unique identifier',
     example: 'uuid-string',

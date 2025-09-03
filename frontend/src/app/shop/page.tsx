@@ -1,3 +1,12 @@
+interface Shop {
+  id: string;
+  businessName: string;
+  description?: string;
+  city?: string;
+  logo?: string;
+  averageRating?: number;
+  totalReviews?: number;
+}
 
 "use client";
 
@@ -131,51 +140,31 @@ export default function ShopPage() {
       <div className="hero-diagonal-cut"></div>
     </div>
   );
-  // Mock shop data
-    const [shops] = useState(
-      Array.from({ length: 20 }).map((_, i) => ({
-      id: i + 1,
-      businessName: [
-        'Urban Cuts', 'Glow Studio', 'Relax Spa', 'Classic Barbers', 'Shear Genius', 'Therapy Touch', 'Fresh Face', 'Beauty Bliss', 'Fade Masters', 'Layered Lounge',
-        'Pompadour Palace', 'Crew HQ', 'Crop Shop', 'Side Part Studio', 'French Crop House', 'Quiff Corner', 'Comb Over Club', 'Taper Town', 'Mohawk Mania', 'Shaggy Shack'
-      ][i % 20],
-      businessDescription: [
-        'Trendy barbershop for men and women.', 'Best facials and skincare treatments.', 'Massage and wellness therapies.', 'Classic and modern haircuts for all ages.', 'Creative hair styling and coloring.',
-        'Deep tissue and relaxing massages.', 'Rejuvenating facial treatments.', 'All-in-one beauty and wellness center.', 'Fade and style experts.', 'Layered hair specialists.',
-        'Pompadour and retro styles.', 'Crew cuts for all ages.', 'Modern crop styles.', 'Side part and classic looks.', 'French crop and sophistication.',
-        'Quiff and volume.', 'Comb over and neat finish.', 'Taper and clean lines.', 'Mohawk and bold looks.', 'Shaggy and relaxed styles.'
-      ][i % 20],
-      businessCity: [
-        'Downtown', 'Beauty Lane', 'Wellness Blvd', 'Main Street', 'Market Ave', 'Elm Street', 'Sunset Ave', 'Central Plaza', 'Fade District', 'Layered City',
-        'Pompadour Park', 'Crew Town', 'Crop Village', 'Side Part Place', 'French Crop Corner', 'Quiff Quarters', 'Comb Over Court', 'Taper Terrace', 'Mohawk Mountain', 'Shaggy Shores'
-      ][i % 20],
-      logoUrl: [
-        'https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993447/pexels-photo-3993447.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3757942/pexels-photo-3757942.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/1813272/pexels-photo-1813272.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993448/pexels-photo-3993448.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3756679/pexels-photo-3756679.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993446/pexels-photo-3993446.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993445/pexels-photo-3993445.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993458/pexels-photo-3993458.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993459/pexels-photo-3993459.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993460/pexels-photo-3993460.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993461/pexels-photo-3993461.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993462/pexels-photo-3993462.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993463/pexels-photo-3993463.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993464/pexels-photo-3993464.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993450/pexels-photo-3993450.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993451/pexels-photo-3993451.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993452/pexels-photo-3993452.jpeg?auto=compress&w=400&h=300',
-        'https://images.pexels.com/photos/3993453/pexels-photo-3993453.jpeg?auto=compress&w=400&h=300'
-      ][i % 20],
-      averageRating: 4.5 + (i % 5) * 0.1,
-      totalReviews: 50 + (i * 7)
-    })
-    )
-  );
-  const [loading] = useState(false);
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/providers?page=1&limit=100`)
+      .then(res => res.json())
+      .then(data => {
+        // The backend returns { data: Provider[], ... } or { items: Provider[], ... } or { providers: Provider[], ... }
+        // Try to support common patterns
+        let providers = [];
+        if (Array.isArray(data)) {
+          providers = data;
+        } else if (Array.isArray(data.items)) {
+          providers = data.items;
+        } else if (Array.isArray(data.providers)) {
+          providers = data.providers;
+        } else if (Array.isArray(data.data)) {
+          providers = data.data;
+        }
+        setShops(providers);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
 
   return (
     <>
@@ -195,17 +184,17 @@ export default function ShopPage() {
             <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
               {shops.map((shop) => (
                 <Link key={shop.id} href={`/shop/${shop.id}`} style={{ textDecoration: 'none' }}>
-                  <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(16,185,129,0.10)', width: 320, minHeight: 360, overflow: 'hidden', display: 'flex', flexDirection: 'column', marginBottom: 24, transition: 'transform 0.2s', cursor: 'pointer' }}>
-                    <div style={{ height: 180, width: '100%', background: shop.logoUrl ? `url(${shop.logoUrl}) center/cover no-repeat` : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '2px solid #e5e7eb' }}>
-                      {!shop.logoUrl && (
+                  <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(16,185,129,0.10)', width: 320, minHeight: 360, maxHeight: 360, overflow: 'hidden', display: 'flex', flexDirection: 'column', marginBottom: 24, transition: 'transform 0.2s', cursor: 'pointer' }}>
+                    <div style={{ height: 180, width: '100%', background: shop.logo ? `url(${shop.logo}) center/cover no-repeat` : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '2px solid #e5e7eb' }}>
+                      {!shop.logo && (
                         <span style={{ color: '#9ca3af', fontSize: 48, fontWeight: 700 }}>🛍️</span>
                       )}
                     </div>
                     <div style={{ padding: 24, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                      <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 20, color: '#222', marginBottom: 8 }}>{shop.businessName}</div>
-                      <div style={{ color: '#6b7280', fontSize: 15, marginBottom: 8 }}>{shop.businessDescription}</div>
-                      <div style={{ color: '#6b7280', fontSize: 14, marginBottom: 8 }}>City: {shop.businessCity}</div>
-                      <div style={{ color: '#f59e42', fontWeight: 700, fontSize: 15, marginBottom: 8 }}>Rating: {shop.averageRating?.toFixed(1) ?? 'N/A'} ({shop.totalReviews} reviews)</div>
+                      <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 20, color: '#222', marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{shop.businessName}</div>
+                      <div style={{ color: '#6b7280', fontSize: 15, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', minHeight: 44, maxHeight: 44 }}>{typeof shop.description === 'string' ? shop.description : shop.description?.toString() || 'No description available'}</div>
+                      <div style={{ color: '#6b7280', fontSize: 14, marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>City: {shop.city || shop.address || ''}</div>
+                      <div style={{ color: '#f59e42', fontWeight: 700, fontSize: 15, marginBottom: 8 }}>Rating: {shop.averageRating?.toFixed ? shop.averageRating.toFixed(1) : (shop.averageRating ?? 'N/A')} ({shop.totalReviews ?? 0} reviews)</div>
                     </div>
                   </div>
                 </Link>

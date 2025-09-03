@@ -15,7 +15,8 @@ import {
   Permission,
   RolePermission,
   OAuthAccount,
-  Payout
+  Payout,
+  CartItem
 } from '../entities';
 
 export default registerAs(
@@ -30,7 +31,7 @@ export default registerAs(
     entities: [
       User, Provider, Service, Booking, Payment, Refund, Category,
       ProviderWorkingHours, ProviderTimeOff, Favorite, Role, Permission, 
-      RolePermission, OAuthAccount, Payout
+      RolePermission, OAuthAccount, Payout, CartItem
     ],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     synchronize: process.env.NODE_ENV === 'development', // Only for development

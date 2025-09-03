@@ -396,7 +396,50 @@ export class BookingsService {
     }
 
     const updatedBooking = await this.bookingRepository.save(booking);
+    
+    // Trigger review request notification (async)
+    this.triggerReviewRequest(booking).catch(error => {
+      console.error('Failed to send review request:', error);
+    });
+
     return this.mapToResponseDto(await this.findOneWithRelations(updatedBooking.id));
+  }
+
+  private async triggerReviewRequest(booking: Booking): Promise<void> {
+    try {
+      // Here you would typically:
+      // 1. Send email notification to customer
+      // 2. Create in-app notification
+      // 3. Schedule follow-up reminders
+      
+      console.log(`Review request triggered for booking ${booking.id}`);
+      console.log(`Customer: ${booking.customer.firstName} ${booking.customer.lastName}`);
+      console.log(`Provider: ${booking.provider.businessName}`);
+      console.log(`Service: ${booking.service.name}`);
+      
+      // In a real implementation, you would integrate with:
+      // - Email service (SendGrid, AWS SES, etc.)
+      // - Push notification service
+      // - In-app notification system
+      
+      // Example structure for notification payload:
+      const reviewRequestData = {
+        bookingId: booking.id,
+        customerId: booking.customerId,
+        customerEmail: booking.customer.email,
+        customerName: `${booking.customer.firstName} ${booking.customer.lastName}`,
+        providerName: booking.provider.businessName,
+        serviceName: booking.service.name,
+        completedAt: booking.completedAt,
+        reviewUrl: `${process.env.FRONTEND_URL || 'http://localhost:7000'}/booking/${booking.id}/review`,
+      };
+      
+      // This would be sent to your notification service
+      console.log('Review request data:', reviewRequestData);
+      
+    } catch (error) {
+      console.error('Error in triggerReviewRequest:', error);
+    }
   }
 
   async getAvailableTimeSlots(

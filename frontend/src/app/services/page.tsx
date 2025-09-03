@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { CloudinaryImage } from '@/components/cloudinary/CloudinaryImage'
 import { 
   Search, 
   Filter, 
@@ -68,13 +69,23 @@ export default function ServicesPage() {
   const ServiceCard = ({ service }: { service: Service }) => (
     <Card className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-md">
       <div className="relative overflow-hidden">
-        <div className="h-48 bg-gradient-to-br from-blue-100 to-indigo-200 flex items-center justify-center">
-          <div className="text-6xl font-bold text-blue-600/20">
-            {service.category.name.charAt(0)}
-          </div>
+        <div className="h-48 bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+          {service.images && service.images.length > 0 ? (
+            <CloudinaryImage
+              src={service.images[0]}
+              alt={service.name}
+              width={300}
+              height={192}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+            />
+          ) : (
+            <div className="text-6xl font-bold text-gray-400/30">
+              {service.category?.name?.charAt(0) || service.name.charAt(0)}
+            </div>
+          )}
         </div>
         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 text-sm font-semibold text-green-700">
-          
+          ${service.basePrice}
         </div>
       </div>
       
@@ -130,10 +141,20 @@ export default function ServicesPage() {
     <Card className="group hover:shadow-lg transition-all duration-300 cursor-pointer">
       <CardContent className="p-6">
         <div className="flex items-start space-x-4">
-          <div className="w-24 h-24 bg-gradient-to-br from-blue-100 to-indigo-200 rounded-lg flex items-center justify-center flex-shrink-0">
-            <div className="text-2xl font-bold text-blue-600/40">
-              {service.category.name.charAt(0)}
-            </div>
+          <div className="w-24 h-24 bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {service.images && service.images.length > 0 ? (
+              <CloudinaryImage
+                src={service.images[0]}
+                alt={service.name}
+                width={96}
+                height={96}
+                style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '8px' }}
+              />
+            ) : (
+              <div className="text-2xl font-bold text-gray-400/40">
+                {service.category?.name?.charAt(0) || service.name.charAt(0)}
+              </div>
+            )}
           </div>
           
           <div className="flex-1 min-w-0">

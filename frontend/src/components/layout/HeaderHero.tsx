@@ -52,9 +52,7 @@ export function HeaderHero() {
             <ul className="nav-links">
               <li><a href="/">Home</a></li>
               <li><a href="/shop">Shop</a></li>
-              <li><a href="/haircuts">Haircuts</a></li>
-              <li><a href="/massages">Massages</a></li>
-              <li><a href="/facials">Facials</a></li>
+              {/* Dynamic categories will be rendered here */}
               <li><a href="/contact">Contact</a></li>
             </ul>
             <div className="user-actions">

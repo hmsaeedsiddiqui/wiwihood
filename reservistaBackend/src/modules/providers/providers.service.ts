@@ -28,6 +28,24 @@ export class ProvidersService {
       throw new ConflictException('User already has a provider profile');
     }
 
+    // Process image fields - convert public IDs to full URLs if they're not already URLs
+    const processedData = { ...createProviderDto };
+    
+    // Handle empty strings by removing them (since fields are optional)
+    if (processedData.logo === '') {
+      delete processedData.logo;
+    } else if (processedData.logo && !processedData.logo.startsWith('http')) {
+      // Convert public ID to full Cloudinary URL
+      processedData.logo = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${processedData.logo}`;
+    }
+    
+    if (processedData.coverImage === '') {
+      delete processedData.coverImage;
+    } else if (processedData.coverImage && !processedData.coverImage.startsWith('http')) {
+      // Convert public ID to full Cloudinary URL
+      processedData.coverImage = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${processedData.coverImage}`;
+    }
+
     // Create provider
     const provider = this.providerRepository.create({
       userId,
@@ -40,7 +58,7 @@ export class ProvidersService {
       commissionRate: 10.00,
       totalReviews: 0,
       totalBookings: 0,
-      ...createProviderDto,
+      ...processedData,
     });
 
     const savedProvider = await this.providerRepository.save(provider);
@@ -144,8 +162,26 @@ export class ProvidersService {
       throw new NotFoundException('Provider not found');
     }
 
+    // Process image fields - convert public IDs to full URLs if they're not already URLs
+    const processedData = { ...updateProviderDto };
+    
+    // Handle empty strings by removing them (since fields are optional)
+    if (processedData.logo === '') {
+      delete processedData.logo;
+    } else if (processedData.logo && !processedData.logo.startsWith('http')) {
+      // Convert public ID to full Cloudinary URL
+      processedData.logo = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${processedData.logo}`;
+    }
+    
+    if (processedData.coverImage === '') {
+      delete processedData.coverImage;
+    } else if (processedData.coverImage && !processedData.coverImage.startsWith('http')) {
+      // Convert public ID to full Cloudinary URL
+      processedData.coverImage = `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${processedData.coverImage}`;
+    }
+
     // Update provider
-    Object.assign(provider, updateProviderDto);
+    Object.assign(provider, processedData);
     const updatedProvider = await this.providerRepository.save(provider);
 
     return this.formatProviderResponse(updatedProvider);
