@@ -1,11 +1,18 @@
 interface Shop {
   id: string;
   businessName: string;
-  description?: string;
+  description?: string | null;
   city?: string;
+  address?: string;
   logo?: string;
   averageRating?: number;
   totalReviews?: number;
+}
+
+interface Category {
+  id: string;
+  name: string;
+  count: number;
 }
 
 "use client";
@@ -16,6 +23,43 @@ import Link from "next/link";
 import Footer from '../../components/Footer';
 
 export default function ShopPage() {
+  const [shops, setShops] = useState<Shop[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    setLoading(true);
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/providers?page=1&limit=100`)
+      .then(res => res.json())
+      .then(data => {
+        // The backend returns { data: Provider[], ... } or { items: Provider[], ... } or { providers: Provider[], ... }
+        // Try to support common patterns
+        let providers = [];
+        if (Array.isArray(data)) {
+          providers = data;
+        } else if (Array.isArray(data.items)) {
+          providers = data.items;
+        } else if (Array.isArray(data.providers)) {
+          providers = data.providers;
+        } else if (Array.isArray(data.data)) {
+          providers = data.data;
+        }
+        setShops(providers);
+        setLoading(false);
+      })
+      .catch(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/categories`)
+      .then(res => res.json())
+      .then(data => {
+        const fetchedCategories = Array.isArray(data) ? data : data.categories || [];
+        setCategories(fetchedCategories);
+      })
+      .catch(() => setCategories([]));
+  }, []);
+
   // Trending Categories section (matches provided image)
   const trendingCategoriesSection = (
     <div style={{ background: '#fff', maxWidth: 1200, margin: '0 auto', marginTop: -32, borderRadius: 18, padding: '40px 32px 32px 32px', position: 'relative', zIndex: 2 }}>
@@ -31,13 +75,8 @@ export default function ShopPage() {
         </div>
       </div>
       <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
-        {[
-          { name: 'Hair Services', count: 80 },
-          { name: 'Body Massage', count: 80 },
-          { name: 'Skincare', count: 80 },
-          { name: 'Facial Treatment', count: 80 }
-        ].map((cat, idx) => (
-          <div key={cat.name} style={{ flex: 1, background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: 12, padding: '22px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(30,41,59,0.02)', position: 'relative', minWidth: 180 }}>
+        {categories.map((cat) => (
+          <div key={cat.id} style={{ flex: 1, background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: 12, padding: '22px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(30,41,59,0.02)', position: 'relative', minWidth: 180 }}>
             <div style={{ fontWeight: 700, fontSize: 18, color: '#111', marginBottom: 4 }}>{cat.name}</div>
             <div style={{ color: '#6b7280', fontSize: 15, fontWeight: 500 }}>({cat.count} Shops)</div>
             <div style={{ position: 'absolute', top: 18, right: 18, width: 16, height: 16, background: '#111827', borderRadius: 4 }} />
@@ -140,31 +179,6 @@ export default function ShopPage() {
       <div className="hero-diagonal-cut"></div>
     </div>
   );
-  const [shops, setShops] = useState<Shop[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    setLoading(true);
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/providers?page=1&limit=100`)
-      .then(res => res.json())
-      .then(data => {
-        // The backend returns { data: Provider[], ... } or { items: Provider[], ... } or { providers: Provider[], ... }
-        // Try to support common patterns
-        let providers = [];
-        if (Array.isArray(data)) {
-          providers = data;
-        } else if (Array.isArray(data.items)) {
-          providers = data.items;
-        } else if (Array.isArray(data.providers)) {
-          providers = data.providers;
-        } else if (Array.isArray(data.data)) {
-          providers = data.data;
-        }
-        setShops(providers);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
 
   return (
     <>
@@ -192,7 +206,7 @@ export default function ShopPage() {
                     </div>
                     <div style={{ padding: 24, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                       <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 20, color: '#222', marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{shop.businessName}</div>
-                      <div style={{ color: '#6b7280', fontSize: 15, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', minHeight: 44, maxHeight: 44 }}>{typeof shop.description === 'string' ? shop.description : shop.description?.toString() || 'No description available'}</div>
+                      <div style={{ color: '#6b7280', fontSize: 15, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', minHeight: 44, maxHeight: 44 }}>{typeof shop.description === 'string' ? shop.description : shop.description || 'No description available'}</div>
                       <div style={{ color: '#6b7280', fontSize: 14, marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>City: {shop.city || shop.address || ''}</div>
                       <div style={{ color: '#f59e42', fontWeight: 700, fontSize: 15, marginBottom: 8 }}>Rating: {shop.averageRating?.toFixed ? shop.averageRating.toFixed(1) : (shop.averageRating ?? 'N/A')} ({shop.totalReviews ?? 0} reviews)</div>
                     </div>

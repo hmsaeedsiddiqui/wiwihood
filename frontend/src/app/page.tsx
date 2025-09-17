@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import Footer from "../components/Footer";
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { apiService, Category } from '@/lib/api';
 import { 
   Search, 
@@ -27,8 +26,7 @@ import {
   Shield
 } from 'lucide-react';
 
-export default function HomePage() {
-  const router = useRouter();
+const HomePage = () => {
   const [dbCategories, setDbCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
@@ -39,18 +37,14 @@ export default function HomePage() {
   const fetchCategories = async () => {
     try {
       setLoadingCategories(true);
-      const categories = await apiService.getCategories(true); // Only active categories
+      const categories = await apiService.getCategories(true); // Fetch active categories
       setDbCategories(categories);
     } catch (error) {
       console.error('Error fetching categories:', error);
-      // Keep the fallback categories if API fails
+      setDbCategories([]); // Clear categories on error
     } finally {
       setLoadingCategories(false);
     }
-  };
-
-  const handleCategoryClick = (category: Category) => {
-    router.push(`/category/api/v1${category.slug}`);
   };
 
   const features = [
@@ -68,49 +62,6 @@ export default function HomePage() {
       icon: Shield,
       title: 'Secure Payment',
       description: 'Safe and protected transactions'
-    }
-  ]
-
-  // Fallback categories for display
-  const fallbackCategories = [
-    {
-      icon: Scissors,
-      name: 'Beauty & Wellness',
-      count: '1,200+ services',
-      color: 'from-pink-400 to-pink-600'
-    },
-    {
-      icon: Wrench,
-      name: 'Home Services',
-      count: '800+ professionals',
-      color: 'from-blue-400 to-blue-600'
-    },
-    {
-      icon: Heart,
-      name: 'Health & Fitness',
-      count: '600+ providers',
-      color: 'from-green-400 to-green-600'
-    }
-  ]
-
-  const howItWorks = [
-    {
-      step: '01',
-      title: 'Search & Discover',
-      description: 'Find the perfect service provider near you',
-      icon: Search
-    },
-    {
-      step: '02',
-      title: 'Compare & Choose',
-      description: 'Review profiles, ratings, and pricing options',
-      icon: Star
-    },
-    {
-      step: '03',
-      title: 'Book & Confirm',
-      description: 'Schedule your appointment and receive instant confirmation',
-      icon: Calendar
     }
   ]
 
@@ -302,45 +253,29 @@ export default function HomePage() {
           </button>
           {/* Cards */}
           <div style={{ display: 'flex', gap: 24, width: '100%' }}>
-            {/* Card 1 */}
-            <div style={{ flex: 1, height: 280, borderRadius: 16, overflow: 'hidden', background: '#fff', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', cursor: 'pointer', minWidth: 0, maxWidth: 'none' }}>
-              <img src="https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&w=640&h=480" alt="Hair Services" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(180deg,rgba(0,0,0,0.10) 60%,rgba(0,0,0,0.38) 100%)', zIndex: 2 }} />
-              <div style={{ position: 'relative', zIndex: 3, padding: '0 0 18px 18px', color: '#fff' }}>
-                <div style={{ fontSize: 19, fontWeight: 700, marginBottom: 6 }}>Hair Services</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600 }}>24</span>
-                  <svg width="16" height="16" fill="#fbbf24" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  <span style={{ fontSize: 13, fontWeight: 500 }}>Top-Rated Professionals</span>
-                </div>
-              </div>
-            </div>
-            {/* Card 2 */}
-            <div style={{ flex: 1, height: 280, borderRadius: 16, overflow: 'hidden', background: '#fff', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', cursor: 'pointer', minWidth: 0, maxWidth: 'none' }}>
-              <img src="https://images.pexels.com/photos/3993448/pexels-photo-3993448.jpeg?auto=compress&w=640&h=480" alt="Body Massage" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(180deg,rgba(0,0,0,0.10) 60%,rgba(0,0,0,0.38) 100%)', zIndex: 2 }} />
-              <div style={{ position: 'relative', zIndex: 3, padding: '0 0 18px 18px', color: '#fff' }}>
-                <div style={{ fontSize: 19, fontWeight: 700, marginBottom: 6 }}>Body Massage</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600 }}>10</span>
-                  <svg width="16" height="16" fill="#fbbf24" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  <span style={{ fontSize: 13, fontWeight: 500 }}>Top-Rated Professionals</span>
-                </div>
-              </div>
-            </div>
-            {/* Card 3 */}
-            <div style={{ flex: 1, height: 280, borderRadius: 16, overflow: 'hidden', background: '#fff', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', cursor: 'pointer', minWidth: 0, maxWidth: 'none' }}>
-              <img src="https://images.pexels.com/photos/3993447/pexels-photo-3993447.jpeg?auto=compress&w=640&h=480" alt="Skin Care" style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
-              <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(180deg,rgba(0,0,0,0.10) 60%,rgba(0,0,0,0.38) 100%)', zIndex: 2 }} />
-              <div style={{ position: 'relative', zIndex: 3, padding: '0 0 18px 18px', color: '#fff' }}>
-                <div style={{ fontSize: 19, fontWeight: 700, marginBottom: 6 }}>Skin Care</div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ fontSize: 15, fontWeight: 600 }}>110</span>
-                  <svg width="16" height="16" fill="#fbbf24" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
-                  <span style={{ fontSize: 13, fontWeight: 500 }}>Top-Rated Professionals</span>
-                </div>
-              </div>
-            </div>
+            {dbCategories.map((category) => {
+              const bannerImages = category.bannerImage ? category.bannerImage.split(',').map(url => url.replace(/"/g, '').trim()) : [];
+              const imageUrl = bannerImages.length > 0 ? bannerImages[0] : category.services?.[0]?.images?.[0] || 'https://via.placeholder.com/640x480';
+
+              return (
+                <Link
+                  key={category.id}
+                  href={`/provider/services?categoryId=${category.id}`}
+                  style={{ flex: 1, height: 280, borderRadius: 16, overflow: 'hidden', background: '#fff', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', cursor: 'pointer', minWidth: 0, maxWidth: 'none' }}
+                >
+                  <img src={imageUrl} alt={category.name} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
+                  <div style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', background: 'linear-gradient(180deg,rgba(0,0,0,0.10) 60%,rgba(0,0,0,0.38) 100%)', zIndex: 2 }} />
+                  <div style={{ position: 'relative', zIndex: 3, padding: '0 0 18px 18px', color: '#fff' }}>
+                    <div style={{ fontSize: 19, fontWeight: 700, marginBottom: 6 }}>{category.name}</div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 15, fontWeight: 600 }}>{category.services?.length || 0}</span>
+                      <svg width="16" height="16" fill="#fbbf24" viewBox="0 0 20 20"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z"/></svg>
+                      <span style={{ fontSize: 13, fontWeight: 500 }}>Top-Rated Professionals</span>
+                    </div>
+                  </div>
+                </Link>
+              );
+            })}
           </div>
           {/* Right Arrow Button */}
           <button
@@ -970,7 +905,7 @@ export default function HomePage() {
               position: 'relative',
             }}>
               <div style={{ position: 'relative', width: '100%', height: '180px', overflow: 'hidden' }}>
-                <img src="https://images.pexels.com/photos/3993448/pexels-photo-3993448.jpeg?auto=compress&w=600&q=80" alt="Relaxing Swedish Massage" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img src="https://images.pexels.com/photos/3993447/pexels-photo-3993447.jpeg?auto=compress&w=600&q=80" alt="Relaxing Swedish Massage" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 <span style={{ position: 'absolute', top: '14px', left: '14px', background: '#f97316', color: '#fff', fontWeight: 700, fontSize: '15px', borderRadius: '8px', padding: '4px 14px', letterSpacing: '0.5px' }}>37% OFF</span>
                 <button style={{ position: 'absolute', top: '14px', right: '14px', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}><i className="fa-regular fa-heart" style={{ color: '#10b981', fontSize: '16px' }}></i></button>
                 {/* Slider dots */}
@@ -1170,3 +1105,5 @@ export default function HomePage() {
     </div>
   );
 }
+
+export default HomePage;
