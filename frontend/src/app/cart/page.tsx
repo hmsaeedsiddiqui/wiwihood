@@ -1,4 +1,6 @@
-'use client';
+"use client";
+
+import StripePayButton from '@/components/StripePayButton';
 
 import { useCart, CartItem } from '@/components/cartContext';
 import Image from 'next/image';
@@ -52,10 +54,10 @@ export default function CartPage() {
 
   if (cart.length === 0) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <div className="mx-auto w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-8">
+  <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex flex-col items-center mt-8">
+        <div className="max-w-4xl w-full px-4 sm:px-6 lg:px-8 flex flex-col items-center">
+          <div className="text-center w-full flex flex-col items-center">
+            <div className="mx-auto w-32 h-32 bg-gradient-to-br from-blue-100 to-purple-100 rounded-full flex items-center justify-center mb-8 mt-8">
               <svg className="h-16 w-16 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M3 3h2l.4 2M7 13h10l4-8H5.4m0 0L7 13m0 0l-1.8 9M7 13l-1.8 9m0 0h9.2" />
               </svg>
@@ -66,7 +68,7 @@ export default function CartPage() {
             </p>
             <Link
               href="/shop"
-              className="inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold rounded-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
+              className="inline-flex items-center px-8 py-4 bg-green-600 text-white font-semibold rounded-2xl hover:bg-green-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-1"
             >
               <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -227,13 +229,10 @@ export default function CartPage() {
                 )}
               </div>
             </div>
-            {/* Checkout Button */}
-            <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white py-4 rounded-2xl font-bold text-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 flex items-center justify-center gap-2">
-              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
-              </svg>
-              Proceed to Checkout
-            </button>
+            {/* Stripe Checkout Button */}
+            <div className="w-full">
+              <StripePayButton amount={Math.round(finalTotal * 100)} />
+            </div>
             {/* Trust Indicators */}
             <div className="mt-6 space-y-3 text-sm text-gray-500">
               <div className="flex items-center">

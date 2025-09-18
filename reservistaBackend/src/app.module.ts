@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { PaymentService } from './services/payment.service';
+import { PaymentController } from './controllers/payment.controller';
 import databaseConfig from './config/database.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -71,7 +73,7 @@ import { UploadModule } from './modules/upload/upload.module';
     CloudinaryModule, // Register CloudinaryModule
     UploadModule, // Register UploadModule
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, PaymentController],
+  providers: [AppService, PaymentService],
 })
 export class AppModule {}
