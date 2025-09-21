@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiService, Service } from "@/lib/api";
+import { useServiceStore } from '@/store/serviceStore';
 import { CloudinaryImage } from "@/components/cloudinary/CloudinaryImage";
 
 // Demo/mock data for fallback
@@ -59,8 +60,15 @@ export default function ServiceDetailPage() {
   const { id } = params as { id: string };
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
+  const selectedService = useServiceStore(state => state.selectedService);
 
   useEffect(() => {
+    if (selectedService && selectedService.id === id) {
+      setService(selectedService);
+      setLoading(false);
+      return;
+    }
+
     async function fetchService() {
       setLoading(true);
       try {
@@ -74,14 +82,14 @@ export default function ServiceDetailPage() {
         setService(found ?? null);
       } catch (e) {
         // On error, fallback to demo data
-  const found = demoServices.find((s) => s.id === id);
-  setService(found ?? null);
+        const found = demoServices.find((s) => s.id === id);
+        setService(found ?? null);
       } finally {
         setLoading(false);
       }
     }
     if (id) fetchService();
-  }, [id]);
+  }, [id, selectedService]);
 
   if (loading) {
     return <div style={{ textAlign: 'center', marginTop: 60 }}>Loading service...</div>;
@@ -138,24 +146,40 @@ function AddToCartButton({ service }: { service: Service }) {
 
   const handleAdd = () => {
     addToCart({
-  id: Number(service.id),
+      id: service.id,
       name: service.name,
-      provider: service.provider?.businessName || '',
+      provider: service.provider?.businessName || 'Unknown Provider',
       price: service.basePrice,
-      imageUrl: service.imageUrl || '',
+      imageUrl: service.images?.[0] || service.imageUrl || '/blog1.jpg',
       quantity: 1
     });
     setAdded(true);
-    setTimeout(() => setAdded(false), 1200);
+    setTimeout(() => setAdded(false), 2000);
+  };
+
+  const handleBookNow = () => {
+    // Store service in localStorage for booking flow
+    localStorage.setItem('selectedServiceForBooking', JSON.stringify(service));
+    router.push(`/book-service?serviceId=${service.id}&providerId=${service.provider?.id || 'unknown'}`);
   };
 
   return (
-    <div style={{ marginTop: 24 }}>
-      <button onClick={handleAdd} style={{ background: '#10b981', color: '#fff', padding: '14px 32px', borderRadius: 8, fontWeight: 700, fontSize: 18, border: 'none', cursor: 'pointer' }}>
-        {added ? 'Added!' : 'Add to Cart'}
+    <div className="space-y-3">
+      {/* Primary Book Now Button */}
+      <button
+        onClick={handleBookNow}
+        className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg"
+      >
+        Book Now - €{service.basePrice}
       </button>
-      <button onClick={() => router.push('/cart')} style={{ marginLeft: 16, background: '#fff', color: '#10b981', border: '2px solid #10b981', padding: '14px 32px', borderRadius: 8, fontWeight: 700, fontSize: 18, cursor: 'pointer' }}>
-        Go to Cart
+      
+      {/* Secondary Add to Cart Button */}
+      <button
+        onClick={handleAdd}
+        disabled={added}
+        className="w-full bg-white text-indigo-600 py-3 px-6 rounded-lg font-semibold border-2 border-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50"
+      >
+        {added ? '✓ Added to Cart' : 'Add to Cart'}
       </button>
     </div>
   );

@@ -143,7 +143,7 @@ export default function ServiceDetailPage() {
                       : '',
                     quantity: 1
                   });
-                  router.push('/404');
+                  router.push(`/book-service?serviceId=${service.id}&providerId=${service.provider.id}`);
                 }}
               >
                 Book Now

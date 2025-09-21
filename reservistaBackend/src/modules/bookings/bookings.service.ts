@@ -528,4 +528,51 @@ export class BookingsService {
       completionRate: totalBookings > 0 ? (completedBookings / totalBookings) * 100 : 0
     };
   }
+
+  async checkAvailability(
+    providerId: string,
+    startTime: string,
+    endTime: string
+  ): Promise<{ available: boolean; message?: string }> {
+    try {
+      const startDateTime = new Date(startTime);
+      const endDateTime = new Date(endTime);
+
+      // Check if the provider exists
+      const provider = await this.providerRepository.findOne({
+        where: { id: providerId }
+      });
+
+      if (!provider) {
+        return { available: false, message: 'Provider not found' };
+      }
+
+      // Check for overlapping bookings
+      const overlappingBookings = await this.bookingRepository
+        .createQueryBuilder('booking')
+        .where('booking.providerId = :providerId', { providerId })
+        .andWhere('booking.status NOT IN (:...statuses)', { 
+          statuses: [BookingStatus.CANCELLED, BookingStatus.NO_SHOW] 
+        })
+        .andWhere(
+          '(booking.startDateTime < :endTime AND booking.endDateTime > :startTime)',
+          { startTime: startDateTime, endTime: endDateTime }
+        )
+        .getCount();
+
+      if (overlappingBookings > 0) {
+        return { available: false, message: 'Time slot is already booked' };
+      }
+
+      // Check if the time slot is in the past
+      if (startDateTime < new Date()) {
+        return { available: false, message: 'Cannot book in the past' };
+      }
+
+      return { available: true };
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      return { available: false, message: 'Error checking availability' };
+    }
+  }
 }

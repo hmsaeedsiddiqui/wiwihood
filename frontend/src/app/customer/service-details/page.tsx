@@ -1,5 +1,5 @@
-
-import DashboardLayout from '../components/DashboardLayout';
+"use client";
+import DashboardLayout from '../../components/DashboardLayout';
 import { useEffect, useState } from 'react';
 
 function getServiceFromState() {
@@ -35,7 +35,7 @@ export default function ServiceDetails() {
       <div style={{color:'#fbbf24',fontSize:16,marginBottom:8}}><Stars count={service.rating || service.averageRating || 5} /></div>
       <div style={{fontWeight:700,fontSize:18,marginBottom:8}}>${service.price || service.basePrice}</div>
       <div style={{marginBottom:16}}>{service.description}</div>
-      <button style={{background:'#10b981',color:'#fff',border:'none',borderRadius:8,padding:'12px 32px',fontWeight:800,fontSize:16,cursor:'pointer',marginBottom:24}} onClick={() => window.location.href = '/(customer)/booking-flow'}>Book Now</button>
+      <button style={{background:'#10b981',color:'#fff',border:'none',borderRadius:8,padding:'12px 32px',fontWeight:800,fontSize:16,cursor:'pointer',marginBottom:24}} onClick={() => window.location.href = '/customer/booking-flow'}>Book Now</button>
       {/* Optionally show reviews if present */}
       {service.reviews && Array.isArray(service.reviews) && (
         <div style={{marginTop:24}}>
@@ -52,4 +52,3 @@ export default function ServiceDetails() {
     </DashboardLayout>
   );
 }
-

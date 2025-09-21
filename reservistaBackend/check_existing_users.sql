@@ -1,0 +1,1 @@
+SELECT id, email, first_name, last_name, role FROM users LIMIT 5;

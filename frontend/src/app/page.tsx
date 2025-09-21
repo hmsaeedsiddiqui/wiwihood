@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Footer from "../components/Footer";
 import Link from 'next/link';
-import { apiService, Category, Service } from '@/lib/api';
+import { apiService, Category } from '@/lib/api';
 import { 
   Search, 
   Calendar, 
@@ -26,93 +26,48 @@ import {
   Shield
 } from 'lucide-react';
 
-function ExclusivePricesGrid() {
-  const [services, setServices] = useState<Service[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
+const HomePage = () => {
   useEffect(() => {
-    apiService.getServices({ limit: 6, sortBy: 'discount', sortOrder: 'DESC' })
-      .then(res => {
-        setServices(res.data || []);
-        setLoading(false);
-      })
-      .catch(err => {
-        setError('Failed to load services');
-        setLoading(false);
-      });
+    fetchServiceCards();
   }, []);
 
-  if (loading) return <div style={{ textAlign: 'center', padding: '40px' }}>Loading exclusive prices...</div>;
-  if (error) return <div style={{ color: 'red', textAlign: 'center', padding: '40px' }}>{error}</div>;
-
-  return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: 'repeat(3, 1fr)',
-      gap: '28px',
-      marginBottom: '38px',
-    }}>
-      {services.map(service => (
-        <div key={service.id} style={{
-          background: '#fff',
-          borderRadius: '16px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '410px',
-          position: 'relative',
-        }}>
-          <div style={{ position: 'relative', width: '100%', height: '180px', overflow: 'hidden' }}>
-            <img src={service.imageUrl || (service.images && service.images[0]) || '/provider1.jpg'} alt={service.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            {service.basePrice && (
-              <span style={{ position: 'absolute', top: '14px', left: '14px', background: '#f97316', color: '#fff', fontWeight: 700, fontSize: '15px', borderRadius: '8px', padding: '4px 14px', letterSpacing: '0.5px' }}>{service.basePrice}% OFF</span>
-            )}
-            <button style={{ position: 'absolute', top: '14px', right: '14px', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}><i className="fa-regular fa-heart" style={{ color: '#10b981', fontSize: '16px' }}></i></button>
-            {/* Slider dots */}
-            <div style={{ position: 'absolute', left: '50%', bottom: '10px', transform: 'translateX(-50%)', display: 'flex', gap: '6px' }}>
-              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fbbf24', display: 'inline-block', border: '2px solid #fff' }}></span>
-              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e5e7eb', display: 'inline-block', border: '2px solid #fff' }}></span>
-              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e5e7eb', display: 'inline-block', border: '2px solid #fff' }}></span>
-            </div>
-          </div>
-          <div style={{ padding: '22px 22px 18px 22px', background: '#f3fdf6', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-              <span style={{ color: '#6b7280', fontWeight: 500, fontSize: '15px', marginRight: '8px', display: 'flex', alignItems: 'center' }}>
-                <i className="fa-regular fa-user" style={{ marginRight: '6px', fontSize: '16px' }}></i> {service.provider?.businessName || 'Provider'}
-              </span>
-              <span style={{ marginLeft: 'auto', background: '#e0f7ec', color: '#10b981', fontWeight: 700, fontSize: '13px', borderRadius: '6px', padding: '3px 14px' }}>Top Rated</span>
-            </div>
-            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '19px', color: '#1f2937', marginBottom: '2px' }}>{service.name}</div>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-              <i className="fa-solid fa-star" style={{ color: '#fbbf24', fontSize: '15px', marginRight: '3px' }}></i>
-              <span style={{ color: '#1f2937', fontWeight: 700, fontSize: '15px', marginRight: '4px' }}>{service.provider?.averageRating?.toFixed(1) || '5.0'}</span>
-              <span style={{ color: '#6b7280', fontSize: '14px' }}>({service.provider?.totalReviews || 0})</span>
-            </div>
-            <div style={{ color: '#6b7280', fontSize: '15px', fontFamily: 'Manrope, sans-serif', marginBottom: '12px' }}>{service.description}</div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '0', marginTop: '10px' }}>
-              <span style={{ color: '#ef4444', fontWeight: 800, fontSize: '24px', marginRight: '8px' }}>${service.basePrice?.toFixed(2)}</span>
-              {/* If you have an original price, show it here. Example: <span style={{ color: '#9ca3af', fontWeight: 600, fontSize: '17px', textDecoration: 'line-through', marginTop: '2px' }}>${service.originalPrice}</span> */}
-            </div>
-            <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '18px 0 10px 0' }} />
-            <div style={{ color: '#bdbdbd', fontSize: '15px', fontFamily: 'Manrope, sans-serif', marginBottom: '10px', fontWeight: 500 }}>
-              This service is about to run out
-            </div>
-            <div style={{ width: '100%', height: '8px', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px', background: 'linear-gradient(90deg, #ffe259 0%, #ffa751 50%, #ef4444 100%)' }}>
-              <div style={{ width: '100%', height: '100%' }}></div>
-            </div>
-            <div style={{ color: '#6b7280', fontSize: '15px', fontFamily: 'Manrope, sans-serif', marginBottom: '0', fontWeight: 400 }}>
-              available slots only : <b style={{ fontWeight: 800, color: '#222' }}>23</b>
-            </div>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-const HomePage = () => {
+  // Fetch dynamic service cards from API
+  const fetchServiceCards = async () => {
+    try {
+  // Fetch services (limit 3, no unsupported params)
+  const response = await apiService.getServices();
+  const services = Array.isArray(response) ? response.slice(0, 3) : (response.data || []).slice(0, 3);
+      // Map API data to ServiceCard model
+      const cards = services.map((service: any) => ({
+        id: service.id,
+        name: service.name,
+        description: service.description,
+        providerName: service.provider?.businessName || '',
+        providerId: service.provider?.id || '',
+        providerAvatar: service.provider?.logoPublicId || '',
+        discount: service.discount || 0,
+        price: service.basePrice,
+        oldPrice: service.oldPrice || service.basePrice,
+        rating: service.averageRating || 5,
+        reviews: service.totalReviews || 0,
+        imageUrl:
+          service.images && service.images.length > 0 && service.images[0]
+            ? (service.images[0].startsWith('http')
+                ? service.images[0]
+                : `https://res.cloudinary.com/djgdfq23e/image/upload/${service.images[0]}`)
+          : service.imageUrl && service.imageUrl.startsWith('http')
+            ? service.imageUrl
+          : service.imageUrl && service.imageUrl.length > 0
+            ? `https://res.cloudinary.com/djgdfq23e/image/upload/${service.imageUrl}`
+          : 'https://via.placeholder.com/640x480',
+        slots: service.availableSlots || 0,
+        isTopRated: service.isTopRated || false,
+      }));
+      setServiceCards(cards);
+    } catch (error) {
+      setServiceCards([]);
+    }
+  };
   const [dbCategories, setDbCategories] = useState<Category[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(true);
 
@@ -126,8 +81,159 @@ const HomePage = () => {
       const categories = await apiService.getCategories(true); // Fetch active categories
       setDbCategories(categories);
     } catch (error) {
-          {/* Dynamic Exclusive Prices Grid */}
-          <ExclusivePricesGrid />
+      console.error('Error fetching categories:', error);
+      setDbCategories([]); // Clear categories on error
+    } finally {
+      setLoadingCategories(false);
+    }
+  };
+
+  // Service card data model
+  type ServiceCard = {
+    id: string;
+    name: string;
+    description: string;
+    providerName: string;
+    providerId: string;
+    providerAvatar?: string;
+    discount: number;
+    price: number;
+    oldPrice: number;
+    rating: number;
+    reviews: number;
+    imageUrl: string;
+    slots: number;
+    isTopRated?: boolean;
+  };
+
+  // Dynamic service cards state
+  const [serviceCards, setServiceCards] = useState<ServiceCard[]>([]);
+
+  const features = [
+    {
+      icon: Search,
+      title: 'Find Services',
+      description: 'Browse trusted professionals in your area'
+    },
+    {
+      icon: Calendar,
+      title: 'Book Online',
+      description: 'Schedule appointments with ease'
+    },
+    {
+      icon: Shield,
+      title: 'Secure Payment',
+      description: 'Safe and protected transactions'
+    }
+  ]
+
+  return (
+    <div className="min-h-screen bg-white">
+      {/* HERO SECTION - 100% MATCHED TO ORIGINAL DESIGN */}
+      <section
+        style={{
+          width: '100%',
+          minHeight: 540,
+          background: `linear-gradient(rgba(34, 40, 49, 0.45), rgba(34, 40, 49, 0.45)), url('https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=1500&q=80') center/cover no-repeat`,
+          position: 'relative',
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'center',
+          padding: '0',
+          overflow: 'hidden',
+        }}
+      >
+        {/* Diagonal White Cut */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 0,
+            bottom: 0,
+            width: '100%',
+            height: 120,
+            background: '#fff',
+            transform: 'skewY(-4deg)',
+            transformOrigin: 'bottom right',
+            zIndex: 2,
+          }}
+        />
+        <div
+          style={{
+            position: 'relative',
+            zIndex: 3,
+            width: '100%',
+            maxWidth: 1300,
+            margin: '0 auto',
+            display: 'flex',
+            flexDirection: 'row',
+            alignItems: 'flex-start',
+            justifyContent: 'space-between',
+            padding: '60px 0 0 0',
+            minHeight: 540,
+          }}
+        >
+          {/* LEFT: HERO TEXT & SEARCH */}
+          <div
+            style={{
+              flex: 1.2,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'flex-start',
+              justifyContent: 'center',
+              padding: '0 0 0 60px',
+              minWidth: 0,
+              maxWidth: 600,
+            }}
+          >
+            <h1
+              style={{
+                fontFamily: 'Manrope, sans-serif',
+                fontWeight: 800,
+                fontSize: '2.8rem',
+                lineHeight: 1.13,
+                color: '#fff',
+                marginBottom: 18,
+                textAlign: 'left',
+              }}
+            >
+              Find <span className="highlight-green" style={{ fontStyle: 'italic', fontWeight: 700, fontSize: '2.2rem', background: 'var(--color-green)', color: '#fff', borderRadius: 6, padding: '2px 14px', margin: '0 2px', boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone', border: '2px solid #fff', display: 'inline-block' }}>Trusted Providers</span> &<br />
+              <span className="highlight-green" style={{ fontStyle: 'italic', fontWeight: 700, fontSize: '2.2rem', background: 'var(--color-green)', color: '#fff', borderRadius: 6, padding: '2px 14px', margin: '0 2px', boxDecorationBreak: 'clone', WebkitBoxDecorationBreak: 'clone', border: '2px solid #fff', display: 'inline-block' }}>Book Services</span> at the<br />
+              Best Prices
+            </h1>
+            <p style={{ color: '#fff', fontSize: 18, fontWeight: 500, marginBottom: 32, textAlign: 'left', textShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
+              Search for top-rated beauty, wellness, and healthcare providers near you.
+            </p>
+            {/* SEARCH BAR */}
+            <div style={{ width: '100%', maxWidth: 520, marginBottom: 18 }}>
+              <div style={{ display: 'flex', gap: 8, background: '#fff', borderRadius: 12, boxShadow: '0 4px 24px rgba(16,185,129,0.10)', padding: 8, alignItems: 'center' }}>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: '#f3f4f6', borderRadius: 8, padding: '8px 14px' }}>
+                  <i className="fa fa-search" style={{ color: '#9ca3af', fontSize: 18 }}></i>
+                  <input type="text" placeholder="Search..." style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 16, width: '100%' }} />
+                </div>
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, background: '#f3f4f6', borderRadius: 8, padding: '8px 14px' }}>
+                  <i className="fa fa-map-marker-alt" style={{ color: '#9ca3af', fontSize: 18 }}></i>
+                  <select style={{ border: 'none', outline: 'none', background: 'transparent', fontSize: 16, width: '100%' }}>
+                    <option>Select...</option>
+                  </select>
+                </div>
+                <button style={{ background: 'var(--color-green)', color: '#fff', fontWeight: 700, fontSize: 17, border: 'none', borderRadius: 8, padding: '12px 32px', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 2px 8px rgba(16,185,129,0.10)' }}>Find Providers</button>
+              </div>
+            </div>
+            <div style={{ color: '#fff', fontSize: 15, fontWeight: 500, marginTop: 8, textAlign: 'left', textShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
+              Popular Searches: Haircuts, Massage, Facials.
+            </div>
+          </div>
+          {/* RIGHT: VIDEO/IMAGE CARD */}
+          <div
+            style={{
+              flex: 0.9,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'flex-end',
+              minWidth: 0,
+              paddingRight: 60,
+              marginTop: 18,
+            }}
           >
             <div style={{
               width: 320,
@@ -216,7 +322,7 @@ const HomePage = () => {
               return (
                 <Link
                   key={category.id}
-                  href={`/provider/services?categoryId=${category.id}`}
+                  href={`/browse?categoryId=${category.id}`}
                   style={{ flex: 1, height: 280, borderRadius: 16, overflow: 'hidden', background: '#fff', boxShadow: '0 4px 24px rgba(0,0,0,0.10)', position: 'relative', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', cursor: 'pointer', minWidth: 0, maxWidth: 'none' }}
                 >
                   <img src={imageUrl} alt={category.name} style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', objectFit: 'cover', zIndex: 1 }} />
@@ -556,158 +662,155 @@ const HomePage = () => {
             margin: '0 auto',
           }}>
             {/* Card 1 */}
-            <a href="/account/signup" style={{ textDecoration: 'none' }}>
+            <Link href="/signup" style={{
+              background: '#fff',
+              borderRadius: '18px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
+              padding: '40px 32px 32px 32px',
+              minWidth: '320px',
+              maxWidth: '340px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              position: 'relative',
+              width: '100%',
+              textDecoration: 'none',
+              color: 'inherit',
+              cursor: 'pointer',
+            }}>
               <div style={{
-                background: '#fff',
-                borderRadius: '18px',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-                padding: '40px 32px 32px 32px',
-                minWidth: '320px',
-                maxWidth: '340px',
+                background: '#d4f4dd',
+                borderRadius: '12px',
+                width: '56px',
+                height: '56px',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                textAlign: 'center',
-                position: 'relative',
-                width: '100%',
-                transition: 'box-shadow 0.2s',
-                cursor: 'pointer',
+                justifyContent: 'center',
+                marginBottom: '24px',
               }}>
-                <div style={{
-                  background: '#d4f4dd',
-                  borderRadius: '12px',
-                  width: '56px',
-                  height: '56px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '24px',
-                }}>
-                  <i className="fa-regular fa-id-card" style={{ color: '#10b981', fontSize: '28px' }}></i>
-                </div>
-                <h3 style={{
-                  fontFamily: 'Manrope, sans-serif',
-                  fontWeight: 700,
-                  fontSize: '22px',
-                  color: '#1f2937',
-                  marginBottom: '12px',
-                }}>
-                  Create Your Account
-                </h3>
-                <p style={{
-                  fontFamily: 'Manrope, sans-serif',
-                  fontWeight: 400,
-                  fontSize: '15px',
-                  color: '#6b7280',
-                  lineHeight: 1.6,
-                  margin: 0,
-                }}>
-                  Sign up for free and create your account to access personalized services and providers.
-                </p>
+                <i className="fa-regular fa-id-card" style={{ color: '#10b981', fontSize: '28px' }}></i>
               </div>
-            </a>
+              <h3 style={{
+                fontFamily: 'Manrope, sans-serif',
+                fontWeight: 700,
+                fontSize: '22px',
+                color: '#1f2937',
+                marginBottom: '12px',
+              }}>
+                Create Your Account
+              </h3>
+              <p style={{
+                fontFamily: 'Manrope, sans-serif',
+                fontWeight: 400,
+                fontSize: '15px',
+                color: '#6b7280',
+                lineHeight: 1.6,
+                margin: 0,
+              }}>
+                Sign up for free and create your account to access personalized services and providers.
+              </p>
+            </Link>
             {/* Card 2 */}
-            <a href="/browse" style={{ textDecoration: 'none' }}>
+            <Link href="/services" style={{
+              background: '#fff',
+              borderRadius: '18px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
+              padding: '40px 32px 32px 32px',
+              minWidth: '320px',
+              maxWidth: '340px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              position: 'relative',
+              width: '100%',
+              textDecoration: 'none',
+              color: 'inherit',
+              cursor: 'pointer',
+            }}>
               <div style={{
-                background: '#fff',
-                borderRadius: '18px',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-                padding: '40px 32px 32px 32px',
-                minWidth: '320px',
-                maxWidth: '340px',
+                background: '#d4f4dd',
+                borderRadius: '12px',
+                width: '56px',
+                height: '56px',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                textAlign: 'center',
-                position: 'relative',
-                width: '100%',
-                transition: 'box-shadow 0.2s',
-                cursor: 'pointer',
+                justifyContent: 'center',
+                marginBottom: '24px',
               }}>
-                <div style={{
-                  background: '#d4f4dd',
-                  borderRadius: '12px',
-                  width: '56px',
-                  height: '56px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '24px',
-                }}>
-                  <i className="fa-solid fa-scissors" style={{ color: '#10b981', fontSize: '28px' }}></i>
-                </div>
-                <h3 style={{
-                  fontFamily: 'Manrope, sans-serif',
-                  fontWeight: 700,
-                  fontSize: '22px',
-                  color: '#1f2937',
-                  marginBottom: '12px',
-                }}>
-                  Choose Your Service
-                </h3>
-                <p style={{
-                  fontFamily: 'Manrope, sans-serif',
-                  fontWeight: 400,
-                  fontSize: '15px',
-                  color: '#6b7280',
-                  lineHeight: 1.6,
-                  margin: 0,
-                }}>
-                  Search for services you need, compare providers, and select your preferred option.
-                </p>
+                <i className="fa-solid fa-scissors" style={{ color: '#10b981', fontSize: '28px' }}></i>
               </div>
-            </a>
+              <h3 style={{
+                fontFamily: 'Manrope, sans-serif',
+                fontWeight: 700,
+                fontSize: '22px',
+                color: '#1f2937',
+                marginBottom: '12px',
+              }}>
+                Choose Your Service
+              </h3>
+              <p style={{
+                fontFamily: 'Manrope, sans-serif',
+                fontWeight: 400,
+                fontSize: '15px',
+                color: '#6b7280',
+                lineHeight: 1.6,
+                margin: 0,
+              }}>
+                Search for services you need, compare providers, and select your preferred option.
+              </p>
+            </Link>
             {/* Card 3 */}
-            <a href="/bookings" style={{ textDecoration: 'none' }}>
+            <Link href="/book" style={{
+              background: '#fff',
+              borderRadius: '18px',
+              boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
+              padding: '40px 32px 32px 32px',
+              minWidth: '320px',
+              maxWidth: '340px',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              textAlign: 'center',
+              position: 'relative',
+              width: '100%',
+              textDecoration: 'none',
+              color: 'inherit',
+              cursor: 'pointer',
+            }}>
               <div style={{
-                background: '#fff',
-                borderRadius: '18px',
-                boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-                padding: '40px 32px 32px 32px',
-                minWidth: '320px',
-                maxWidth: '340px',
+                background: '#d4f4dd',
+                borderRadius: '12px',
+                width: '56px',
+                height: '56px',
                 display: 'flex',
-                flexDirection: 'column',
                 alignItems: 'center',
-                textAlign: 'center',
-                position: 'relative',
-                width: '100%',
-                transition: 'box-shadow 0.2s',
-                cursor: 'pointer',
+                justifyContent: 'center',
+                marginBottom: '24px',
               }}>
-                <div style={{
-                  background: '#d4f4dd',
-                  borderRadius: '12px',
-                  width: '56px',
-                  height: '56px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  marginBottom: '24px',
-                }}>
-                  <i className="fa-regular fa-calendar-check" style={{ color: '#10b981', fontSize: '28px' }}></i>
-                </div>
-                <h3 style={{
-                  fontFamily: 'Manrope, sans-serif',
-                  fontWeight: 700,
-                  fontSize: '22px',
-                  color: '#1f2937',
-                  marginBottom: '12px',
-                }}>
-                  Book & Confirm
-                </h3>
-                <p style={{
-                  fontFamily: 'Manrope, sans-serif',
-                  fontWeight: 400,
-                  fontSize: '15px',
-                  color: '#6b7280',
-                  lineHeight: 1.6,
-                  margin: 0,
-                }}>
-                  Book your service, choose a time, and get an instant confirmation. Enjoy the service at your convenience.
-                </p>
+                <i className="fa-regular fa-calendar-check" style={{ color: '#10b981', fontSize: '28px' }}></i>
               </div>
-            </a>
+              <h3 style={{
+                fontFamily: 'Manrope, sans-serif',
+                fontWeight: 700,
+                fontSize: '22px',
+                color: '#1f2937',
+                marginBottom: '12px',
+              }}>
+                Book & Confirm
+              </h3>
+              <p style={{
+                fontFamily: 'Manrope, sans-serif',
+                fontWeight: 400,
+                fontSize: '15px',
+                color: '#6b7280',
+                lineHeight: 1.6,
+                margin: 0,
+              }}>
+                Book your service, choose a time, and get an instant confirmation. Enjoy the service at your convenience.
+              </p>
+            </Link>
           </div>
         </div>
       </section>
@@ -751,62 +854,122 @@ const HomePage = () => {
           }}>
             Browse popular services and enjoy exclusive discounts. Don’t miss out on these limited-time offers!
           </p>
-          {/* Dynamic Exclusive Prices Grid */}
-          <ExclusivePricesGrid />
-          overflow: 'hidden',
-          display: 'flex',
-          flexDirection: 'column',
-          minHeight: '410px',
-          position: 'relative',
-        }}>
-          <div style={{ position: 'relative', width: '100%', height: '180px', overflow: 'hidden' }}>
-            <img src={service.imageUrl || (service.images && service.images[0]) || '/provider1.jpg'} alt={service.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-            {service.basePrice && (
-              <span style={{ position: 'absolute', top: '14px', left: '14px', background: '#f97316', color: '#fff', fontWeight: 700, fontSize: '15px', borderRadius: '8px', padding: '4px 14px', letterSpacing: '0.5px' }}>{service.basePrice}% OFF</span>
-            )}
-            <button style={{ position: 'absolute', top: '14px', right: '14px', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}><i className="fa-regular fa-heart" style={{ color: '#10b981', fontSize: '16px' }}></i></button>
-            {/* Slider dots */}
-            <div style={{ position: 'absolute', left: '50%', bottom: '10px', transform: 'translateX(-50%)', display: 'flex', gap: '6px' }}>
-              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fbbf24', display: 'inline-block', border: '2px solid #fff' }}></span>
-              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e5e7eb', display: 'inline-block', border: '2px solid #fff' }}></span>
-              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e5e7eb', display: 'inline-block', border: '2px solid #fff' }}></span>
-            </div>
-          </div>
-          <div style={{ padding: '22px 22px 18px 22px', background: '#f3fdf6', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-              <span style={{ color: '#6b7280', fontWeight: 500, fontSize: '15px', marginRight: '8px', display: 'flex', alignItems: 'center' }}>
-                <i className="fa-regular fa-user" style={{ marginRight: '6px', fontSize: '16px' }}></i> {service.provider?.businessName || 'Provider'}
-              </span>
-              <span style={{ marginLeft: 'auto', background: '#e0f7ec', color: '#10b981', fontWeight: 700, fontSize: '13px', borderRadius: '6px', padding: '3px 14px' }}>Top Rated</span>
-            </div>
-            <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '19px', color: '#1f2937', marginBottom: '2px' }}>{service.name}</div>
-            <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-              <i className="fa-solid fa-star" style={{ color: '#fbbf24', fontSize: '15px', marginRight: '3px' }}></i>
-              <span style={{ color: '#1f2937', fontWeight: 700, fontSize: '15px', marginRight: '4px' }}>{service.provider?.averageRating?.toFixed(1) || '5.0'}</span>
-              <span style={{ color: '#6b7280', fontSize: '14px' }}>({service.provider?.totalReviews || 0})</span>
-            </div>
-            <div style={{ color: '#6b7280', fontSize: '15px', fontFamily: 'Manrope, sans-serif', marginBottom: '12px' }}>{service.description}</div>
-            <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '0', marginTop: '10px' }}>
-              <span style={{ color: '#ef4444', fontWeight: 800, fontSize: '24px', marginRight: '8px' }}>${service.basePrice?.toFixed(2)}</span>
-              {/* If you have an original price, show it here. Example: <span style={{ color: '#9ca3af', fontWeight: 600, fontSize: '17px', textDecoration: 'line-through', marginTop: '2px' }}>${service.originalPrice}</span> */}
-            </div>
-            <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '18px 0 10px 0' }} />
-            <div style={{ color: '#bdbdbd', fontSize: '15px', fontFamily: 'Manrope, sans-serif', marginBottom: '10px', fontWeight: 500 }}>
-              This service is about to run out
-            </div>
-            <div style={{ width: '100%', height: '8px', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px', background: 'linear-gradient(90deg, #ffe259 0%, #ffa751 50%, #ef4444 100%)' }}>
-              <div style={{ width: '100%', height: '100%' }}></div>
-            </div>
-            <div style={{ color: '#6b7280', fontSize: '15px', fontFamily: 'Manrope, sans-serif', marginBottom: '0', fontWeight: 400 }}>
-              available slots only : <b style={{ fontWeight: 800, color: '#222' }}>23</b>
-            </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, 1fr)',
+            gap: '28px',
+            marginBottom: '38px',
+          }}>
+            {serviceCards.map((card) => (
+              <div
+                key={card.id}
+                style={{
+                  background: '#fff',
+                  borderRadius: '16px',
+                  boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
+                  overflow: 'hidden',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  minHeight: '410px',
+                  position: 'relative',
+                  cursor: 'pointer',
+                }}
+                onClick={() => {
+                  if (typeof window !== 'undefined') {
+                    // Navigate to the correct service detail page with the service ID
+                    window.location.href = `/service/${card.id}`;
+                  }
+                }}
+              >
+                <div style={{ position: 'relative', width: '100%', height: '180px', overflow: 'hidden' }}>
+                  <img src={card.imageUrl} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <span style={{ position: 'absolute', top: '14px', left: '14px', background: '#f97316', color: '#fff', fontWeight: 700, fontSize: '15px', borderRadius: '8px', padding: '4px 14px', letterSpacing: '0.5px' }}>{card.discount ? `${card.discount}% OFF` : ''}</span>
+                  <button style={{ position: 'absolute', top: '14px', right: '14px', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}><i className="fa-regular fa-heart" style={{ color: '#10b981', fontSize: '16px' }}></i></button>
+                  {/* Slider dots */}
+                  <div style={{ position: 'absolute', left: '50%', bottom: '10px', transform: 'translateX(-50%)', display: 'flex', gap: '6px' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fbbf24', display: 'inline-block', border: '2px solid #fff' }}></span>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e5e7eb', display: 'inline-block', border: '2px solid #fff' }}></span>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e5e7eb', display: 'inline-block', border: '2px solid #fff' }}></span>
+                  </div>
+                </div>
+                <div style={{ padding: '22px 22px 18px 22px', background: '#f3fdf6', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
+                    <span style={{ color: '#6b7280', fontWeight: 500, fontSize: '15px', marginRight: '8px', display: 'flex', alignItems: 'center' }}>
+                      <i className="fa-regular fa-user" style={{ marginRight: '6px', fontSize: '16px' }}></i> {card.providerName}
+                    </span>
+                    {card.isTopRated && (
+                      <span style={{ marginLeft: 'auto', background: '#e0f7ec', color: '#10b981', fontWeight: 700, fontSize: '13px', borderRadius: '6px', padding: '3px 14px' }}>Top Rated</span>
+                    )}
+                  </div>
+                  <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '19px', color: '#1f2937', marginBottom: '2px' }}>{card.name}</div>
+                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
+                    <i className="fa-solid fa-star" style={{ color: '#fbbf24', fontSize: '15px', marginRight: '3px' }}></i>
+                    <span style={{ color: '#1f2937', fontWeight: 700, fontSize: '15px', marginRight: '4px' }}>{card.rating}</span>
+                    <span style={{ color: '#6b7280', fontSize: '14px' }}>({card.reviews})</span>
+                  </div>
+                  <div style={{
+                    color: '#6b7280',
+                    fontSize: '15px',
+                    fontFamily: 'Manrope, sans-serif',
+                    marginBottom: '12px',
+                    maxHeight: '54px', // about 3 lines
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    display: '-webkit-box',
+                    WebkitLineClamp: 3,
+                    WebkitBoxOrient: 'vertical',
+                  }}>{card.description}</div>
+                  <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '0', marginTop: '10px' }}>
+                    <span style={{ color: '#ef4444', fontWeight: 800, fontSize: '24px', marginRight: '8px' }}>${card.price}</span>
+                    <span style={{ color: '#9ca3af', fontWeight: 600, fontSize: '17px', textDecoration: 'line-through', marginTop: '2px' }}>${card.oldPrice}</span>
+                  </div>
+                  <hr style={{ border: 'none', borderTop: '1px solid #e5e7eb', margin: '18px 0 10px 0' }} />
+                  <div style={{ color: '#bdbdbd', fontSize: '15px', fontFamily: 'Manrope, sans-serif', marginBottom: '10px', fontWeight: 500 }}>
+                    This service is about to run out
+                  </div>
+                  <div style={{ width: '100%', height: '8px', borderRadius: '4px', overflow: 'hidden', marginBottom: '8px', background: 'linear-gradient(90deg, #ffe259 0%, #ffa751 50%, #ef4444 100%)' }}>
+                    <div style={{ width: '100%', height: '100%' }}></div>
+                  </div>
+                  <div style={{ color: '#6b7280', fontSize: '15px', fontFamily: 'Manrope, sans-serif', marginBottom: '16px', fontWeight: 400 }}>
+                    available slots only : <b style={{ fontWeight: 800, color: '#222' }}>{card.slots}</b>
+                  </div>
+                  
+                  {/* Book Now Button */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation(); // Prevent card click navigation
+                      if (typeof window !== 'undefined') {
+                        // Navigate to booking page with service ID and provider ID
+                        window.location.href = `/book-service?serviceId=${card.id}&providerId=${card.providerId || 'unknown'}`;
+                      }
+                    }}
+                    style={{
+                      width: '100%',
+                      background: '#10b981',
+                      color: '#fff',
+                      border: 'none',
+                      borderRadius: '8px',
+                      padding: '12px 16px',
+                      fontWeight: 700,
+                      fontSize: '16px',
+                      cursor: 'pointer',
+                      transition: 'all 0.2s ease',
+                      fontFamily: 'Manrope, sans-serif',
+                    }}
+                    onMouseOver={(e) => {
+                      e.currentTarget.style.background = '#059669';
+                    }}
+                    onMouseOut={(e) => {
+                      e.currentTarget.style.background = '#10b981';
+                    }}
+                  >
+                    Book Now - ${card.price}
+                  </button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      ))}
-    </div>
-  );
-}
-                  <span style={{ marginLeft: 'auto', background: '#e0f7ec', color: '#10b981', fontWeight: 700, fontSize: '13px', borderRadius: '6px', padding: '3px 14px' }}>Top Rated</span>
       </section>
 
       {/* Browse Services Section - 100% Exact Design */}

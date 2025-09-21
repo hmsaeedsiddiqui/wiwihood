@@ -166,7 +166,19 @@ export default function ProvidersPage() {
                 <Button variant="outline" size="sm">
                   View Profile
                 </Button>
-                <Button size="sm" className="bg-blue-600 hover:bg-blue-700">
+                <Button 
+                  size="sm" 
+                  className="bg-blue-600 hover:bg-blue-700"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (provider.services.length > 0) {
+                      window.location.href = `/book-service?serviceId=${provider.services[0].id}&providerId=${provider.id}`;
+                    } else {
+                      window.location.href = `/shop/${provider.id}`;
+                    }
+                  }}
+                >
                   Book Now
                 </Button>
               </div>
@@ -248,7 +260,19 @@ export default function ProvidersPage() {
                   <Button variant="outline" size="sm" className="w-full">
                     View Profile
                   </Button>
-                  <Button size="sm" className="w-full bg-blue-600 hover:bg-blue-700">
+                  <Button 
+                    size="sm" 
+                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      if (provider.services.length > 0) {
+                        window.location.href = `/book-service?serviceId=${provider.services[0].id}&providerId=${provider.id}`;
+                      } else {
+                        window.location.href = `/shop/${provider.id}`;
+                      }
+                    }}
+                  >
                     Book Now
                   </Button>
                 </div>

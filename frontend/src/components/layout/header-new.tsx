@@ -2,12 +2,13 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import axios from 'axios';
 import { useWishlist } from '../WishlistContext';
 import { useCart } from '../cartContext';
 import { useRouter } from 'next/navigation';
 import { usePathname } from 'next/navigation';
-import { useAuth } from '../AuthProvider';
+import { useAuthStore } from '@/store/authStore';
 import { apiService } from '@/lib/api';
 
 export function Header() {
@@ -18,7 +19,7 @@ export function Header() {
   const [mounted, setMounted] = useState(false);
   const pathname = usePathname();
   const isHomePage = pathname === '/';
-  const { user, logout, isAuthenticated, isLoading } = useAuth();
+  const { user, logout, isAuthenticated, isLoading } = useAuthStore();
 
   // Categories state
   const [categories, setCategories] = useState<{ id: string, name: string, slug: string }[]>([]);
@@ -100,6 +101,7 @@ export function Header() {
             <ul className="nav-links">
               <li><a href="/">Home</a></li>
               <li><a href="/shop">Shop</a></li>
+              <li><a href="/book-service">Book Service</a></li>
               {categories.map(cat => (
                 <li key={cat.id}><a href={`/category/${cat.slug}`}>{cat.name}</a></li>
               ))}
@@ -150,7 +152,7 @@ export function Header() {
                         </div>
                       </div>
                     ) : (
-                      <a href="/auth/login" style={{
+                      <Link href="/auth/login" style={{
                         display: 'flex',
                         alignItems: 'center',
                         color: '#111',
@@ -168,7 +170,7 @@ export function Header() {
                           <span style={{ fontSize: 13, fontWeight: 400, color: '#6b7280', margin: 0, letterSpacing: 0 }}>Sign In</span>
                           <span style={{ fontSize: 16, fontWeight: 700, color: '#111', margin: 0, letterSpacing: 0 }}>Account</span>
                         </span>
-                      </a>
+                      </Link>
                     )}
                   </>
                 )}

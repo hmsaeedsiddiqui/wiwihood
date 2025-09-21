@@ -31,13 +31,22 @@ interface Service {
   name: string;
   description: string;
   price: number;
+  basePrice?: number; // Alternative price property from API
   duration: number;
-  category: string;
+  durationMinutes?: number; // Alternative duration property from API
+  category: string | { name: string; [key: string]: any };
   isPopular?: boolean;
   discount?: number;
   image?: string;
   images?: string[];
   imagesPublicIds?: string[];
+}
+
+interface Booking {
+  id: string;
+  serviceId: string;
+  status: string;
+  hasReview?: boolean;
 }
 
 interface Provider {
@@ -57,7 +66,7 @@ interface Provider {
   coverImage?: string;
   isVerified?: boolean;
   experience?: string;
-  specialties?: string[];
+  specialties?: (string | { name: string; [key: string]: any })[];
   workingHours?: {
     open: string;
     close: string;
@@ -117,7 +126,8 @@ const getServiceImage = (service: Service): string => {
 };
 
 export default function ShopDetailPage() {
-  const { id } = useParams();
+  const params = useParams();
+  const id = params?.id as string;
   const { wishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
   const [shop, setShop] = useState<Provider | null>(null);
@@ -322,17 +332,31 @@ export default function ShopDetailPage() {
   };
 
   const handleAddToCart = (service: Service) => {
-    const finalPrice = service.discount ? service.price * (1 - service.discount / 100) : service.price;
-    addToCart({
-      id: service.id,
-      name: service.name,
-      provider: shop.businessName,
-      price: finalPrice,
-      imageUrl: getServiceImage(service),
-      quantity: 1
-    });
-    setToastMsg(`${service.name} added to cart!`);
-    setOpen(true);
+    try {
+      // Get the correct price property - handle both price and basePrice
+      const servicePrice = service.price || service.basePrice || 0;
+      const finalPrice = service.discount ? servicePrice * (1 - service.discount / 100) : servicePrice;
+      
+      console.log('Adding to cart:', {
+        service: service,
+        servicePrice: servicePrice,
+        finalPrice: finalPrice
+      });
+
+      addToCart({
+        id: service.id,
+        name: service.name,
+        provider: shop.businessName,
+        price: finalPrice,
+        imageUrl: getServiceImage(service),
+        quantity: 1
+      });
+      setToastMsg(`${service.name} added to cart!`);
+      setOpen(true);
+    } catch (error) {
+      console.error('Error adding to cart:', error);
+      alert('Error adding service to cart. Please try again.');
+    }
   };
 
   return (
@@ -551,7 +575,7 @@ export default function ShopDetailPage() {
                                 {service.discount ? (
                                   <div className="flex items-center space-x-2">
                                     <span className="text-2xl font-bold text-emerald-600">
-                                      €{((service.price || parseFloat(service.basePrice || '0')) * (1 - service.discount / 100)).toFixed(0)}
+                                      €{((service.price || parseFloat((service.basePrice || 0).toString())) * (1 - service.discount / 100)).toFixed(0)}
                                     </span>
                                     <span className="text-lg text-gray-400 line-through">
                                       €{service.price || service.basePrice || 0}
@@ -565,18 +589,55 @@ export default function ShopDetailPage() {
                                 <p className="text-xs text-gray-500">Starting price</p>
                               </div>
                               
-                              <button
-                                onClick={() => handleAddToCart(service)}
-                                className="group relative bg-gradient-to-r from-blue-600 to-purple-600 text-white px-8 py-3 rounded-2xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 hover:shadow-xl active:scale-95 overflow-hidden"
-                              >
-                                <span className="relative z-10 flex items-center space-x-2">
-                                  <span>Book Now</span>
-                                  <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                                  </svg>
-                                </span>
-                                <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                              </button>
+                              <div className="flex flex-col space-y-2">
+                                <button
+                                  onClick={() => {
+                                    try {
+                                      // Store service in localStorage for booking flow
+                                      const serviceWithProvider = {
+                                        id: service.id,
+                                        name: service.name,
+                                        description: service.description || 'Professional service with expert care',
+                                        basePrice: service.price || service.basePrice || 0,
+                                        duration: service.duration || service.durationMinutes || 60,
+                                        images: service.images || service.imagesPublicIds || [],
+                                        category: service.category,
+                                        provider: {
+                                          id: shop.id,
+                                          businessName: shop.businessName,
+                                          averageRating: shop.averageRating || 4.5,
+                                          totalReviews: shop.totalReviews || 0,
+                                          businessAddress: shop.address || '',
+                                          logoPublicId: shop.logoPublicId,
+                                          coverImagePublicId: shop.coverImagePublicId
+                                        }
+                                      };
+                                      console.log('Storing service for booking:', serviceWithProvider);
+                                      localStorage.setItem('selectedServiceForBooking', JSON.stringify(serviceWithProvider));
+                                      window.location.href = `/book-service?serviceId=${service.id}&providerId=${shop.id}`;
+                                    } catch (error) {
+                                      console.error('Error storing service for booking:', error);
+                                      alert('Error preparing booking. Please try again.');
+                                    }
+                                  }}
+                                  className="group relative bg-gradient-to-r from-blue-600 to-purple-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 hover:shadow-lg active:scale-95 overflow-hidden text-sm"
+                                >
+                                  <span className="relative z-10 flex items-center justify-center space-x-2">
+                                    <span>Book Now</span>
+                                    <svg className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </span>
+                                  <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                                </button>
+                                
+                                <button
+                                  onClick={() => handleAddToCart(service)}
+                                  className="w-full bg-white text-blue-600 px-6 py-2.5 rounded-xl font-semibold border-2 border-blue-600 hover:bg-blue-50 transition-all duration-300 text-sm"
+                                >
+                                  Add to Cart
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { Fragment } from 'react';
+import { useRouter } from 'next/navigation';
 import { useCart, CartItem } from '@/components/cartContext';
 import Image from 'next/image';
 
@@ -10,6 +11,7 @@ interface CartModalProps {
 }
 
 export default function CartModal({ isOpen, onClose }: CartModalProps) {
+  const router = useRouter();
   const { 
     cart, 
     updateQuantity, 
@@ -41,6 +43,27 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
         const delta = newQuantity - currentItem.quantity;
         updateQuantity(id, delta);
       }
+    }
+  };
+
+  const handleCheckout = async () => {
+    try {
+      // Simulate payment processing
+      const orderId = 'ORD-' + Date.now();
+      const amount = finalTotal.toFixed(2);
+      const paymentMethod = 'card';
+
+      // In a real app, you would process payment here
+      // For now, we'll simulate success and redirect
+      
+      // Close modal first
+      onClose();
+      
+      // Redirect to success page with order details
+      router.push(`/payment-success?orderId=${orderId}&amount=${amount}&method=${paymentMethod}`);
+    } catch (error) {
+      console.error('Checkout failed:', error);
+      alert('Checkout failed. Please try again.');
     }
   };
 
@@ -259,11 +282,15 @@ export default function CartModal({ isOpen, onClose }: CartModalProps) {
                   >
                     Clear Cart
                   </button>
-                  <button className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg flex items-center justify-center">
+                  <button 
+                    onClick={handleCheckout}
+                    disabled={cart.length === 0}
+                    className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
                     <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                     </svg>
-                    Checkout
+                    Checkout ${finalTotal.toFixed(2)}
                   </button>
                 </div>
                 

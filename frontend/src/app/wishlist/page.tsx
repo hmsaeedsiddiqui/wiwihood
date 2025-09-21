@@ -179,7 +179,10 @@ export default function WishlistPage() {
                     View Details
                   </Link>
                   <button
-                    onClick={() => handleAddToCart(item)}
+                    onClick={() => {
+                      // Navigate to booking page for this service
+                      window.location.href = `/book-service?serviceId=${item.id}&providerId=unknown`;
+                    }}
                     className="flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white py-3 rounded-xl font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg"
                   >
                     Book Now
