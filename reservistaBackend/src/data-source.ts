@@ -6,7 +6,7 @@ const AppDataSource = new DataSource({
   port: 5432,
   username: "umar",
   password: "umar",
-  database: "reservistadb",
+  database: "reservista_clean",
   synchronize: true, // Temporarily enabled for schema synchronization
   logging: true,
   entities: ["dist/src/entities/**/*.js"],

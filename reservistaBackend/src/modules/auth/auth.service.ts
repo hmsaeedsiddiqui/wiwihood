@@ -9,6 +9,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../../entities/user.entity';
+import { Provider } from '../../entities/provider.entity';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { UserProfileDto } from './dto/user-profile.dto';
@@ -18,6 +19,8 @@ export class AuthService {
   constructor(
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(Provider)
+    private readonly providerRepository: Repository<Provider>,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -119,15 +122,10 @@ export class AuthService {
   }
 
   async getProfile(userId: string): Promise<UserProfileDto> {
-    const user = await this.userRepository.findOne({
-      where: { id: userId },
-    });
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
 
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return {
+    const profile: any = {
       id: user.id,
       email: user.email,
       firstName: user.firstName,
@@ -141,6 +139,18 @@ export class AuthService {
       createdAt: user.createdAt,
       updatedAt: user.updatedAt,
     };
+
+    if (user.role === 'provider') {
+      const provider = await this.providerRepository.findOne({ where: { user: { id: user.id } } });
+      if (provider) {
+        profile.provider = {
+          id: provider.id,
+          businessName: provider.businessName,
+          // add more fields as needed
+        };
+      }
+    }
+    return profile;
   }
 
   async refresh(user: any): Promise<AuthResponseDto> {

@@ -1,397 +1,193 @@
-"use client";
-import React, { useState } from 'react';
+'use client';
+
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-
-const demoProfile = {
-  id: 1,
-  firstName: 'Sarah',
-  lastName: 'Johnson',
-  email: 'sarah.johnson@example.com',
-  phone: '+1 (555) 123-4567',
-  avatar: 'https://images.unsplash.com/photo-1494790108755-2616b612b647?w=150&h=150&fit=crop&crop=face',
-  coverImage: 'https://images.unsplash.com/photo-1556909114-f6e7ad7d3136?w=800&h=300&fit=crop',
-  joinDate: '2024-03-15',
-  city: 'New York, NY',
-  about: 'Love trying new beauty and wellness services. Always looking for the best providers in the city! Passionate about self-care and discovering amazing local businesses.',
-  preferences: {
-    notifications: true,
-    marketing: false,
-    reminders: true
-  },
-  stats: {
-    totalBookings: 12,
-    completedBookings: 8,
-    favoriteProviders: 3,
-    reviewsLeft: 5,
-    loyaltyPoints: 250
-  }
-};
-
-const demoRecentActivity = [
-  {
-    id: 1,
-    type: 'booking',
-    description: 'Booked Hair Cut & Styling at Elite Hair Studio',
-    date: '2025-08-27',
-    icon: 'fas fa-calendar-plus',
-    color: 'text-blue-500'
-  },
-  {
-    id: 2,
-    type: 'review',
-    description: 'Left a 5-star review for Zen Wellness Spa',
-    date: '2025-08-25',
-    icon: 'fas fa-star',
-    color: 'text-yellow-500'
-  },
-  {
-    id: 3,
-    type: 'favorite',
-    description: 'Added Glow Studio to favorites',
-    date: '2025-08-23',
-    icon: 'fas fa-heart',
-    color: 'text-red-500'
-  },
-  {
-    id: 4,
-    type: 'booking',
-    description: 'Completed Massage Therapy at Zen Wellness Spa',
-    date: '2025-08-20',
-    icon: 'fas fa-check-circle',
-    color: 'text-green-500'
-  }
-];
-
-const achievements = [
-  { name: 'First Booking', icon: 'fas fa-trophy', description: 'Made your first booking' },
-  { name: 'Review Master', icon: 'fas fa-medal', description: 'Left 5+ reviews' },
-  { name: 'Loyal Customer', icon: 'fas fa-crown', description: 'Regular customer' }
-];
+import { useAuthStore } from '@/store/authStore';
 
 export default function ProfilePage() {
-  const [isEditing, setIsEditing] = useState(false);
-  const [profileData, setProfileData] = useState(demoProfile);
-  const [activeTab, setActiveTab] = useState('overview');
+  const { user, token, isAuthenticated, logout } = useAuthStore();
+  const [loading, setLoading] = useState(true);
+  const [profileData, setProfileData] = useState<any>(null);
+  const [error, setError] = useState<string>('');
 
-  const handleSave = () => {
-    console.log('Saving profile:', profileData);
-    setIsEditing(false);
+  useEffect(() => {
+    if (isAuthenticated && token) {
+      fetchProfile();
+    } else {
+      // Fallback to localStorage if auth store not initialized
+      const storedToken = localStorage.getItem('auth-token') || localStorage.getItem('accessToken');
+      if (storedToken) {
+        fetchProfileWithToken(storedToken);
+      } else {
+        setError('No authentication token found. Please login.');
+        setLoading(false);
+      }
+    }
+  }, [isAuthenticated, token]);
+
+  const fetchProfile = async () => {
+    if (token) {
+      await fetchProfileWithToken(token);
+    }
   };
 
-  const handleInputChange = (field: string, value: string) => {
-    setProfileData({ ...profileData, [field]: value });
+  const fetchProfileWithToken = async (authToken: string) => {
+    try {
+      if (!authToken) {
+        setError('No authentication token found. Please login.');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch('http://localhost:8000/api/v1/auth/profile', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`,
+        }
+      });
+      
+      if (response.ok) {
+        const userData = await response.json();
+        setProfileData(userData);
+        setError('');
+      } else {
+        const errorText = await response.text();
+        setError(`Failed to load profile: ${response.status} ${errorText}`);
+      }
+    } catch (error: any) {
+      setError(`Error: ${error.message || 'Unknown error'}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  return (
-    <div className="profile-container">
-      {/* Cover Photo Section */}
-      <div className="profile-cover">
-        <img 
-          src={profileData.coverImage} 
-          alt="Cover" 
-          className="cover-image"
-        />
-        <div className="cover-overlay"></div>
-        
-        {/* Profile Picture and Basic Info */}
-        <div className="profile-header">
-          <div className="profile-picture-container">
-            <img 
-              src={profileData.avatar} 
-              alt="Profile" 
-              className="profile-picture"
-            />
-            <div className="profile-status"></div>
-          </div>
-          
-          <div className="profile-info">
-            <h1 className="profile-name">
-              {profileData.firstName} {profileData.lastName}
-            </h1>
-            <p className="profile-location">
-              <i className="fas fa-map-marker-alt"></i>
-              {profileData.city}
-            </p>
-            <p className="profile-member-since">
-              Member since {new Date(profileData.joinDate).toLocaleDateString('en-US', { 
-                month: 'long', 
-                year: 'numeric' 
-              })}
-            </p>
-          </div>
-          
-          <div className="profile-actions">
-            <button
-              onClick={() => setIsEditing(!isEditing)}
-              className="edit-profile-btn"
+  const handleLogout = () => {
+    logout();
+    // Also clear any legacy tokens
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <div className="text-center">
+          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+          <p className="mt-2 text-gray-600">Loading profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <div className="text-center bg-white p-8 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Authentication Error</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <div className="space-x-4">
+            <button 
+              onClick={fetchProfile}
+              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
             >
-              <i className="fas fa-edit"></i>
-              {isEditing ? 'Cancel' : 'Edit Profile'}
+              Retry
+            </button>
+            <button 
+              onClick={() => window.location.href = '/auth/login'}
+              className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
+            >
+              Login Again
             </button>
           </div>
         </div>
       </div>
+    );
+  }
 
-      {/* Main Content */}
-      <div className="profile-content">
-        {/* Navigation Tabs */}
-        <div className="profile-tabs">
+  if (!profileData) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
+        <div className="text-center">
+          <p className="text-red-600">No profile data available</p>
           <button 
-            className={`tab-btn ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
+            onClick={fetchProfile}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
           >
-            <i className="fas fa-user"></i>
-            Overview
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'activity' ? 'active' : ''}`}
-            onClick={() => setActiveTab('activity')}
-          >
-            <i className="fas fa-chart-line"></i>
-            Activity
-          </button>
-          <button 
-            className={`tab-btn ${activeTab === 'achievements' ? 'active' : ''}`}
-            onClick={() => setActiveTab('achievements')}
-          >
-            <i className="fas fa-trophy"></i>
-            Achievements
+            Retry
           </button>
         </div>
+      </div>
+    );
+  }
 
-        <div className="tab-content">
-          {activeTab === 'overview' && (
-            <div className="overview-content">
-              <div className="content-grid">
-                {/* Profile Details */}
-                <div className="profile-details-card">
-                  <div className="card-header">
-                    <h3>
-                      <i className="fas fa-user-circle"></i>
-                      Profile Information
-                    </h3>
-                  </div>
-                  
-                  <div className="profile-form">
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>First Name</label>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={profileData.firstName}
-                            onChange={(e) => handleInputChange('firstName', e.target.value)}
-                            className="profile-input"
-                          />
-                        ) : (
-                          <div className="profile-value">{profileData.firstName}</div>
-                        )}
-                      </div>
-                      <div className="form-group">
-                        <label>Last Name</label>
-                        {isEditing ? (
-                          <input
-                            type="text"
-                            value={profileData.lastName}
-                            onChange={(e) => handleInputChange('lastName', e.target.value)}
-                            className="profile-input"
-                          />
-                        ) : (
-                          <div className="profile-value">{profileData.lastName}</div>
-                        )}
-                      </div>
-                    </div>
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8">
+        <div className="max-w-4xl mx-auto">
+          <div className="bg-white rounded-lg shadow-md p-6">
+            {/* Header */}
+            <div className="mb-6">
+              <h1 className="text-3xl font-bold text-gray-900">Profile</h1>
+            </div>
 
-                    <div className="form-group">
-                      <label>Email Address</label>
-                      {isEditing ? (
-                        <input
-                          type="email"
-                          value={profileData.email}
-                          onChange={(e) => handleInputChange('email', e.target.value)}
-                          className="profile-input"
-                        />
-                      ) : (
-                        <div className="profile-value">{profileData.email}</div>
-                      )}
-                    </div>
+            {/* Profile Information */}
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Full Name</label>
+                <p className="mt-1 text-lg text-gray-900">
+                  {profileData.name || 
+                   `${profileData.firstName || ''} ${profileData.lastName || ''}`.trim() || 
+                   'Not provided'}
+                </p>
+              </div>
 
-                    <div className="form-group">
-                      <label>Phone Number</label>
-                      {isEditing ? (
-                        <input
-                          type="tel"
-                          value={profileData.phone}
-                          onChange={(e) => handleInputChange('phone', e.target.value)}
-                          className="profile-input"
-                        />
-                      ) : (
-                        <div className="profile-value">{profileData.phone}</div>
-                      )}
-                    </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Email</label>
+                <p className="mt-1 text-lg text-gray-900">{profileData.email || 'Not provided'}</p>
+              </div>
 
-                    <div className="form-group">
-                      <label>City</label>
-                      {isEditing ? (
-                        <input
-                          type="text"
-                          value={profileData.city}
-                          onChange={(e) => handleInputChange('city', e.target.value)}
-                          className="profile-input"
-                        />
-                      ) : (
-                        <div className="profile-value">{profileData.city}</div>
-                      )}
-                    </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Phone</label>
+                <p className="mt-1 text-lg text-gray-900">{profileData.phone || 'Not provided'}</p>
+              </div>
 
-                    <div className="form-group">
-                      <label>About Me</label>
-                      {isEditing ? (
-                        <textarea
-                          value={profileData.about}
-                          onChange={(e) => handleInputChange('about', e.target.value)}
-                          rows={4}
-                          className="profile-textarea"
-                        />
-                      ) : (
-                        <div className="profile-value about-text">{profileData.about}</div>
-                      )}
-                    </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Role</label>
+                <p className="mt-1 text-lg text-gray-900 capitalize">{profileData.role || 'Not provided'}</p>
+              </div>
 
-                    {isEditing && (
-                      <div className="form-actions">
-                        <button onClick={handleSave} className="save-btn">
-                          <i className="fas fa-check"></i>
-                          Save Changes
-                        </button>
-                        <button onClick={() => setIsEditing(false)} className="cancel-btn">
-                          <i className="fas fa-times"></i>
-                          Cancel
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
-                {/* Stats and Quick Actions */}
-                <div className="sidebar-content">
-                  {/* Profile Stats */}
-                  <div className="stats-card">
-                    <div className="card-header">
-                      <h3>
-                        <i className="fas fa-chart-bar"></i>
-                        Your Stats
-                      </h3>
-                    </div>
-                    <div className="stats-grid">
-                      <div className="stat-item">
-                        <div className="stat-number">{profileData.stats.totalBookings}</div>
-                        <div className="stat-label">Total Bookings</div>
-                      </div>
-                      <div className="stat-item">
-                        <div className="stat-number">{profileData.stats.completedBookings}</div>
-                        <div className="stat-label">Completed</div>
-                      </div>
-                      <div className="stat-item">
-                        <div className="stat-number">{profileData.stats.favoriteProviders}</div>
-                        <div className="stat-label">Favorites</div>
-                      </div>
-                      <div className="stat-item">
-                        <div className="stat-number">{profileData.stats.loyaltyPoints}</div>
-                        <div className="stat-label">Points</div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Quick Actions */}
-                  <div className="quick-actions-card">
-                    <div className="card-header">
-                      <h3>
-                        <i className="fas fa-bolt"></i>
-                        Quick Actions
-                      </h3>
-                    </div>
-                    <div className="quick-actions">
-                      <Link href="/bookings" className="action-item">
-                        <i className="fas fa-calendar"></i>
-                        <span>My Bookings</span>
-                      </Link>
-                      <Link href="/wishlist" className="action-item">
-                        <i className="fas fa-heart"></i>
-                        <span>Wishlist</span>
-                      </Link>
-                      <Link href="/reviews" className="action-item">
-                        <i className="fas fa-star"></i>
-                        <span>Reviews</span>
-                      </Link>
-                      <Link href="/settings" className="action-item">
-                        <i className="fas fa-cog"></i>
-                        <span>Settings</span>
-                      </Link>
-                    </div>
-                  </div>
-                </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Member Since</label>
+                <p className="mt-1 text-lg text-gray-900">
+                  {profileData.createdAt ? new Date(profileData.createdAt).toLocaleDateString() : 'Not available'}
+                </p>
               </div>
             </div>
-          )}
 
-          {activeTab === 'activity' && (
-            <div className="activity-content">
-              <div className="activity-card">
-                <div className="card-header">
-                  <h3>
-                    <i className="fas fa-history"></i>
-                    Recent Activity
-                  </h3>
-                </div>
-                <div className="activity-list">
-                  {demoRecentActivity.map(activity => (
-                    <div key={activity.id} className="activity-item">
-                      <div className={`activity-icon ${activity.color}`}>
-                        <i className={activity.icon}></i>
-                      </div>
-                      <div className="activity-content-text">
-                        <p className="activity-description">{activity.description}</p>
-                        <p className="activity-date">
-                          {new Date(activity.date).toLocaleDateString('en-US', {
-                            month: 'long',
-                            day: 'numeric',
-                            year: 'numeric'
-                          })}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+            {/* Action Buttons */}
+            <div className="mt-8 flex space-x-4">
+              <Link 
+                href="/bookings" 
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+              >
+                View Bookings
+              </Link>
+              <Link 
+                href="/settings" 
+                className="px-6 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+              >
+                Settings
+              </Link>
+              <button 
+                onClick={handleLogout}
+                className="px-6 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+              >
+                Logout
+              </button>
             </div>
-          )}
-
-          {activeTab === 'achievements' && (
-            <div className="achievements-content">
-              <div className="achievements-card">
-                <div className="card-header">
-                  <h3>
-                    <i className="fas fa-trophy"></i>
-                    Your Achievements
-                  </h3>
-                </div>
-                <div className="achievements-grid">
-                  {achievements.map((achievement, index) => (
-                    <div key={index} className="achievement-item">
-                      <div className="achievement-icon">
-                        <i className={achievement.icon}></i>
-                      </div>
-                      <div className="achievement-info">
-                        <h4>{achievement.name}</h4>
-                        <p>{achievement.description}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
         </div>
       </div>
     </div>

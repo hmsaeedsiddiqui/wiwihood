@@ -147,24 +147,24 @@ export class CreateProviderDto {
   taxId?: string;
 
   @ApiProperty({
-    description: 'Business logo URL',
+    description: 'Business logo URL or Cloudinary public ID',
     example: 'https://example.com/logo.jpg',
     required: false,
     maxLength: 500,
   })
   @IsOptional()
-  @IsUrl()
+  @IsString()
   @MaxLength(500)
   logo?: string;
 
   @ApiProperty({
-    description: 'Business cover image URL',
+    description: 'Business cover image URL or Cloudinary public ID',
     example: 'https://example.com/cover.jpg',
     required: false,
     maxLength: 500,
   })
   @IsOptional()
-  @IsUrl()
+  @IsString()
   @MaxLength(500)
   coverImage?: string;
 

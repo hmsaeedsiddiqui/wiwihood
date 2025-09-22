@@ -23,10 +23,10 @@ export class AppService {
         calendar: 'planned 📋'
       },
       endpoints: {
-        authentication: '/api/v1/auth',
-        users: '/api/v1/users',
-        providers: '/api/v1/providers',
-        documentation: '/api/docs'
+        authentication: '/auth',
+        users: '/users',
+        providers: '/providers',
+        documentation: '/docs'
       }
     };
   }

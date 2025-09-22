@@ -25,7 +25,6 @@ export class Review {
 
   @ApiProperty({ description: 'Review rating (1-5)' })
   @Column({ type: 'int' })
-  @Index()
   rating: number;
 
   @ApiProperty({ description: 'Review title', required: false })
@@ -63,17 +62,14 @@ export class Review {
   // Foreign keys
   @ApiProperty({ description: 'Customer user ID' })
   @Column({ type: 'uuid' })
-  @Index()
   customerId: string;
 
   @ApiProperty({ description: 'Provider ID' })
   @Column({ type: 'uuid' })
-  @Index()
   providerId: string;
 
   @ApiProperty({ description: 'Booking ID' })
   @Column({ type: 'uuid' })
-  @Index()
   bookingId: string;
 
   // Relationships

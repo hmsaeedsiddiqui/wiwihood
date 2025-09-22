@@ -20,7 +20,7 @@ export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
     setError("");
     try {
       const res = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/register`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/auth/register`,
         { email, password, firstName, lastName, userRole: 'customer' },
         { withCredentials: true }
       );

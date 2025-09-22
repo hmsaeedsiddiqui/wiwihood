@@ -1,3 +1,217 @@
+/* Provider Signup Custom Styles */
+.provider-signup-bg {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f9fafb;
+  padding: 48px 0;
+}
+.provider-signup-card {
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px 0 rgba(0,0,0,0.08);
+  padding: 0 0 0 0;
+}
+.provider-signup-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 32px 32px 0 32px;
+}
+.provider-signup-logo {
+  width: 48px;
+  height: 48px;
+  background: #16a34a;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+.provider-signup-logo span {
+  color: #fff;
+  font-weight: 700;
+  font-size: 2rem;
+}
+.provider-signup-header h2 {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #111827;
+  margin: 0 0 4px 0;
+  text-align: center;
+}
+.provider-signup-sub {
+  color: #6b7280;
+  font-size: 1rem;
+  margin-bottom: 2px;
+  text-align: center;
+}
+.provider-signup-link {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 0;
+  text-align: center;
+}
+.provider-signup-link a {
+  color: #16a34a;
+  font-weight: 500;
+  text-decoration: none;
+}
+.provider-signup-link a:hover {
+  color: #15803d;
+}
+.provider-signup-formwrap {
+  padding: 0 32px 32px 32px;
+}
+.provider-signup-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.provider-signup-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+.provider-signup-row .provider-signup-field {
+  min-width: 0;
+  flex: 1 1 0%;
+}
+.provider-signup-field {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.provider-signup-field label {
+  font-size: 0.98rem;
+  color: #374151;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+.provider-signup-field input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 1rem;
+  color: #111827;
+  background: #fff;
+  outline: none;
+  transition: border 0.2s;
+}
+.provider-signup-field input:focus {
+  border: 1.5px solid #16a34a;
+}
+.provider-signup-password-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+.provider-signup-password-wrap input {
+  width: 100%;
+  padding-right: 38px;
+}
+.provider-signup-eye {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+}
+.provider-signup-eye-icon {
+  width: 20px;
+  height: 20px;
+  color: #9ca3af;
+}
+.provider-signup-password-hint {
+  font-size: 0.85rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+.provider-signup-btn {
+  width: 100%;
+  background: #16a34a;
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.08rem;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 0;
+  margin-top: 2px;
+  cursor: pointer;
+  transition: background 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.provider-signup-btn:hover {
+  background: #15803d;
+}
+.provider-signup-btn-loader {
+  margin-right: 8px;
+}
+.provider-signup-error {
+  background: #fee2e2;
+  border: 1px solid #f87171;
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: 6px;
+  margin-bottom: 8px;
+  font-size: 0.97rem;
+}
+.provider-signup-error ul {
+  margin: 0;
+  padding-left: 18px;
+}
+.provider-signup-customer-link {
+  text-align: center;
+  margin-top: 8px;
+  font-size: 1.01rem;
+}
+.provider-signup-customer-link a {
+  color: #111827;
+  font-weight: 600;
+  text-decoration: none;
+}
+.provider-signup-customer-link a:hover {
+  color: #16a34a;
+}
+.provider-signup-terms {
+  text-align: center;
+  color: #6b7280;
+  font-size: 0.93rem;
+  margin-top: 6px;
+}
+.provider-signup-terms a {
+  color: #16a34a;
+  text-decoration: none;
+}
+.provider-signup-terms a:hover {
+  color: #15803d;
+}
+@media (max-width: 600px) {
+  .provider-signup-card {
+    max-width: 98vw;
+    padding: 0;
+  }
+  .provider-signup-header, .provider-signup-formwrap {
+    padding: 18px 8px 0 8px;
+  }
+  .provider-signup-formwrap {
+    padding-bottom: 18px;
+  }
+  .provider-signup-row {
+    flex-direction: column;
+    gap: 0;
+  }
+}
 @import "tailwindcss";
 
 /* ==================================
@@ -229,25 +443,31 @@ a { text-decoration: none; color: inherit; }
 .highlight-green {
   position: relative;
   display: inline-block;
-  padding: 1px 14px;
-  margin: 0 -4px;
-  color: var(--color-white);
   font-style: italic;
-
-  line-height: 1.4;
+  font-weight: 700;
+  color: #fff;
+  z-index: 1;
+  padding: 6px 22px 4px 22px;
+  margin: 0 2px 8px 2px;
+  line-height: 1.2;
+  box-decoration-break: clone;
+  -webkit-box-decoration-break: clone;
+  font-size: inherit;
 }
 
 .highlight-green::before {
   content: "";
   position: absolute;
-  inset: 0;
-  background-color: var(--color-green);
-  transform: skew(-10deg);
-  z-index: 4;
-  text-align: center;
-  color: white;
-  max-width: 800px;
-  padding: 0 20px;
+  left: -8px;
+  top: -4px;
+  width: calc(100% + 16px);
+  height: calc(100% + 8px);
+  background: #10b981;
+  transform: skew(-13deg);
+  z-index: -1;
+  border-radius: 0;
+  box-shadow: 0 2px 8px rgba(16,185,129,0.10);
+  border: 3px solid #fff;
 }
 /* .highlight-green {
     background-color: var(--color-green);
@@ -1045,7 +1265,7 @@ html {
 }
 
 .edit-profile-btn {
-  background: var(--color-primary);
+  background: black; /* Consistent background color */
   color: white;
   border: none;
   padding: 12px 25px;
@@ -1056,13 +1276,13 @@ html {
   display: flex;
   align-items: center;
   gap: 8px;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .edit-profile-btn:hover {
-  background: var(--color-primary-dark);
+  background: #333; /* Dark gray hover effect */
   transform: translateY(-2px);
-  box-shadow: 0 8px 25px rgba(59, 130, 246, 0.4);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4);
 }
 
 .profile-content {
@@ -1098,14 +1318,14 @@ html {
 }
 
 .tab-btn.active {
-  background: var(--color-primary);
+  background: black; /* Consistent active background color */
   color: white;
-  box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 .tab-btn:hover:not(.active) {
-  background: #f3f4f6;
-  color: var(--color-primary);
+  background: #333; /* Dark gray hover effect */
+  color: white;
 }
 
 .tab-content {
@@ -1595,12 +1815,7 @@ html {
 }
 
 .highlight-green {
-  background: #10b981;
-  color: white !important;
-  padding: 4px 12px;
-  border-radius: 8px;
-  display: inline-block;
-  margin: 0 4px;
+  /* removed duplicate, see above for new style */
 }
 
 .hero-subtitle-new {
@@ -1886,4 +2101,67 @@ html {
   .hero-content {
     padding: 0 15px;
   }
+}
+
+/* Service Card Enhancement Styles */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+/* Custom hover effects for service cards */
+.service-card-3d {
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease;
+}
+
+.service-card-3d:hover {
+  transform: rotateY(5deg) rotateX(5deg);
+}
+
+/* Smooth gradient animations */
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.gradient-animate {
+  background-size: 200% 200%;
+  animation: gradient-shift 3s ease infinite;
+}
+
+/* Enhanced shadows */
+.shadow-xl-colored {
+  box-shadow: 0 20px 25px -5px rgba(59, 130, 246, 0.1), 0 10px 10px -5px rgba(59, 130, 246, 0.04);
+}
+
+/* Custom button effects */
+.btn-primary-enhanced {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  transition: all 0.3s ease;
+}
+
+.btn-primary-enhanced::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.5s ease;
+}
+
+.btn-primary-enhanced:hover::before {
+  left: 100%;
 }

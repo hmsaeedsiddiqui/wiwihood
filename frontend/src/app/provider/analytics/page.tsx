@@ -51,6 +51,12 @@ const analyticsData = {
 export default function ProviderAnalytics() {
   const [selectedPeriod, setSelectedPeriod] = useState("30days");
   const [selectedTab, setSelectedTab] = useState("overview");
+  const [fromDate, setFromDate] = useState(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30); // Default to 30 days ago
+    return date;
+  });
+  const [toDate, setToDate] = useState(new Date());
 
   const { overview, revenueChart, topServices, customerInsights, recentReviews } = analyticsData;
 
@@ -74,17 +80,25 @@ export default function ProviderAnalytics() {
             <p className="text-gray-600">Track your business performance and growth</p>
           </div>
           <div className="flex gap-3 mt-4 md:mt-0">
-            <select
-              value={selectedPeriod}
-              onChange={(e) => setSelectedPeriod(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            >
-              <option value="7days">Last 7 days</option>
-              <option value="30days">Last 30 days</option>
-              <option value="90days">Last 90 days</option>
-              <option value="year">This year</option>
-            </select>
-            <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+            <div className="flex items-center gap-2">
+              <label className="text-gray-600">From:</label>
+              <input
+                type="date"
+                value={fromDate.toISOString().split('T')[0]}
+                onChange={(e) => setFromDate(new Date(e.target.value))}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div className="flex items-center gap-2">
+              <label className="text-gray-600">To:</label>
+              <input
+                type="date"
+                value={toDate.toISOString().split('T')[0]}
+                onChange={(e) => setToDate(new Date(e.target.value))}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <button className="bg-black text-white px-4 py-2 rounded-lg hover:bg-gray-800 transition">
               📊 Export Report
             </button>
           </div>

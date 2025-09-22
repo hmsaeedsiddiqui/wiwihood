@@ -1,4 +1,5 @@
-'use client'
+"use client";
+import { useRouter } from 'next/navigation';
 
 import { useState, useEffect } from 'react';
 import { useParams } from 'next/navigation';
@@ -8,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Star, MapPin, Clock, Heart, Share2 } from 'lucide-react';
 
 export default function CategoryPage() {
+  const router = useRouter();
   const params = useParams();
   const categorySlug = params.slug as string;
   const [category, setCategory] = useState<Category | null>(null);
@@ -19,9 +21,8 @@ export default function CategoryPage() {
       setLoading(true);
       try {
         const cat = await apiService.getCategoryBySlug(categorySlug);
-        setCategory(cat);
-        const servs = await apiService.getServicesByCategory(cat.id);
-        setServices(servs);
+        setCategory(cat || null);
+        setServices(cat?.services || []);
       } catch (e) {
         setCategory(null);
         setServices([]);
@@ -34,35 +35,6 @@ export default function CategoryPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Hero Section */}
-      <div style={{
-        position: 'relative',
-        width: '100%',
-        height: 300,
-        background: `linear-gradient(rgba(44,62,80,0.85),rgba(44,62,80,0.85)), url(${category?.bannerImage || 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80'}) center/cover no-repeat`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        color: '#fff',
-        textAlign: 'center',
-        overflow: 'hidden',
-      }}>
-        <div style={{ position: 'relative', zIndex: 2 }}>
-          <h1 style={{ fontSize: 40, fontWeight: 800, marginBottom: 10, fontFamily: 'Manrope, sans-serif', letterSpacing: '-1px' }}>{category?.name || 'Category'}</h1>
-          <p style={{ fontSize: 18, opacity: 0.85 }}>Home &gt; {category?.name || 'Category'}</p>
-        </div>
-        <div style={{
-          position: 'absolute',
-          left: 0,
-          bottom: -50,
-          width: '100%',
-          height: 100,
-          background: '#fff',
-          transform: 'skewY(-3deg)',
-          transformOrigin: '100% 0',
-          zIndex: 1,
-        }}></div>
-      </div>
 
       {/* Services Grid Section */}
       <section style={{ padding: '60px 0 40px 0', background: '#f8fafc', flex: 1 }}>
@@ -89,10 +61,16 @@ export default function CategoryPage() {
             <div style={{ display: 'grid', gap: 32, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
               {services.map((service) => (
                 <Card key={service.id} className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-md" style={{ borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
-                  <div style={{ position: 'relative', overflow: 'hidden' }}>
+                  <div
+                    style={{ position: 'relative', overflow: 'hidden' }}
+                    onClick={() => router.push(`/service/${service.id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyDown={e => { if (e.key === 'Enter') router.push(`/service/${service.id}`); }}
+                  >
                     <div style={{ height: 180, background: '#e0e7ef', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                      {service.imageUrl ? (
-                        <img src={service.imageUrl} alt={service.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                      {service.images && service.images.length > 0 ? (
+                        <img src={service.images[0]} alt={service.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                       ) : (
                         <div style={{ fontSize: 48, fontWeight: 700, color: '#60a5fa' }}>{service.name.charAt(0)}</div>
                       )}
@@ -109,7 +87,20 @@ export default function CategoryPage() {
                     <CardTitle style={{ fontSize: 20, fontWeight: 700, color: '#222', marginBottom: 4 }}>{service.name}</CardTitle>
                   </CardHeader>
                   <CardContent style={{ paddingTop: 0 }}>
-                    <div style={{ color: '#6b7280', fontSize: 15, marginBottom: 10 }}>{service.description}</div>
+                    <div
+                      style={{
+                        color: '#6b7280',
+                        fontSize: 15,
+                        marginBottom: 10,
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        maxWidth: '100%'
+                      }}
+                      title={service.description}
+                    >
+                      {service.description}
+                    </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
                       <Star size={16} color="#fbbf24" fill="#fbbf24" />
                       <span style={{ fontSize: 15, fontWeight: 600 }}>{service.provider.averageRating}</span>

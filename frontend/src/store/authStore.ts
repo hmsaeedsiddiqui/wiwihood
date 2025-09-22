@@ -18,7 +18,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   login: async (credentials: LoginCredentials) => {
     set({ isLoading: true })
     try {
-  const response = await fetch('http://localhost:8000/auth/login', {
+  const response = await fetch('http://localhost:8000/api/v1/auth/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -32,13 +32,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       const data = await response.json()
       
-      // Store in localStorage
-      localStorage.setItem('auth-token', data.access_token)
+      // Store in localStorage - backend returns 'accessToken', not 'access_token'
+      localStorage.setItem('auth-token', data.accessToken)
       localStorage.setItem('auth-user', JSON.stringify(data.user))
       
       set({
         user: data.user,
-        token: data.access_token,
+        token: data.accessToken,
         isAuthenticated: true,
         isLoading: false,
       })
@@ -51,7 +51,7 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
   register: async (data: RegisterData) => {
     set({ isLoading: true })
     try {
-  const response = await fetch('http://localhost:8000/auth/register', {
+  const response = await fetch('http://localhost:8000/api/v1/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -65,13 +65,13 @@ export const useAuthStore = create<AuthStore>((set, get) => ({
 
       const result = await response.json()
       
-      // Store in localStorage
-      localStorage.setItem('auth-token', result.access_token)
+      // Store in localStorage - backend returns 'accessToken', not 'access_token'
+      localStorage.setItem('auth-token', result.accessToken)
       localStorage.setItem('auth-user', JSON.stringify(result.user))
       
       set({
         user: result.user,
-        token: result.access_token,
+        token: result.accessToken,
         isAuthenticated: true,
         isLoading: false,
       })

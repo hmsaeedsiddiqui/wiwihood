@@ -57,7 +57,7 @@ export default function ServicesPage() {
     try {
       const token = localStorage.getItem('providerToken');
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/profile`,
+        `${process.env.NEXT_PUBLIC_API_URL }/auth/profile`,
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,

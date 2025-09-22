@@ -20,7 +20,7 @@ export default function ProviderLoginPage() {
     if (token) {
       // Verify token is for provider
       axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/profile`,
+  `${process.env.NEXT_PUBLIC_API_URL}/auth/profile`,
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -43,7 +43,7 @@ export default function ProviderLoginPage() {
 
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/login`,
+  `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
         { email, password },
         { withCredentials: true }
       )
@@ -66,121 +66,220 @@ export default function ProviderLoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <div className="flex justify-center">
-            <div className="w-12 h-12 bg-green-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-xl">R</span>
-            </div>
+    <div style={{
+      minHeight: 'calc(100vh - 80px)',
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#f9fafb',
+      padding: '48px 24px'
+    }}>
+      <div style={{
+        backgroundColor: '#ffffff',
+        padding: '48px',
+        borderRadius: '12px',
+        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+        width: '100%',
+        maxWidth: '400px'
+      }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            backgroundColor: '#059669',
+            borderRadius: '50%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 16px auto'
+          }}>
+            <span style={{
+              fontSize: '32px',
+              fontWeight: '700',
+              color: '#ffffff'
+            }}>
+              R
+            </span>
           </div>
-          <h2 className="mt-6 text-center text-3xl font-bold text-gray-900">
+          <h1 style={{
+            fontSize: '28px',
+            fontWeight: '700',
+            color: '#1f2937',
+            marginBottom: '8px'
+          }}>
             Provider Sign In
-          </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          </h1>
+          <p style={{
+            fontSize: '16px',
+            color: '#6b7280'
+          }}>
             Access your provider dashboard
           </p>
-          <p className="mt-1 text-center text-sm text-gray-600">
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280',
+            marginTop: '8px'
+          }}>
             Don't have an account?{' '}
-            <Link href="/auth/provider/signup" className="font-medium text-green-600 hover:text-green-500">
+            <Link href="/auth/provider/signup" style={{
+              color: '#059669',
+              textDecoration: 'none',
+              fontWeight: '600'
+            }}>
               Sign up as a provider
             </Link>
           </p>
         </div>
 
-        <div className="bg-white py-8 px-6 shadow rounded-lg">
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            {error && (
-              <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
-                {error}
-              </div>
-            )}
+        {/* Form */}
+        <form onSubmit={handleSubmit} style={{ width: '100%' }}>
+          {error && (
+            <div style={{
+              backgroundColor: '#fee2e2',
+              border: '1px solid #fca5a5',
+              color: '#dc2626',
+              padding: '12px',
+              borderRadius: '6px',
+              marginBottom: '16px',
+              fontSize: '14px'
+            }}>
+              {error}
+            </div>
+          )}
 
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                Email address
-              </label>
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '6px'
+            }}>
+              Email address
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              placeholder="Enter your email"
+              style={{
+                width: '100%',
+                padding: '12px',
+                border: '1px solid #d1d5db',
+                borderRadius: '6px',
+                fontSize: '16px',
+                backgroundColor: '#ffffff',
+                color: '#111827'
+              }}
+            />
+          </div>
+
+          <div style={{ marginBottom: '20px' }}>
+            <label style={{
+              display: 'block',
+              fontSize: '14px',
+              fontWeight: '600',
+              color: '#374151',
+              marginBottom: '6px'
+            }}>
+              Password
+            </label>
+            <div style={{ position: 'relative' }}>
               <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="mt-1 appearance-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                placeholder="Enter your email"
+                placeholder="Enter your password"
+                style={{
+                  width: '100%',
+                  padding: '12px',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '6px',
+                  fontSize: '16px',
+                  backgroundColor: '#ffffff',
+                  color: '#111827',
+                  paddingRight: '40px'
+                }}
               />
-            </div>
-
-            <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                Password
-              </label>
-              <div className="mt-1 relative">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? 'text' : 'password'}
-                  autoComplete="current-password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="appearance-none relative block w-full px-3 py-2 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-green-500 focus:border-green-500 focus:z-10 sm:text-sm"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5 text-gray-400" />
-                  ) : (
-                    <Eye className="h-5 w-5 text-gray-400" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  Remember me
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <Link href="/auth/forgot-password" className="font-medium text-green-600 hover:text-green-500">
-                  Forgot your password?
-                </Link>
-              </div>
-            </div>
-
-            <div>
               <button
-                type="submit"
-                disabled={loading}
-                className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                type="button"
+                style={{
+                  position: 'absolute',
+                  right: '8px',
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  background: 'none',
+                  border: 'none',
+                  cursor: 'pointer',
+                  padding: 0
+                }}
+                onClick={() => setShowPassword(!showPassword)}
               >
-                {loading && <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />}
-                Sign in
+                {showPassword ? (
+                  <EyeOff size={20} color="#9ca3af" />
+                ) : (
+                  <Eye size={20} color="#9ca3af" />
+                )}
               </button>
             </div>
+          </div>
 
-            <div className="text-center">
-              <Link href="/auth/customer/login" className="font-medium text-sm text-gray-600 hover:text-gray-900">
-                Looking for customer login?
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
+            <div style={{ display: 'flex', alignItems: 'center' }}>
+              <input
+                id="remember-me"
+                name="remember-me"
+                type="checkbox"
+                style={{
+                  height: '16px',
+                  width: '16px',
+                  color: '#10b981',
+                  border: '1px solid #d1d5db',
+                  borderRadius: '4px',
+                  marginRight: '6px'
+                }}
+              />
+              <label htmlFor="remember-me" style={{ fontSize: '14px', color: '#374151' }}>
+                Remember me
+              </label>
+            </div>
+            <div style={{ fontSize: '14px' }}>
+              <Link href="/auth/forgot-password" style={{ color: '#059669', textDecoration: 'none', fontWeight: 600 }}>
+                Forgot your password?
               </Link>
             </div>
-          </form>
-        </div>
+          </div>
+
+          <button
+            type="submit"
+            disabled={loading}
+            style={{
+              width: '100%',
+              padding: '12px',
+              backgroundColor: '#10b981',
+              color: '#fff',
+              border: 'none',
+              borderRadius: '6px',
+              fontWeight: 600,
+              fontSize: '16px',
+              cursor: 'pointer',
+              marginBottom: '12px',
+              opacity: loading ? 0.7 : 1
+            }}
+          >
+            {loading && <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />}
+            Sign in
+          </button>
+
+          <div style={{ textAlign: 'center', fontSize: '14px', marginTop: '8px' }}>
+            <Link href="/auth/customer/login" style={{ color: '#374151', textDecoration: 'none', fontWeight: 500 }}>
+              Looking for customer login?
+            </Link>
+          </div>
+        </form>
       </div>
     </div>
   )

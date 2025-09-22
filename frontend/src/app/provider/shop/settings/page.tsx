@@ -6,16 +6,16 @@ const ShopSettingsPage = () => {
   const [activeSection, setActiveSection] = useState('business');
   const [showSaveConfirmation, setShowSaveConfirmation] = useState(false);
 
-  // Form states
+  // Form states - using empty defaults instead of mock data
   const [businessInfo, setBusinessInfo] = useState({
-    businessName: "Sarah's Wellness Studio",
-    businessType: "Beauty & Wellness",
-    registrationNumber: "BW-2023-001",
-    taxId: "TX-123456789",
-    primaryEmail: "business@sarahwellness.com",
-    primaryPhone: "+1 (555) 123-4567",
-    website: "https://sarahwellness.com",
-    description: "Premium wellness and beauty services with experienced professionals",
+    businessName: "",
+    businessType: "",
+    registrationNumber: "",
+    taxId: "",
+    primaryEmail: "",
+    primaryPhone: "",
+    website: "",
+    description: "",
     logo: null,
     coverImage: null
   });

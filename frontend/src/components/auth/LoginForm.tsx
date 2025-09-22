@@ -1,8 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import axios from "axios";
-import { useAuth } from "../AuthProvider";
+import { useAuthStore } from "@/store/authStore";
 
 export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const [email, setEmail] = useState("");
@@ -10,25 +9,18 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const { login } = useAuth();
+  const { login } = useAuthStore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
+    
     try {
-      const res = await axios.post(
-  `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/login`,
-        { email, password },
-        { withCredentials: true }
-      );
-      if (res.data && res.data.accessToken) {
-        // Use auth context to login
-        login(res.data.user, res.data.accessToken);
-        if (onSuccess) onSuccess();
-      }
+      await login({ email, password });
+      if (onSuccess) onSuccess();
     } catch (err: any) {
-      setError(err.response?.data?.message || "Login failed");
+      setError(err.message || "Login failed");
     } finally {
       setLoading(false);
     }

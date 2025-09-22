@@ -1,6 +1,8 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import { ImageUpload } from "@/components/cloudinary/ImageUpload";
+import { CloudinaryImage } from "@/components/cloudinary/CloudinaryImage";
 
 interface Shop {
   id: string;
@@ -37,7 +39,9 @@ export default function ShopsPage() {
     postalCode: "",
     phone: "",
     website: "",
-    providerType: "individual"
+    providerType: "individual",
+    logo: "",
+    coverImage: ""
   });
 
   useEffect(() => {
@@ -48,7 +52,7 @@ export default function ShopsPage() {
     try {
       const token = localStorage.getItem('providerToken');
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/providers/me`,
+        `${process.env.NEXT_PUBLIC_API_URL}/providers/me`,
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -85,7 +89,7 @@ export default function ShopsPage() {
       if (editingShop) {
         // Update existing shop
         await axios.patch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/providers/me`,
+          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/providers/me`,
           submitData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -95,7 +99,7 @@ export default function ShopsPage() {
       } else {
         // Create new shop/provider profile
         await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/providers`,
+          `${process.env.NEXT_PUBLIC_API_URL}/providers`,
           submitData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -115,7 +119,9 @@ export default function ShopsPage() {
         postalCode: "",
         phone: "",
         website: "",
-        providerType: "individual"
+        providerType: "individual",
+        logo: "",
+        coverImage: ""
       });
       setShowCreateForm(false);
       setEditingShop(null);
@@ -138,7 +144,9 @@ export default function ShopsPage() {
       postalCode: shop.postalCode || "",
       phone: shop.phone || "",
       website: shop.website || "",
-      providerType: "individual"
+      providerType: "individual",
+      logo: shop.logo || "",
+      coverImage: shop.coverImage || ""
     });
     setShowCreateForm(true);
   };
@@ -156,7 +164,9 @@ export default function ShopsPage() {
       postalCode: "",
       phone: "",
       website: "",
-      providerType: "individual"
+      providerType: "individual",
+      logo: "",
+      coverImage: ""
     });
     setError("");
   };
@@ -445,6 +455,130 @@ export default function ShopsPage() {
               />
             </div>
 
+            {/* Logo Image */}
+            <div style={{ marginTop: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>
+                Business Logo
+              </label>
+              <div style={{ marginBottom: '12px' }}>
+                <ImageUpload
+                  uploadType="shop"
+                  onImageUploaded={(publicId: string) => {
+                    setFormData({
+                      ...formData,
+                      logo: publicId
+                    });
+                  }}
+                  maxFiles={1}
+                />
+              </div>
+              
+              {/* Display current logo */}
+              {formData.logo && (
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ position: 'relative', width: '120px' }}>
+                    <CloudinaryImage
+                      src={formData.logo}
+                      alt="Business logo"
+                      width={120}
+                      height={120}
+                      style={{ borderRadius: '8px', objectFit: 'cover' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({
+                          ...formData,
+                          logo: ""
+                        });
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '4px',
+                        background: 'rgba(239, 68, 68, 0.9)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '24px',
+                        height: '24px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="Remove logo"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Cover Image */}
+            <div style={{ marginTop: '16px' }}>
+              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>
+                Cover Image
+              </label>
+              <div style={{ marginBottom: '12px' }}>
+                <ImageUpload
+                  uploadType="shop"
+                  onImageUploaded={(publicId: string) => {
+                    setFormData({
+                      ...formData,
+                      coverImage: publicId
+                    });
+                  }}
+                  maxFiles={1}
+                />
+              </div>
+              
+              {/* Display current cover image */}
+              {formData.coverImage && (
+                <div style={{ marginTop: '12px' }}>
+                  <div style={{ position: 'relative', width: '300px' }}>
+                    <CloudinaryImage
+                      src={formData.coverImage}
+                      alt="Cover image"
+                      width={300}
+                      height={180}
+                      style={{ borderRadius: '8px', objectFit: 'cover' }}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormData({
+                          ...formData,
+                          coverImage: ""
+                        });
+                      }}
+                      style={{
+                        position: 'absolute',
+                        top: '4px',
+                        right: '4px',
+                        background: 'rgba(239, 68, 68, 0.9)',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '50%',
+                        width: '24px',
+                        height: '24px',
+                        cursor: 'pointer',
+                        fontSize: '12px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="Remove cover image"
+                    >
+                      ×
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+
             {/* Action Buttons */}
             <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
               <button
@@ -542,6 +676,41 @@ export default function ShopsPage() {
                       </div>
                     )}
                   </div>
+                  
+                  {/* Shop Images */}
+                  {(shop.logo || shop.coverImage) && (
+                    <div style={{ marginTop: '16px' }}>
+                      <strong style={{ fontSize: '14px', color: '#374151', display: 'block', marginBottom: '8px' }}>
+                        Images:
+                      </strong>
+                      <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                        {shop.logo && (
+                          <div>
+                            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 4px 0' }}>Logo:</p>
+                            <CloudinaryImage
+                              src={shop.logo}
+                              alt="Business logo"
+                              width={80}
+                              height={80}
+                              style={{ borderRadius: '6px', objectFit: 'cover' }}
+                            />
+                          </div>
+                        )}
+                        {shop.coverImage && (
+                          <div>
+                            <p style={{ fontSize: '12px', color: '#6b7280', margin: '0 0 4px 0' }}>Cover:</p>
+                            <CloudinaryImage
+                              src={shop.coverImage}
+                              alt="Cover image"
+                              width={120}
+                              height={80}
+                              style={{ borderRadius: '6px', objectFit: 'cover' }}
+                            />
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
                   
                   <div style={{ marginTop: '16px' }}>
                     <span style={{

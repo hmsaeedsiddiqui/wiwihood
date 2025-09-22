@@ -3,8 +3,11 @@
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { apiService, Service } from "@/lib/api";
+import { useServiceStore } from '@/store/serviceStore';
+import { CloudinaryImage } from "@/components/cloudinary/CloudinaryImage";
 
-// Demo/mock data for fallback
+// Demo/mock data commented out to prevent bugs
+/*
 const demoServices: Service[] = [
   // Facials
   ...Array.from({ length: 20 }).map((_, i) => ({
@@ -50,6 +53,7 @@ const demoServices: Service[] = [
   })),
   // Add similar demo data for haircuts, massages, etc. as needed
 ];
+*/
 import Link from "next/link";
 import { useCart } from "@/components/cartContext";
 
@@ -58,29 +62,31 @@ export default function ServiceDetailPage() {
   const { id } = params as { id: string };
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
+  const selectedService = useServiceStore(state => state.selectedService);
 
   useEffect(() => {
+    if (selectedService && selectedService.id === id) {
+      setService(selectedService);
+      setLoading(false);
+      return;
+    }
+
     async function fetchService() {
       setLoading(true);
       try {
-        // Try API first
+        // Try API only - no fallback to demo data
         const result = await apiService.getServices();
         let found = (result.data || []).find((s: Service) => s.id === id);
-        // Fallback to demo data if not found
-        if (!found) {
-          found = demoServices.find((s) => s.id === id);
-        }
         setService(found ?? null);
       } catch (e) {
-        // On error, fallback to demo data
-  const found = demoServices.find((s) => s.id === id);
-  setService(found ?? null);
+        // On error, set service to null
+        setService(null);
       } finally {
         setLoading(false);
       }
     }
     if (id) fetchService();
-  }, [id]);
+  }, [id, selectedService]);
 
   if (loading) {
     return <div style={{ textAlign: 'center', marginTop: 60 }}>Loading service...</div>;
@@ -95,7 +101,23 @@ export default function ServiceDetailPage() {
         <Link href="/shop" style={{ color: '#10b981', fontWeight: 600, fontSize: 16, textDecoration: 'none', marginBottom: 24, display: 'inline-block' }}>&larr; Back to Shop</Link>
         <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: 40, display: 'flex', gap: 32, flexWrap: 'wrap' }}>
           <div style={{ flex: 1, minWidth: 260 }}>
-            <div style={{ height: 240, width: '100%', background: service.imageUrl ? `url(${service.imageUrl}) center/cover no-repeat` : '#f3f4f6', borderRadius: 12, marginBottom: 24 }}></div>
+            <div style={{ height: 240, width: '100%', borderRadius: 12, marginBottom: 24, overflow: 'hidden', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {service.images && service.images.length > 0 ? (
+                <CloudinaryImage
+                  src={service.images[0]}
+                  alt={service.name}
+                  width={400}
+                  height={240}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                />
+              ) : service.imageUrl ? (
+                <img src={service.imageUrl} alt={service.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#d1d5db' }}>
+                  {service.category?.name?.charAt(0) || service.name.charAt(0)}
+                </div>
+              )}
+            </div>
           </div>
           <div style={{ flex: 2, minWidth: 260 }}>
             <h1 style={{ fontSize: 32, fontWeight: 800, color: '#222', marginBottom: 16 }}>{service.name}</h1>
@@ -104,7 +126,8 @@ export default function ServiceDetailPage() {
             <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Category: {service.category?.name}</div>
             <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Provider: {service.provider?.businessName}</div>
             <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 24 }}>Duration: {service.duration} min</div>
-            <AddToCartButton service={service} />
+            {/* AddToCartButton hidden - keeping code intact for future use */}
+            {/* <AddToCartButton service={service} /> */}
           </div>
         </div>
       </div>
@@ -121,24 +144,40 @@ function AddToCartButton({ service }: { service: Service }) {
 
   const handleAdd = () => {
     addToCart({
-  id: Number(service.id),
+      id: service.id,
       name: service.name,
-      provider: service.provider?.businessName || '',
+      provider: service.provider?.businessName || 'Unknown Provider',
       price: service.basePrice,
-      imageUrl: service.imageUrl || '',
+      imageUrl: service.images?.[0] || service.imageUrl || '/blog1.jpg',
       quantity: 1
     });
     setAdded(true);
-    setTimeout(() => setAdded(false), 1200);
+    setTimeout(() => setAdded(false), 2000);
+  };
+
+  const handleBookNow = () => {
+    // Store service in localStorage for booking flow
+    localStorage.setItem('selectedServiceForBooking', JSON.stringify(service));
+    router.push(`/book-service?serviceId=${service.id}&providerId=${service.provider?.id || 'unknown'}`);
   };
 
   return (
-    <div style={{ marginTop: 24 }}>
-      <button onClick={handleAdd} style={{ background: '#10b981', color: '#fff', padding: '14px 32px', borderRadius: 8, fontWeight: 700, fontSize: 18, border: 'none', cursor: 'pointer' }}>
-        {added ? 'Added!' : 'Add to Cart'}
+    <div className="space-y-3">
+      {/* Primary Book Now Button */}
+      <button
+        onClick={handleBookNow}
+        className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg"
+      >
+        Book Now - €{service.basePrice}
       </button>
-      <button onClick={() => router.push('/cart')} style={{ marginLeft: 16, background: '#fff', color: '#10b981', border: '2px solid #10b981', padding: '14px 32px', borderRadius: 8, fontWeight: 700, fontSize: 18, cursor: 'pointer' }}>
-        Go to Cart
+      
+      {/* Secondary Add to Cart Button */}
+      <button
+        onClick={handleAdd}
+        disabled={added}
+        className="w-full bg-white text-indigo-600 py-3 px-6 rounded-lg font-semibold border-2 border-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50"
+      >
+        {added ? '✓ Added to Cart' : 'Add to Cart'}
       </button>
     </div>
   );

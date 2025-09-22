@@ -19,6 +19,24 @@ export class ServicesService {
     private providerRepository: Repository<Provider>,
   ) {}
 
+  /**
+   * Transform service data for frontend consumption
+   * For frontend editing, we return public IDs in images field
+   */
+  private transformServiceForFrontend(service: Service): Service {
+    // Create a new service object that preserves getters
+    const transformedService = Object.assign(Object.create(Object.getPrototypeOf(service)), service);
+    transformedService.images = service.imagesPublicIds || service.images || [];
+    return transformedService;
+  }
+
+  /**
+   * Transform multiple services for frontend consumption
+   */
+  private transformServicesForFrontend(services: Service[]): Service[] {
+    return services.map(service => this.transformServiceForFrontend(service));
+  }
+
   async create(createServiceDto: CreateServiceDto, providerId: string, userId?: string): Promise<Service> {
     const { categoryId, ...serviceData } = createServiceDto;
 
@@ -55,16 +73,36 @@ export class ServicesService {
       throw new BadRequestException('Service with this name already exists for this provider');
     }
 
+    // Handle image processing - convert public IDs to URLs
+    let processedImages: string[] | undefined;
+    let processedImagesPublicIds: string[] | undefined;
+    
+    console.log('Service creation - incoming serviceData.images:', serviceData.images);
+    console.log('CLOUDINARY_CLOUD_NAME:', process.env.CLOUDINARY_CLOUD_NAME);
+    
+    if (serviceData.images && Array.isArray(serviceData.images)) {
+      // Frontend sends public IDs in images field
+      processedImagesPublicIds = serviceData.images;
+      // Convert public IDs to full Cloudinary URLs
+      processedImages = serviceData.images.map(publicId => 
+        `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${publicId}`
+      );
+      console.log('Processed images for DB:', processedImages);
+      console.log('Processed public IDs for DB:', processedImagesPublicIds);
+    }
+
     const service = this.serviceRepository.create({
       ...serviceData,
       categoryId,
       providerId,
+      images: processedImages,
+      imagesPublicIds: processedImagesPublicIds,
       serviceType: serviceData.serviceType as ServiceType || ServiceType.APPOINTMENT,
       pricingType: serviceData.pricingType as PricingType || PricingType.FIXED,
       status: serviceData.status as ServiceStatus || ServiceStatus.ACTIVE,
     });
 
-    return await this.serviceRepository.save(service);
+    return this.transformServiceForFrontend(await this.serviceRepository.save(service));
   }
 
   async findAll(filters?: ServiceFilterDto): Promise<Service[]> {
@@ -130,9 +168,11 @@ export class ServicesService {
       queryBuilder.andWhere('service.basePrice <= :maxPrice', { maxPrice: filters.maxPrice });
     }
 
-    return await queryBuilder
+    const services = await queryBuilder
       .orderBy('service.createdAt', 'DESC')
       .getMany();
+      
+    return this.transformServicesForFrontend(services);
   }
 
   async findByProvider(providerId: string): Promise<Service[]> {
@@ -143,13 +183,15 @@ export class ServicesService {
       throw new NotFoundException('Provider not found');
     }
 
-    return await this.serviceRepository.find({
+    const services = await this.serviceRepository.find({
       where: { providerId },
       relations: ['category', 'provider'],
       order: {
         createdAt: 'DESC'
       }
     });
+    
+    return this.transformServicesForFrontend(services);
   }
 
   async findByCategory(categoryId: string): Promise<Service[]> {
@@ -160,26 +202,28 @@ export class ServicesService {
       throw new NotFoundException('Category not found');
     }
 
-    return await this.serviceRepository.find({
+    const services = await this.serviceRepository.find({
       where: { categoryId, isActive: true },
       relations: ['category', 'provider', 'provider.user'],
       order: {
         createdAt: 'DESC'
       }
     });
+    
+    return this.transformServicesForFrontend(services);
   }
 
   async findOne(id: string): Promise<Service> {
     const service = await this.serviceRepository.findOne({
       where: { id },
-      relations: ['category', 'provider', 'provider.user', 'reviews']
+      relations: ['category', 'provider', 'provider.user']
     });
 
     if (!service) {
       throw new NotFoundException('Service not found');
     }
 
-    return service;
+    return this.transformServiceForFrontend(service);
   }
 
   async update(id: string, updateServiceDto: UpdateServiceDto, userId?: string): Promise<Service> {
@@ -227,10 +271,27 @@ export class ServicesService {
       updateData.status = updateData.status as ServiceStatus;
     }
 
+    // Handle image processing - convert public IDs to URLs
+    if (updateData.images && Array.isArray(updateData.images)) {
+      // Frontend sends public IDs in images field
+      const imagesPublicIds = updateData.images;
+      // Convert public IDs to full Cloudinary URLs
+      const imageUrls = updateData.images.map(publicId => 
+        `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${publicId}`
+      );
+      
+      // Update both fields on the service entity
+      service.imagesPublicIds = imagesPublicIds;
+      service.images = imageUrls;
+      
+      // Remove images from updateData to avoid overwriting our processed data
+      delete updateData.images;
+    }
+
     Object.assign(service, updateData);
     service.updatedAt = new Date();
 
-    return await this.serviceRepository.save(service);
+    return this.transformServiceForFrontend(await this.serviceRepository.save(service));
   }
 
   async remove(id: string, userId?: string): Promise<void> {
@@ -255,7 +316,7 @@ export class ServicesService {
     service.isActive = !service.isActive;
     service.updatedAt = new Date();
 
-    return await this.serviceRepository.save(service);
+    return this.transformServiceForFrontend(await this.serviceRepository.save(service));
   }
 
   async searchServices(query: string, filters?: ServiceFilterDto): Promise<Service[]> {
@@ -296,15 +357,17 @@ export class ServicesService {
       services.andWhere('service.price <= :maxPrice', { maxPrice: filters.maxPrice });
     }
 
-    return await services
+    const results = await services
       .orderBy('service.createdAt', 'DESC')
       .getMany();
+      
+    return this.transformServicesForFrontend(results);
   }
 
   async getPopularServices(limit: number = 10): Promise<Service[]> {
     // This would typically be based on booking frequency, ratings, etc.
     // For now, we'll return active services ordered by creation date
-    return await this.serviceRepository.find({
+    const services = await this.serviceRepository.find({
       where: { isActive: true },
       relations: ['category', 'provider', 'provider.user'],
       order: {
@@ -312,5 +375,7 @@ export class ServicesService {
       },
       take: limit
     });
+    
+    return this.transformServicesForFrontend(services);
   }
 }

@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cart API Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
+        button { margin: 10px; padding: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
+        .result { background: #f8f9fa; padding: 10px; margin: 10px 0; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>Cart API Test</h1>
+    
+    <div class="test-section">
+        <h2>Test Cart Endpoints</h2>
+        <button onclick="testGetCart()">Get Cart</button>
+        <button onclick="testAddToCart()">Add to Cart</button>
+        <button onclick="testGetServices()">Get Services</button>
+        <div id="result" class="result"></div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        
+        function logResult(message) {
+            document.getElementById('result').textContent = message;
+        }
+        
+        async function testGetCart() {
+            try {
+                logResult('Testing GET /cart...');
+                const response = await fetch(`${API_BASE}/cart`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    logResult(`GET /cart SUCCESS:\n${JSON.stringify(data, null, 2)}`);
+                } else {
+                    logResult(`GET /cart ERROR: ${response.status} - ${await response.text()}`);
+                }
+            } catch (error) {
+                logResult(`GET /cart NETWORK ERROR: ${error.message}`);
+            }
+        }
+        
+        async function testAddToCart() {
+            try {
+                logResult('Testing POST /cart...');
+                const cartItem = {
+                    serviceId: '1',
+                    quantity: 1,
+                    notes: 'Test cart item'
+                };
+                
+                const response = await fetch(`${API_BASE}/cart`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(cartItem)
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    logResult(`POST /cart SUCCESS:\n${JSON.stringify(data, null, 2)}`);
+                } else {
+                    logResult(`POST /cart ERROR: ${response.status} - ${await response.text()}`);
+                }
+            } catch (error) {
+                logResult(`POST /cart NETWORK ERROR: ${error.message}`);
+            }
+        }
+        
+        async function testGetServices() {
+            try {
+                logResult('Testing GET /services...');
+                const response = await fetch(`${API_BASE}/services`, {
+                    method: 'GET',
+                    headers: { 'Content-Type': 'application/json' }
+                });
+                
+                if (response.ok) {
+                    const data = await response.json();
+                    logResult(`GET /services SUCCESS:\n${JSON.stringify(data, null, 2)}`);
+                } else {
+                    logResult(`GET /services ERROR: ${response.status} - ${await response.text()}`);
+                }
+            } catch (error) {
+                logResult(`GET /services NETWORK ERROR: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

@@ -4,6 +4,8 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { PaymentService } from './services/payment.service';
+import { PaymentController } from './controllers/payment.controller';
 import databaseConfig from './config/database.config';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
@@ -20,6 +22,11 @@ import { LogsModule } from './modules/logs/logs.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
+import { CartModule } from './modules/cart/cart.module';
+import { FavoritesModule } from './modules/favorites/favorites.module';
+import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
+import { UploadModule } from './modules/upload/upload.module';
+import { ContactModule } from './modules/contact/contact.module';
 
 @Module({
   imports: [
@@ -62,8 +69,13 @@ import { SystemSettingsModule } from './modules/system-settings/system-settings.
     AnalyticsModule,
     CalendarModule,
     SystemSettingsModule,
+    CartModule, // Register CartModule
+    FavoritesModule, // Register FavoritesModule
+    CloudinaryModule, // Register CloudinaryModule
+    UploadModule, // Register UploadModule
+    ContactModule, // Register ContactModule
   ],
-  controllers: [AppController],
-  providers: [AppService],
+  controllers: [AppController, PaymentController],
+  providers: [AppService, PaymentService],
 })
 export class AppModule {}

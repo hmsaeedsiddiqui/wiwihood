@@ -396,7 +396,50 @@ export class BookingsService {
     }
 
     const updatedBooking = await this.bookingRepository.save(booking);
+    
+    // Trigger review request notification (async)
+    this.triggerReviewRequest(booking).catch(error => {
+      console.error('Failed to send review request:', error);
+    });
+
     return this.mapToResponseDto(await this.findOneWithRelations(updatedBooking.id));
+  }
+
+  private async triggerReviewRequest(booking: Booking): Promise<void> {
+    try {
+      // Here you would typically:
+      // 1. Send email notification to customer
+      // 2. Create in-app notification
+      // 3. Schedule follow-up reminders
+      
+      console.log(`Review request triggered for booking ${booking.id}`);
+      console.log(`Customer: ${booking.customer.firstName} ${booking.customer.lastName}`);
+      console.log(`Provider: ${booking.provider.businessName}`);
+      console.log(`Service: ${booking.service.name}`);
+      
+      // In a real implementation, you would integrate with:
+      // - Email service (SendGrid, AWS SES, etc.)
+      // - Push notification service
+      // - In-app notification system
+      
+      // Example structure for notification payload:
+      const reviewRequestData = {
+        bookingId: booking.id,
+        customerId: booking.customerId,
+        customerEmail: booking.customer.email,
+        customerName: `${booking.customer.firstName} ${booking.customer.lastName}`,
+        providerName: booking.provider.businessName,
+        serviceName: booking.service.name,
+        completedAt: booking.completedAt,
+        reviewUrl: `${process.env.FRONTEND_URL || 'http://localhost:7000'}/booking/${booking.id}/review`,
+      };
+      
+      // This would be sent to your notification service
+      console.log('Review request data:', reviewRequestData);
+      
+    } catch (error) {
+      console.error('Error in triggerReviewRequest:', error);
+    }
   }
 
   async getAvailableTimeSlots(
@@ -484,5 +527,52 @@ export class BookingsService {
       upcomingBookings,
       completionRate: totalBookings > 0 ? (completedBookings / totalBookings) * 100 : 0
     };
+  }
+
+  async checkAvailability(
+    providerId: string,
+    startTime: string,
+    endTime: string
+  ): Promise<{ available: boolean; message?: string }> {
+    try {
+      const startDateTime = new Date(startTime);
+      const endDateTime = new Date(endTime);
+
+      // Check if the provider exists
+      const provider = await this.providerRepository.findOne({
+        where: { id: providerId }
+      });
+
+      if (!provider) {
+        return { available: false, message: 'Provider not found' };
+      }
+
+      // Check for overlapping bookings
+      const overlappingBookings = await this.bookingRepository
+        .createQueryBuilder('booking')
+        .where('booking.providerId = :providerId', { providerId })
+        .andWhere('booking.status NOT IN (:...statuses)', { 
+          statuses: [BookingStatus.CANCELLED, BookingStatus.NO_SHOW] 
+        })
+        .andWhere(
+          '(booking.startDateTime < :endTime AND booking.endDateTime > :startTime)',
+          { startTime: startDateTime, endTime: endDateTime }
+        )
+        .getCount();
+
+      if (overlappingBookings > 0) {
+        return { available: false, message: 'Time slot is already booked' };
+      }
+
+      // Check if the time slot is in the past
+      if (startDateTime < new Date()) {
+        return { available: false, message: 'Cannot book in the past' };
+      }
+
+      return { available: true };
+    } catch (error) {
+      console.error('Error checking availability:', error);
+      return { available: false, message: 'Error checking availability' };
+    }
   }
 }

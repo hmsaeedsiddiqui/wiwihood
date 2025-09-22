@@ -185,8 +185,10 @@ export default function UserActions() {
           <span style={{ fontSize: 13, color: '#222', fontWeight: 400, marginLeft: 2 }}>Account</span>
         </button>
       )}
-      <a href="#" className="heart-icon"><i className="fa-regular fa-heart"></i></a>
-      <a href="/cart" className="cart-icon"><i className="fa-solid fa-cart-shopping"></i></a>
+      {/* Heart/Wishlist icon hidden - keeping code intact for future use */}
+      {/* <a href="#" className="heart-icon"><i className="fa-regular fa-heart"></i></a> */}
+      {/* Cart icon hidden - keeping code intact for future use */}
+      {/* <a href="/cart" className="cart-icon"><i className="fa-solid fa-cart-shopping"></i></a> */}
       {/* Portal Modal */}
       {modalContent && createPortal(modalContent, document.body)}
     </>

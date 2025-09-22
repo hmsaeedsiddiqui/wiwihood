@@ -67,29 +67,8 @@ export default function BookingPage() {
   })
   const [loading, setLoading] = useState(false)
 
-  // Mock service data - in real app, get from URL params or API
-  useEffect(() => {
-    const mockService: Service = {
-      id: 1,
-      name: 'Premium Hair Cut & Styling',
-      description: 'Professional haircut with consultation, wash, cut, and styling. Includes beard trim if needed.',
-      basePrice: 45,
-      duration: 60,
-      provider: {
-        id: 1,
-        businessName: 'Elite Hair Studio',
-        businessAddress: '123 Main St',
-        businessCity: 'Downtown',
-        averageRating: 4.8,
-        totalReviews: 127,
-        user: {
-          firstName: 'Maria',
-          lastName: 'Rodriguez'
-        }
-      }
-    }
-  // No need for selectedService, use cart items
-  }, [])
+  // Service data will be loaded from URL params or API when integrated
+  // Currently using cart items for service information
 
   // Generate available dates (next 14 days)
   const getAvailableDates = () => {
@@ -164,8 +143,7 @@ export default function BookingPage() {
   if (!cart.length) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-  <div className="text-xl text-gray-600">Your cart is empty. <Link href="/cart" className="text-green-600 underline">Go to Cart</Link></div>
-// ...ensure import Link from "next/link" is present at the top...
+        <div className="text-xl text-gray-600">No services selected for booking. <Link href="/shop" className="text-green-600 underline">Browse Services</Link></div>
       </div>
     )
   }

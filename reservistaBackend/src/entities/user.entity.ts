@@ -18,6 +18,7 @@ import { Role } from './role.entity';
 import { Booking } from './booking.entity';
 // import { Review } from './review.entity';
 import { Favorite } from './favorite.entity';
+import { CartItem } from './cart-item.entity';
 
 @Entity('users')
 export class User {
@@ -41,6 +42,9 @@ export class User {
 
   @Column({ name: 'profile_picture', nullable: true, length: 500 })
   profilePicture?: string;
+
+  @Column({ name: 'profile_picture_public_id', nullable: true, length: 255 })
+  profilePicturePublicId?: string;
 
   @Column({ name: 'date_of_birth', nullable: true, type: 'date' })
   dateOfBirth?: Date;
@@ -135,6 +139,9 @@ export class User {
     inverseJoinColumn: { name: 'roleId', referencedColumnName: 'id' },
   })
   roles: Role[];
+
+  @OneToMany(() => CartItem, (cartItem) => cartItem.user)
+  cartItems: CartItem[];
 
   // Virtual properties
   @ApiProperty({ description: 'User full name' })

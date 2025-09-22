@@ -2,12 +2,12 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../components/AuthProvider';
+import { useAuthStore } from '@/store/authStore';
 import LoginForm from '../../../components/auth/LoginForm';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuthStore();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -17,10 +17,8 @@ export default function LoginPage() {
   }, [isAuthenticated, isLoading, router]);
 
   const handleLoginSuccess = () => {
-    // Redirect to home page after successful login
-    router.push('/');
-    // Force page refresh to update header state
-    window.location.href = '/';
+    // Redirect to profile page after successful login
+    router.push('/profile');
   };
 
   // Show loading while checking auth status

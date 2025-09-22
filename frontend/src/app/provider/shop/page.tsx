@@ -6,7 +6,8 @@ const ShopManagementPage = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showAddLocationModal, setShowAddLocationModal] = useState(false);
 
-  // Mock shop data based on ERD
+  // Mock shop data commented out - should come from API
+  /*
   const shopData = {
     businessName: "Sarah's Wellness Studio",
     businessType: "Beauty & Wellness",
@@ -74,6 +75,10 @@ const ShopManagementPage = () => {
       monthlyGrowth: 12.5
     }
   };
+  */
+
+  // TODO: Replace with real shop data from API
+  const shopData = null;
 
   const tabs = [
     { id: 'overview', label: 'Business Overview', icon: '🏢' },

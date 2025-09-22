@@ -8,6 +8,8 @@
   businessEmail?: string;
   websiteUrl?: string;
   logoUrl?: string;
+  logoPublicId?: string;
+  coverImagePublicId?: string;
   isVerified: boolean;
   averageRating: number;
   totalReviews: number;
@@ -15,6 +17,7 @@
     firstName: string;
     lastName: string;
     profileImageUrl?: string;
+    profileImagePublicId?: string;
   };
   services: Array<{
     id: string;
@@ -22,6 +25,7 @@
     basePrice: number;
     duration: number;
     category: { name: string };
+    images?: string[];
   }>;
 }
 import axios from 'axios'
@@ -45,6 +49,7 @@ export interface Category {
   metaKeywords?: string;
   createdAt: string;
   updatedAt: string;
+  services?: any[];
 }
 
 export interface Service {
@@ -54,6 +59,7 @@ export interface Service {
   basePrice: number;
   duration: number;
   imageUrl?: string;
+  images?: string[]; // Array of Cloudinary public IDs
   category: Category;
   provider: {
     id: string;
@@ -61,6 +67,8 @@ export interface Service {
     averageRating: number;
     totalReviews: number;
     businessAddress: string;
+    logoPublicId?: string;
+    coverImagePublicId?: string;
   };
 }
 
@@ -101,6 +109,15 @@ apiClient.interceptors.response.use(
 
 // API Service methods
 export const apiService = {
+  async getServiceById(serviceId: string): Promise<Service> {
+    try {
+      const response = await apiClient.get(`/services/${serviceId}`);
+      return response.data.data || response.data;
+    } catch (error) {
+      console.error('Error fetching service by ID:', error);
+      throw error;
+    }
+  },
   // Bookings
   async createBooking(data: {
     serviceId: string;

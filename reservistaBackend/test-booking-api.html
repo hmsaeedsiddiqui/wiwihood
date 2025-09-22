@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Booking API</title>
+</head>
+<body>
+    <h1>Testing Booking API</h1>
+    <button onclick="testBookingAPI()">Test My Bookings API</button>
+    <div id="result"></div>
+
+    <script>
+        async function testBookingAPI() {
+            try {
+                const response = await fetch('http://localhost:8000/api/v1/bookings/my-bookings');
+                const data = await response.json();
+                document.getElementById('result').innerHTML = 
+                    '<h3>Response Status: ' + response.status + '</h3>' +
+                    '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                document.getElementById('result').innerHTML = 
+                    '<h3>Error:</h3><p>' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html>
