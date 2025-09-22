@@ -24,6 +24,9 @@ import {
   ChevronDown
 } from 'lucide-react'
 
+// Mock services data commented out to prevent bugs
+// Will be replaced with real API data when services section is reactivated
+/*
 const mockServices = [
   {
     category: 'Haircuts',
@@ -51,6 +54,7 @@ const mockServices = [
     ]
   }
 ];
+*/
 
 export default function HomePage() {
 
@@ -204,6 +208,7 @@ export default function HomePage() {
           }}>
             Browse and book top-rated services from trusted providers near you. Compare options, read reviews, and find the perfect match for your beauty, wellness, and healthcare needs.
           </p>
+          {/* Services section commented out to remove static data
           <div style={{ position: 'relative', width: '100%', display: 'flex', justifyContent: 'center', alignItems: 'flex-start', minHeight: '320px', marginTop: 0, gap: 32 }}>
             {mockServices.map(service => (
               <div key={service.category} style={{
@@ -244,6 +249,7 @@ export default function HomePage() {
               </div>
             ))}
           </div>
+          */}
         </div>
       </section>
 

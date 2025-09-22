@@ -6,7 +6,8 @@ import { apiService, Service } from "@/lib/api";
 import { useServiceStore } from '@/store/serviceStore';
 import { CloudinaryImage } from "@/components/cloudinary/CloudinaryImage";
 
-// Demo/mock data for fallback
+// Demo/mock data commented out to prevent bugs
+/*
 const demoServices: Service[] = [
   // Facials
   ...Array.from({ length: 20 }).map((_, i) => ({
@@ -52,6 +53,7 @@ const demoServices: Service[] = [
   })),
   // Add similar demo data for haircuts, massages, etc. as needed
 ];
+*/
 import Link from "next/link";
 import { useCart } from "@/components/cartContext";
 
@@ -72,18 +74,13 @@ export default function ServiceDetailPage() {
     async function fetchService() {
       setLoading(true);
       try {
-        // Try API first
+        // Try API only - no fallback to demo data
         const result = await apiService.getServices();
         let found = (result.data || []).find((s: Service) => s.id === id);
-        // Fallback to demo data if not found
-        if (!found) {
-          found = demoServices.find((s) => s.id === id);
-        }
         setService(found ?? null);
       } catch (e) {
-        // On error, fallback to demo data
-        const found = demoServices.find((s) => s.id === id);
-        setService(found ?? null);
+        // On error, set service to null
+        setService(null);
       } finally {
         setLoading(false);
       }

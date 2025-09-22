@@ -141,9 +141,10 @@ export default function SettingsPage() {
   const tabs = [
     { id: 'profile', name: 'Profile', icon: User },
     { id: 'security', name: 'Security', icon: Lock },
-    { id: 'notifications', name: 'Notifications', icon: Bell },
-    { id: 'billing', name: 'Billing', icon: CreditCard },
-    { id: 'privacy', name: 'Privacy', icon: Shield }
+    /* Hidden sidebar items - keeping code intact for future use */
+    /* { id: 'notifications', name: 'Notifications', icon: Bell }, */
+    /* { id: 'billing', name: 'Billing', icon: CreditCard }, */
+    /* { id: 'privacy', name: 'Privacy', icon: Shield } */
   ]
 
   return (
@@ -462,6 +463,8 @@ export default function SettingsPage() {
                   </CardContent>
                 </Card>
 
+                {/* Two-Factor Authentication section hidden - keeping code intact for future use */}
+                {/*
                 <Card>
                   <CardHeader>
                     <CardTitle>Two-Factor Authentication</CardTitle>
@@ -483,6 +486,7 @@ export default function SettingsPage() {
                     </div>
                   </CardContent>
                 </Card>
+                */}
               </div>
             )}
 

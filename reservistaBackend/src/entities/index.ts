@@ -12,7 +12,7 @@ export { ProviderTimeOff } from './provider-time-off.entity';
 export { Booking } from './booking.entity';
 export { Payment } from './payment.entity';
 export { Refund } from './refund.entity';
-// export { Review } from './review.entity';
+export { Review } from './review.entity';
 export { Favorite } from './favorite.entity';
 export { UserNotificationPreferences } from './user-notification-preferences.entity';
 
@@ -32,3 +32,4 @@ export { CalendarEvent } from './calendar-event.entity';
 export { SystemSetting } from './system-setting.entity';
 export { Log } from './log.entity';
 export { CartItem } from './cart-item.entity';
+export { ContactMessage } from './contact-message.entity';

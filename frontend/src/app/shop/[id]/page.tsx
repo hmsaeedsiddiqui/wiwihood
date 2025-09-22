@@ -21,7 +21,8 @@ import {
   Globe as GlobeAltIcon,
   Users as UserGroupIcon,
   Trophy as TrophyIcon,
-  ShieldCheck as ShieldCheckIcon
+  ShieldCheck as ShieldCheckIcon,
+  MessageSquare as ReviewIcon
 } from 'lucide-react';
 import { Heart as HeartIconSolid } from 'lucide-react';
 import * as Toast from '@radix-ui/react-toast';
@@ -75,6 +76,58 @@ interface Provider {
     completedBookings: number;
     repeatClients: number;
     responseTime: string;
+  };
+}
+
+interface Review {
+  id: string;
+  rating: number;
+  title?: string;
+  comment?: string;
+  isPublished: boolean;
+  isVerified: boolean;
+  providerResponse?: string;
+  providerResponseAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  customer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    profileImage?: string;
+  };
+  booking: {
+    id: string;
+    service: {
+      name: string;
+    };
+    startDateTime: string;
+  };
+}
+
+interface Review {
+  id: string;
+  rating: number;
+  title?: string;
+  comment?: string;
+  isPublished: boolean;
+  isVerified: boolean;
+  providerResponse?: string;
+  providerResponseAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  customer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    profileImage?: string;
+  };
+  booking: {
+    id: string;
+    service: {
+      name: string;
+    };
+    startDateTime: string;
   };
 }
 
@@ -132,6 +185,8 @@ export default function ShopDetailPage() {
   const { addToCart } = useCart();
   const [shop, setShop] = useState<Provider | null>(null);
   const [services, setServices] = useState<Service[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [reviewsLoading, setReviewsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isWishlisted, setIsWishlisted] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -145,6 +200,32 @@ export default function ShopDetailPage() {
     setMounted(true);
   }, []);
 
+  // Fetch reviews when reviews tab is opened
+  useEffect(() => {
+    if (activeTab === 'reviews' && mounted && id) {
+      const fetchReviews = async () => {
+        setReviewsLoading(true);
+        try {
+          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/provider/${id}`);
+          if (response.ok) {
+            const data = await response.json();
+            setReviews(data.data || data || []);
+          } else {
+            console.error('Failed to fetch reviews');
+            setReviews([]);
+          }
+        } catch (error) {
+          console.error('Error fetching reviews:', error);
+          setReviews([]);
+        } finally {
+          setReviewsLoading(false);
+        }
+      };
+      
+      fetchReviews();
+    }
+  }, [activeTab, id, mounted]);
+
   useEffect(() => {
     if (!id) return;
     setLoading(true);
@@ -155,11 +236,11 @@ export default function ShopDetailPage() {
       fetch(`${process.env.NEXT_PUBLIC_API_URL}/services/provider/${id}`).then(res => res.json()).catch(() => null)
     ])
       .then(([shopData, servicesData]) => {
-        // Set shop data with enhanced dummy data
+        // Set shop data from API response
         const realShop = shopData?.data || shopData;
         
         // Safely process specialties to ensure they're strings
-        let processedSpecialties = ["Bridal Makeup", "Hair Styling", "Skincare", "Nail Art"];
+        let processedSpecialties = [];
         if (realShop?.specialties) {
           if (Array.isArray(realShop.specialties)) {
             processedSpecialties = realShop.specialties.map((item: any) => {
@@ -171,96 +252,31 @@ export default function ShopDetailPage() {
           }
         }
         
-        setShop({
-          id: id as string,
-          businessName: realShop?.businessName || "Beauty Studio Elite",
-          description: realShop?.description || "Transforming beauty with expert care and premium services. Over 8 years of experience in creating stunning looks for special occasions and everyday elegance.",
-          logo: realShop?.logo || "https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=facearea&w=400&h=400&facepad=2",
-          coverImage: realShop?.coverImage || "https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=facearea&w=400&h=400&facepad=2",
-          averageRating: realShop?.averageRating || 4.9,
-          totalReviews: realShop?.totalReviews || 342,
-          address: realShop?.address || realShop?.city || "Downtown, New York",
-          phone: realShop?.phone || "+1 (555) 123-4567",
-          isVerified: realShop?.isVerified ?? true,
-          experience: realShop?.experience || "8+ years",
-          specialties: processedSpecialties,
-          workingHours: realShop?.workingHours || {
-            open: "9:00 AM",
-            close: "7:00 PM"
-          },
-          socialProof: realShop?.socialProof || {
-            completedBookings: 1250,
-            repeatClients: 85,
-            responseTime: "< 2 hours"
-          },
-          images: realShop?.images || ["/provider1.jpg", "/provider3.jpg", "/provider4.jpg", "/blog1.jpg"]
-        });
+        if (realShop) {
+          setShop({
+            id: id as string,
+            businessName: realShop.businessName,
+            description: realShop.description,
+            logo: realShop.logo,
+            coverImage: realShop.coverImage,
+            averageRating: realShop.averageRating,
+            totalReviews: realShop.totalReviews,
+            address: realShop.address || realShop.city,
+            phone: realShop.phone,
+            isVerified: realShop.isVerified ?? false,
+            experience: realShop.experience,
+            specialties: processedSpecialties,
+            workingHours: realShop.workingHours,
+            socialProof: realShop.socialProof,
+            images: realShop.images || []
+          });
+        }
 
-        // Set services data with enhanced dummy data
+        // Set services data from API response
         let realServices = Array.isArray(servicesData?.data) ? servicesData.data : Array.isArray(servicesData) ? servicesData : [];
         console.log('Raw services data from API:', servicesData);
         console.log('Processed real services:', realServices);
-        if (realServices.length === 0) {
-          realServices = [
-            {
-              id: '1',
-              name: 'Bridal Makeup Package',
-              description: 'Complete bridal transformation including trial, wedding day makeup, and touch-up kit',
-              price: 299,
-              duration: 180,
-              category: 'makeup',
-              isPopular: true,
-              discount: 20,
-              image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=facearea&w=400&h=400&facepad=2'
-            },
-            {
-              id: '2',
-              name: 'Hair Styling & Blowout',
-              description: 'Professional hair styling with premium products for any occasion',
-              price: 89,
-              duration: 90,
-              category: 'hair',
-              image: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=facearea&w=400&h=400&facepad=2'
-            },
-            {
-              id: '3',
-              name: 'Deep Cleansing Facial',
-              description: 'Rejuvenating facial treatment with extraction and hydrating mask',
-              price: 129,
-              duration: 75,
-              category: 'skincare',
-              isPopular: true,
-              image: 'https://images.unsplash.com/photo-1529626455594-4ff0802cfb7e?auto=format&fit=facearea&w=400&h=400&facepad=2'
-            },
-            {
-              id: '4',
-              name: 'Luxury Manicure & Pedicure',
-              description: 'Complete nail care with gel polish and nail art options',
-              price: 79,
-              duration: 120,
-              category: 'nails',
-              image: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=facearea&w=400&h=400&facepad=2'
-            },
-            {
-              id: '5',
-              name: 'Evening Glam Package',
-              description: 'Makeup and hair styling perfect for special events and parties',
-              price: 159,
-              duration: 120,
-              category: 'makeup',
-              image: 'https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=facearea&w=400&h=400&facepad=2'
-            },
-            {
-              id: '6',
-              name: 'Anti-Aging Treatment',
-              description: 'Advanced skincare treatment to reduce fine lines and improve skin texture',
-              price: 199,
-              duration: 90,
-              category: 'skincare',
-              image: 'https://images.unsplash.com/photo-1508214751196-bcfd4ca60f91?auto=format&fit=facearea&w=400&h=400&facepad=2'
-            }
-          ];
-        }
+        
         setServices(realServices);
         console.log('Services loaded:', realServices);
         setLoading(false);
@@ -275,6 +291,31 @@ export default function ShopDetailPage() {
       setIsWishlisted(wishlist.some(item => item.id === shop.id));
     }
   }, [wishlist, shop, mounted]);
+
+  // Fetch reviews for the provider
+  const fetchReviews = async () => {
+    if (!id) return;
+    
+    setReviewsLoading(true);
+    try {
+      const response = await fetch(`http://localhost:3001/reviews/provider/${id}`);
+      if (response.ok) {
+        const reviewsData = await response.json();
+        setReviews(reviewsData);
+      }
+    } catch (error) {
+      console.error('Error fetching reviews:', error);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  // Fetch reviews when reviews tab is selected
+  useEffect(() => {
+    if (activeTab === 'reviews' && id && reviews.length === 0) {
+      fetchReviews();
+    }
+  }, [activeTab, id]);
 
   if (loading || !mounted) {
     return (
@@ -463,6 +504,7 @@ export default function ShopDetailPage() {
                 <nav className="flex space-x-8 px-8">
                   {[
                     { id: 'services', name: 'Services', icon: TagIcon },
+                    { id: 'reviews', name: 'Reviews', icon: StarIcon },
                     { id: 'about', name: 'About', icon: ChatBubbleLeftRightIcon },
                     { id: 'gallery', name: 'Gallery', icon: PhotoIcon }
                   ].map((tab) => (
@@ -707,6 +749,114 @@ export default function ShopDetailPage() {
                         />
                       </div>
                     ))}
+                  </div>
+                )}
+
+                {activeTab === 'reviews' && (
+                  <div className="space-y-6">
+                    {/* Reviews Header */}
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="text-2xl font-bold text-gray-900">Customer Reviews</h3>
+                        <p className="text-gray-600 mt-1">
+                          {shop.totalReviews || 0} reviews • {shop.averageRating || 0}/5 average rating
+                        </p>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <div className="flex text-yellow-400">
+                          {[...Array(5)].map((_, i) => (
+                            <StarIcon 
+                              key={i} 
+                              className={`h-5 w-5 ${i < Math.floor(shop.averageRating || 0) ? 'fill-current' : ''}`} 
+                            />
+                          ))}
+                        </div>
+                        <span className="text-lg font-semibold text-gray-900">{shop.averageRating || 0}</span>
+                      </div>
+                    </div>
+
+                    {/* Reviews List */}
+                    {reviewsLoading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
+                        <p className="text-gray-600 mt-2">Loading reviews...</p>
+                      </div>
+                    ) : reviews.length === 0 ? (
+                      <div className="text-center py-12">
+                        <StarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                        <h4 className="text-lg font-semibold text-gray-900 mb-2">No reviews yet</h4>
+                        <p className="text-gray-600">Be the first to review this provider!</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-6">
+                        {reviews.map((review) => (
+                          <div key={review.id} className="bg-gray-50 rounded-xl p-6 border border-gray-100">
+                            {/* Review Header */}
+                            <div className="flex items-start justify-between mb-4">
+                              <div className="flex items-center space-x-3">
+                                <div className="h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                  <span className="text-blue-600 font-semibold">
+                                    {review.customer.firstName[0]}{review.customer.lastName[0]}
+                                  </span>
+                                </div>
+                                <div>
+                                  <p className="font-semibold text-gray-900">
+                                    {review.customer.firstName} {review.customer.lastName}
+                                  </p>
+                                  <p className="text-sm text-gray-500">
+                                    {new Date(review.createdAt).toLocaleDateString()}
+                                  </p>
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                {[...Array(5)].map((_, i) => (
+                                  <StarIcon 
+                                    key={i} 
+                                    className={`h-4 w-4 ${i < review.rating ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} 
+                                  />
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* Review Content */}
+                            {review.title && (
+                              <h4 className="font-semibold text-gray-900 mb-2">{review.title}</h4>
+                            )}
+                            {review.comment && (
+                              <p className="text-gray-700 mb-4">{review.comment}</p>
+                            )}
+
+                            {/* Service Info */}
+                            <div className="text-sm text-gray-500 mb-4">
+                              <span>Service: {review.booking.service.name}</span>
+                              <span className="mx-2">•</span>
+                              <span>Appointment: {new Date(review.booking.startDateTime).toLocaleDateString()}</span>
+                            </div>
+
+                            {/* Provider Response */}
+                            {review.providerResponse && (
+                              <div className="bg-white rounded-lg p-4 border-l-4 border-blue-500">
+                                <div className="flex items-center space-x-2 mb-2">
+                                  <span className="text-sm font-semibold text-blue-600">Response from {shop.businessName}</span>
+                                  <span className="text-xs text-gray-500">
+                                    {new Date(review.providerResponseAt!).toLocaleDateString()}
+                                  </span>
+                                </div>
+                                <p className="text-gray-700 text-sm">{review.providerResponse}</p>
+                              </div>
+                            )}
+
+                            {/* Verification Badge */}
+                            {review.isVerified && (
+                              <div className="flex items-center space-x-1 mt-3">
+                                <CheckBadgeIcon className="h-4 w-4 text-green-500" />
+                                <span className="text-xs text-green-600 font-medium">Verified booking</span>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

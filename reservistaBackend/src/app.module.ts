@@ -26,6 +26,7 @@ import { CartModule } from './modules/cart/cart.module';
 import { FavoritesModule } from './modules/favorites/favorites.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { ContactModule } from './modules/contact/contact.module';
 
 @Module({
   imports: [
@@ -72,6 +73,7 @@ import { UploadModule } from './modules/upload/upload.module';
     FavoritesModule, // Register FavoritesModule
     CloudinaryModule, // Register CloudinaryModule
     UploadModule, // Register UploadModule
+    ContactModule, // Register ContactModule
   ],
   controllers: [AppController, PaymentController],
   providers: [AppService, PaymentService],

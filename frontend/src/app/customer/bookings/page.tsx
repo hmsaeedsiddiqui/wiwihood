@@ -17,6 +17,7 @@ interface Booking {
   paymentStatus: string;
   notes?: string;
   imageUrl?: string;
+  hasReview?: boolean;
 }
 
 interface BookingSummary {
@@ -156,30 +157,68 @@ export default function CustomerBookingsPage() {
                   }}>
                     View Details
                   </button>
-                  <button style={{ 
-                    background: '#10b981', 
-                    color: '#fff', 
-                    border: 'none', 
-                    borderRadius: 6, 
-                    padding: '7px 18px', 
-                    fontWeight: 600, 
-                    fontSize: 15, 
-                    cursor: 'pointer' 
-                  }}>
-                    Reschedule
-                  </button>
-                  <button style={{ 
-                    background: '#ef4444', 
-                    color: '#fff', 
-                    border: 'none', 
-                    borderRadius: 6, 
-                    padding: '7px 18px', 
-                    fontWeight: 600, 
-                    fontSize: 15, 
-                    cursor: 'pointer' 
-                  }}>
-                    Cancel
-                  </button>
+                  {booking.status === 'completed' ? (
+                    booking.hasReview ? (
+                      <button 
+                        onClick={() => window.location.href = `/booking/${booking.id}/review`}
+                        style={{ 
+                          background: '#10b981', 
+                          color: '#fff', 
+                          border: 'none', 
+                          borderRadius: 6, 
+                          padding: '7px 18px', 
+                          fontWeight: 600, 
+                          fontSize: 15, 
+                          cursor: 'pointer' 
+                        }}
+                      >
+                        👁️ View Review
+                      </button>
+                    ) : (
+                      <button 
+                        onClick={() => window.location.href = `/booking/${booking.id}/review`}
+                        style={{ 
+                          background: '#f59e0b', 
+                          color: '#fff', 
+                          border: 'none', 
+                          borderRadius: 6, 
+                          padding: '7px 18px', 
+                          fontWeight: 600, 
+                          fontSize: 15, 
+                          cursor: 'pointer' 
+                        }}
+                      >
+                        ⭐ Write Review
+                      </button>
+                    )
+                  ) : booking.status === 'confirmed' || booking.status === 'pending' ? (
+                    <>
+                      <button style={{ 
+                        background: '#10b981', 
+                        color: '#fff', 
+                        border: 'none', 
+                        borderRadius: 6, 
+                        padding: '7px 18px', 
+                        fontWeight: 600, 
+                        fontSize: 15, 
+                        cursor: 'pointer' 
+                      }}>
+                        Reschedule
+                      </button>
+                      <button style={{ 
+                        background: '#ef4444', 
+                        color: '#fff', 
+                        border: 'none', 
+                        borderRadius: 6, 
+                        padding: '7px 18px', 
+                        fontWeight: 600, 
+                        fontSize: 15, 
+                        cursor: 'pointer' 
+                      }}>
+                        Cancel
+                      </button>
+                    </>
+                  ) : null}
                 </div>
               </div>
             </div>

@@ -7,6 +7,7 @@ import {
   Booking, 
   Payment,
   Refund,
+  Review,
   Category,
   ProviderWorkingHours,
   ProviderTimeOff,
@@ -16,7 +17,8 @@ import {
   RolePermission,
   OAuthAccount,
   Payout,
-  CartItem
+  CartItem,
+  ContactMessage
 } from '../entities';
 
 export default registerAs(
@@ -29,9 +31,9 @@ export default registerAs(
     password: process.env.DATABASE_PASSWORD || 'reservista_password',
     database: process.env.DATABASE_NAME || 'reservista_clean',
     entities: [
-      User, Provider, Service, Booking, Payment, Refund, Category,
+      User, Provider, Service, Booking, Payment, Refund, Review, Category,
       ProviderWorkingHours, ProviderTimeOff, Favorite, Role, Permission, 
-      RolePermission, OAuthAccount, Payout, CartItem
+      RolePermission, OAuthAccount, Payout, CartItem, ContactMessage
     ],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     synchronize: process.env.NODE_ENV === 'development', // Only for development
