@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import Footer from "../components/Footer";
 import Link from 'next/link';
 import { apiService, Category } from '@/lib/api';
@@ -27,6 +28,8 @@ import {
 } from 'lucide-react';
 
 const HomePage = () => {
+  const router = useRouter();
+
   useEffect(() => {
     fetchServiceCards();
   }, []);
@@ -590,21 +593,32 @@ const HomePage = () => {
               </div>
 
               {/* CTA Button */}
-              <button style={{
-                backgroundColor: '#10b981',
-                color: '#fff',
-                padding: '13px 32px',
-                borderRadius: '7px',
-                border: 'none',
-                fontSize: '16px',
-                fontWeight: 600,
-                cursor: 'pointer',
-                fontFamily: 'Manrope, sans-serif',
-                transition: 'all 0.2s',
-                alignSelf: 'flex-start',
-                boxShadow: '0 2px 8px rgba(16,185,129,0.13)',
-                marginTop: 8,
-              }}>
+              <button 
+                onClick={() => router.push('/auth/provider/signup')}
+                style={{
+                  backgroundColor: '#10b981',
+                  color: '#fff',
+                  padding: '13px 32px',
+                  borderRadius: '7px',
+                  border: 'none',
+                  fontSize: '16px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontFamily: 'Manrope, sans-serif',
+                  transition: 'all 0.2s',
+                  alignSelf: 'flex-start',
+                  boxShadow: '0 2px 8px rgba(16,185,129,0.13)',
+                  marginTop: 8,
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#059669';
+                  e.currentTarget.style.transform = 'translateY(-1px)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#10b981';
+                  e.currentTarget.style.transform = 'translateY(0px)';
+                }}
+              >
                 Join Now as a Provider
               </button>
             </div>

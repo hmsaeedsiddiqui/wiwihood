@@ -101,7 +101,8 @@ export function Header() {
             <ul className="nav-links">
               <li><a href="/">Home</a></li>
               <li><a href="/shop">Shop</a></li>
-              <li><a href="/book-service">Book Service</a></li>
+              {/* Book Service link hidden - keeping code intact for future use */}
+              {/* <li><a href="/book-service">Book Service</a></li> */}
               {categories.map(cat => (
                 <li key={cat.id}><a href={`/category/${cat.slug}`}>{cat.name}</a></li>
               ))}
@@ -174,12 +175,12 @@ export function Header() {
                     )}
                   </>
                 )}
-                {/* Wishlist Icon with badge */}
+                {/* Wishlist Icon with badge - HIDDEN */}
                 <button
                   type="button"
                   onClick={() => setShowWishlistModal(true)}
                   style={{
-                    display: 'flex',
+                    display: 'none', // HIDDEN: Will be re-enabled later
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#222',
@@ -345,11 +346,11 @@ export function Header() {
           </div>
         </div>
       )}
-                {/* Cart Icon with badge */}
+                {/* Cart Icon with badge - HIDDEN */}
                 <button
                   onClick={handleCartClick}
                   style={{
-                    display: 'flex',
+                    display: 'none', // HIDDEN: Will be re-enabled later
                     alignItems: 'center',
                     justifyContent: 'center',
                     color: '#222',

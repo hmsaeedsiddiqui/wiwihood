@@ -631,12 +631,15 @@ export default function ShopDetailPage() {
                                   <div className="absolute inset-0 bg-gradient-to-r from-purple-600 to-blue-600 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                                 </button>
                                 
+                                {/* Add to Cart button hidden - keeping code intact for future use */}
+                                {/* 
                                 <button
                                   onClick={() => handleAddToCart(service)}
                                   className="w-full bg-white text-blue-600 px-6 py-2.5 rounded-xl font-semibold border-2 border-blue-600 hover:bg-blue-50 transition-all duration-300 text-sm"
                                 >
                                   Add to Cart
                                 </button>
+                                */}
                               </div>
                             </div>
                           </div>

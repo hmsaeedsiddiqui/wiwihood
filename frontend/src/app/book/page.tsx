@@ -164,8 +164,7 @@ export default function BookingPage() {
   if (!cart.length) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-  <div className="text-xl text-gray-600">Your cart is empty. <Link href="/cart" className="text-green-600 underline">Go to Cart</Link></div>
-// ...ensure import Link from "next/link" is present at the top...
+        <div className="text-xl text-gray-600">No services selected for booking. <Link href="/shop" className="text-green-600 underline">Browse Services</Link></div>
       </div>
     )
   }

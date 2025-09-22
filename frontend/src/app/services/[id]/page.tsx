@@ -129,7 +129,8 @@ export default function ServiceDetailPage() {
             <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Category: {service.category?.name}</div>
             <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Provider: {service.provider?.businessName}</div>
             <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 24 }}>Duration: {service.duration} min</div>
-            <AddToCartButton service={service} />
+            {/* AddToCartButton hidden - keeping code intact for future use */}
+            {/* <AddToCartButton service={service} /> */}
           </div>
         </div>
       </div>

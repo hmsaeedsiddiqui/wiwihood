@@ -131,6 +131,9 @@ export default function ServiceDetailPage() {
                   cursor: "pointer"
                 }}
                 onClick={() => {
+                  // Cart functionality hidden - going directly to booking
+                  router.push(`/book-service?serviceId=${service.id}&providerId=${service.provider.id}`);
+                  /* ORIGINAL CART CODE - keeping for future use:
                   addToCart({
                     id: service.id,
                     name: service.name,
@@ -143,7 +146,7 @@ export default function ServiceDetailPage() {
                       : '',
                     quantity: 1
                   });
-                  router.push(`/book-service?serviceId=${service.id}&providerId=${service.provider.id}`);
+                  */
                 }}
               >
                 Book Now
