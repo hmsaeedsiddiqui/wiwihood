@@ -74,6 +74,7 @@
     "@types/passport-google-oauth20": "^2.0.16",
     "@types/passport-jwt": "^4.0.1",
     "@types/react": "^19.1.11",
+    "@types/stripe": "^8.0.416",
     "@types/supertest": "^6.0.2",
     "@typescript-eslint/eslint-plugin": "^8.6.0",
     "@typescript-eslint/parser": "^8.6.0",
