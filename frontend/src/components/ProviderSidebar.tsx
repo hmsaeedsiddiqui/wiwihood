@@ -21,12 +21,19 @@ export default function ProviderSidebar() {
       ]
     },
     {
+      title: 'BOOKINGS',
+      items: [
+        { name: 'Availability', href: '/provider/availability', icon: '📅' },
+        { name: 'Calendar', href: '/provider/calendar', icon: '🗓️' },
+        { name: 'Bookings', href: '/provider/bookings', icon: '📋' },
+      ]
+    },
+    {
       title: 'CLIENTS',
       items: [
         { name: 'My Buyers', href: '/provider/buyers', icon: '👥' },
         { name: 'Visited', href: '/provider/visited', icon: '👁️' },
         { name: 'Transactions', href: '/provider/transactions', icon: '💳' },
-        { name: 'Payouts', href: '/provider/payouts', icon: '💰' },
       ]
     },
     {
@@ -42,7 +49,6 @@ export default function ProviderSidebar() {
       items: [
         { name: 'Settings', href: '/provider/settings', icon: '⚙️' },
         { name: 'Transactions', href: '/provider/transactions', icon: '📄' },
-        { name: 'Payouts', href: '/provider/payouts', icon: '💸' },
       ]
     }
   ];

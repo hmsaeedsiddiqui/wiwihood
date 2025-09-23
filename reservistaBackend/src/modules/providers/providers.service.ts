@@ -237,4 +237,56 @@ export class ProvidersService {
       fullAddress: provider.fullAddress,
     };
   }
+
+  async getAvailability(userId: string): Promise<any> {
+    const provider = await this.providerRepository.findOne({
+      where: { userId },
+    });
+
+    if (!provider) {
+      throw new NotFoundException('Provider not found');
+    }
+
+    // Return default availability structure if none exists
+    // In a real implementation, you might have a separate ProviderAvailability entity
+    return {
+      workingHours: [
+        { dayOfWeek: 'Monday', isWorkingDay: true, startTime: '09:00', endTime: '17:00', breakStartTime: '', breakEndTime: '' },
+        { dayOfWeek: 'Tuesday', isWorkingDay: true, startTime: '09:00', endTime: '17:00', breakStartTime: '', breakEndTime: '' },
+        { dayOfWeek: 'Wednesday', isWorkingDay: true, startTime: '09:00', endTime: '17:00', breakStartTime: '', breakEndTime: '' },
+        { dayOfWeek: 'Thursday', isWorkingDay: true, startTime: '09:00', endTime: '17:00', breakStartTime: '', breakEndTime: '' },
+        { dayOfWeek: 'Friday', isWorkingDay: true, startTime: '09:00', endTime: '17:00', breakStartTime: '', breakEndTime: '' },
+        { dayOfWeek: 'Saturday', isWorkingDay: false, startTime: '', endTime: '', breakStartTime: '', breakEndTime: '' },
+        { dayOfWeek: 'Sunday', isWorkingDay: false, startTime: '', endTime: '', breakStartTime: '', breakEndTime: '' },
+      ],
+      bookingSettings: {
+        maxAdvanceBookingDays: 30,
+        minAdvanceBookingHours: 24,
+        maxDailyBookings: 10,
+        bufferTimeBetweenBookings: 15,
+        autoConfirmBookings: true,
+        allowSameDayBookings: true,
+      },
+      blockedTimes: [],
+    };
+  }
+
+  async updateAvailability(userId: string, availabilityData: any): Promise<any> {
+    const provider = await this.providerRepository.findOne({
+      where: { userId },
+    });
+
+    if (!provider) {
+      throw new NotFoundException('Provider not found');
+    }
+
+    // In a real implementation, you would save this to a separate ProviderAvailability entity
+    // For now, we'll just return the updated data
+    console.log('Updating availability for provider:', provider.id, availabilityData);
+    
+    return {
+      message: 'Availability updated successfully',
+      data: availabilityData,
+    };
+  }
 }

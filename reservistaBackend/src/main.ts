@@ -82,7 +82,7 @@ async function bootstrap() {
     },
   });
 
-  const port = process.env.PORT || 3002;
+  const port = process.env.PORT || 8000;
   await app.listen(port);
   
   console.log(`🚀 Reservista API is running on: http://localhost:${port}`);
