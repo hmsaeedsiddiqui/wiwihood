@@ -79,14 +79,26 @@ export default function ProviderAvailabilityPage() {
         },
       });
 
-      // Temporary: Skip API call and use default data
-      const useDefaults = true;
-      if (useDefaults) {
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Availability data received:', data);
+        
+        // If we have real data, use it; otherwise use defaults
+        if (data && data.workingHours && data.workingHours.length > 0) {
+          setWorkingHours(data.workingHours);
+        } else {
+          // Use default working hours if no data exists yet
+          setWorkingHours(defaultWorkingHours);
+        }
+        setError(null);
+      } else {
+        console.log('No availability data found, using defaults');
         setWorkingHours(defaultWorkingHours);
         setError(null);
       }
     } catch (error: any) {
-      // For now, just use defaults instead of showing error
+      console.error('Error fetching availability:', error);
+      // Use defaults if API is not available
       setWorkingHours(defaultWorkingHours);
       setError(null);
     } finally {
@@ -112,7 +124,7 @@ export default function ProviderAvailabilityPage() {
       };
 
       const response = await fetch('http://localhost:8000/api/v1/providers/me/availability', {
-        method: availability ? 'PUT' : 'POST',
+        method: 'POST', // Always use POST as backend handles updates
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`,
@@ -120,18 +132,19 @@ export default function ProviderAvailabilityPage() {
         body: JSON.stringify(payload),
       });
 
-      // Temporary: Skip API call for now and just simulate success
-      const simulateSuccess = true;
-      if (simulateSuccess) {
-        // setAvailability(payload);
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Availability saved successfully:', data);
         setError(null);
-        alert('Availability saved successfully! (Simulated - API will be connected later)');
+        alert('Availability saved successfully! Your working hours are now live for customer bookings.');
+      } else {
+        const errorData = await response.text();
+        console.error('Failed to save availability:', errorData);
+        setError('Failed to save availability. Please try again.');
       }
     } catch (error: any) {
-      // For now, just log the error since we're simulating success
-      console.log('API call would have failed:', error.message);
-      setError(null);
-      alert('Availability saved successfully! (Simulated - API will be connected later)');
+      console.error('Error saving availability:', error);
+      setError('Error saving availability. Please check your connection and try again.');
     } finally {
       setSaving(false);
     }

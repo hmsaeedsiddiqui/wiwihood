@@ -5,6 +5,7 @@ import { Booking, BookingStatus } from '../../entities/booking.entity';
 import { Service } from '../../entities/service.entity';
 import { Provider } from '../../entities/provider.entity';
 import { User } from '../../entities/user.entity';
+import { ProviderWorkingHours, DayOfWeek } from '../../entities/provider-working-hours.entity';
 import { CreateBookingDto } from './dto/create-booking.dto';
 import { UpdateBookingDto } from './dto/update-booking.dto';
 import { BookingResponseDto, BookingsListResponseDto } from './dto/booking-response.dto';
@@ -27,6 +28,8 @@ export class BookingsService {
     private providerRepository: Repository<Provider>,
     @InjectRepository(User)
     private userRepository: Repository<User>,
+    @InjectRepository(ProviderWorkingHours)
+    private providerWorkingHoursRepository: Repository<ProviderWorkingHours>,
   ) {}
 
   async create(createBookingDto: CreateBookingDto, customerId: string): Promise<BookingResponseDto> {
@@ -76,6 +79,9 @@ export class BookingsService {
     // Generate unique booking number
     const bookingNumber = await this.generateBookingNumber();
 
+    // Get the actual service price from database (don't trust frontend)
+    const actualTotalPrice = service ? service.basePrice : createBookingDto.totalPrice;
+
     // Create booking
     const booking = this.bookingRepository.create({
       serviceId: createBookingDto.serviceId,
@@ -83,7 +89,7 @@ export class BookingsService {
       customerId,
       startDateTime,
       endDateTime,
-      totalPrice: createBookingDto.totalPrice,
+      totalPrice: actualTotalPrice, // Use actual service price instead of frontend data
       durationMinutes: Math.floor((endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60)),
       status: (createBookingDto.status as BookingStatus) || BookingStatus.PENDING,
       customerNotes: createBookingDto.notes,
@@ -447,21 +453,73 @@ export class BookingsService {
     serviceId: string, 
     date: string
   ): Promise<{ available: boolean; timeSlots: string[] }> {
-    // Get provider's working hours (simplified - in reality this would come from provider settings)
-    const workingHours = {
-      start: 9, // 9 AM
-      end: 17,  // 5 PM
-      interval: 60 // 60 minutes
-    };
-
     const targetDate = new Date(date);
+    const dayOfWeek = this.getDayOfWeek(targetDate);
+
+    // Get provider's working hours for the specific day
+    const workingHours = await this.providerWorkingHoursRepository.findOne({
+      where: {
+        providerId,
+        dayOfWeek,
+        isActive: true,
+      },
+    });
+
+    if (!workingHours) {
+      // No working hours set for this day
+      return {
+        available: false,
+        timeSlots: []
+      };
+    }
+
+    // Get service duration to determine slot intervals
+    const service = await this.serviceRepository.findOne({
+      where: { id: serviceId }
+    });
+    
+    const slotDuration = service?.durationMinutes || 60; // Default to 60 minutes
     const timeSlots: string[] = [];
 
-    // Generate all possible time slots
-    for (let hour = workingHours.start; hour < workingHours.end; hour++) {
-      const timeSlot = new Date(targetDate);
-      timeSlot.setHours(hour, 0, 0, 0);
-      timeSlots.push(timeSlot.toISOString());
+    // Parse working hours
+    const [startHour, startMinute] = workingHours.startTime.split(':').map(Number);
+    const [endHour, endMinute] = workingHours.endTime.split(':').map(Number);
+
+    let currentTime = new Date(targetDate);
+    currentTime.setHours(startHour, startMinute, 0, 0);
+    
+    const endTime = new Date(targetDate);
+    endTime.setHours(endHour, endMinute, 0, 0);
+
+    // Generate time slots based on service duration
+    while (currentTime < endTime) {
+      const slotEndTime = new Date(currentTime.getTime() + slotDuration * 60000);
+      
+      // Only add slot if it doesn't exceed working hours
+      if (slotEndTime <= endTime) {
+        // Skip break time if exists
+        if (workingHours.breakStartTime && workingHours.breakEndTime) {
+          const [breakStartHour, breakStartMinute] = workingHours.breakStartTime.split(':').map(Number);
+          const [breakEndHour, breakEndMinute] = workingHours.breakEndTime.split(':').map(Number);
+          
+          const breakStart = new Date(targetDate);
+          breakStart.setHours(breakStartHour, breakStartMinute, 0, 0);
+          
+          const breakEnd = new Date(targetDate);
+          breakEnd.setHours(breakEndHour, breakEndMinute, 0, 0);
+          
+          // Skip if slot overlaps with break time
+          if (!(currentTime >= breakEnd || slotEndTime <= breakStart)) {
+            currentTime = new Date(breakEnd);
+            continue;
+          }
+        }
+        
+        timeSlots.push(currentTime.toISOString());
+      }
+      
+      // Move to next slot
+      currentTime = new Date(currentTime.getTime() + slotDuration * 60000);
     }
 
     // Get existing bookings for the date
@@ -481,9 +539,11 @@ export class BookingsService {
     // Filter out booked time slots
     const availableSlots = timeSlots.filter(slot => {
       const slotTime = new Date(slot);
+      const slotEndTime = new Date(slotTime.getTime() + slotDuration * 60000);
+      
       return !existingBookings.some(booking => 
-        slotTime.getTime() >= booking.startDateTime.getTime() && 
-        slotTime.getTime() < booking.endDateTime.getTime()
+        // Check if slot overlaps with existing booking
+        slotTime < booking.endDateTime && slotEndTime > booking.startDateTime
       );
     });
 
@@ -491,6 +551,19 @@ export class BookingsService {
       available: availableSlots.length > 0,
       timeSlots: availableSlots
     };
+  }
+
+  private getDayOfWeek(date: Date): DayOfWeek {
+    const days = [
+      DayOfWeek.SUNDAY,
+      DayOfWeek.MONDAY,
+      DayOfWeek.TUESDAY,
+      DayOfWeek.WEDNESDAY,
+      DayOfWeek.THURSDAY,
+      DayOfWeek.FRIDAY,
+      DayOfWeek.SATURDAY,
+    ];
+    return days[date.getDay()];
   }
 
   async getBookingStats(userId: string, userRole: string): Promise<any> {

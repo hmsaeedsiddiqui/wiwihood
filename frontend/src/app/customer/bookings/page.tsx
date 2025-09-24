@@ -145,7 +145,9 @@ export default function CustomerBookingsPage() {
                   <strong>Notes:</strong> {booking.notes || "No notes"}
                 </div>
                 <div style={{ display: 'flex', gap: 10, marginTop: 4 }}>
-                  <button style={{ 
+                  <button 
+                    onClick={() => window.location.href = `/booking/${booking.id}`}
+                    style={{ 
                     background: '#6366f1', 
                     color: '#fff', 
                     border: 'none', 

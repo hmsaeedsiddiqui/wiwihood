@@ -10,6 +10,7 @@ interface Booking {
   startTime: string
   endTime: string
   notes?: string
+  hasReview?: boolean
   service?: {
     name: string
   }
@@ -197,9 +198,26 @@ export default function MyAppointmentsPage() {
                       <span className={`px-4 py-1 rounded-full text-sm font-semibold ${statusBadge.className}`}>
                         {statusBadge.text}
                       </span>
-                      <button className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold text-sm hover:bg-purple-700 transition">
-                        View Details
-                      </button>
+                      <div className="flex flex-col gap-2">
+                        <button 
+                          onClick={() => router.push(`/booking/${booking.id}`)}
+                          className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold text-sm hover:bg-purple-700 transition"
+                        >
+                          View Details
+                        </button>
+                        {booking.status === 'completed' && (
+                          <button 
+                            onClick={() => router.push(`/booking/${booking.id}/review`)}
+                            className={`px-6 py-2 rounded-lg font-semibold text-sm transition ${
+                              booking.hasReview 
+                                ? 'bg-green-600 text-white hover:bg-green-700'
+                                : 'bg-yellow-500 text-white hover:bg-yellow-600'
+                            }`}
+                          >
+                            {booking.hasReview ? '👁️ View Review' : '⭐ Write Review'}
+                          </button>
+                        )}
+                      </div>
                     </div>
                   </div>
                 )

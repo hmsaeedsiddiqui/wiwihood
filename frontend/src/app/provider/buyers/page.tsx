@@ -8,7 +8,7 @@ interface Customer {
   phone?: string;
   totalBookings: number;
   totalSpent: number;
-  averageRating: number;
+  averageRating: number | null; // Allow null when no reviews exist
   lastBooking: string;
   status: 'active' | 'inactive';
   completedBookings: number;
@@ -22,12 +22,58 @@ export default function MyBuyersPage() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
+  const [providerId, setProviderId] = useState<string | null>(null);
 
   useEffect(() => {
-    fetchCustomers();
+    fetchProviderInfo();
   }, []);
 
+  useEffect(() => {
+    if (providerId) {
+      fetchCustomers();
+    }
+  }, [providerId]);
+
+  const fetchProviderInfo = async () => {
+    try {
+      const token = localStorage.getItem('providerToken');
+      
+      if (!token) {
+        setError('Authentication token not found');
+        setLoading(false);
+        return;
+      }
+
+      const response = await fetch('http://localhost:8000/api/v1/auth/profile', {
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.provider && data.provider.id) {
+          setProviderId(data.provider.id);
+        } else {
+          setProviderId(data.id);
+        }
+      } else {
+        setError('Failed to fetch provider information');
+        setLoading(false);
+      }
+    } catch (error) {
+      console.error('Error fetching provider info:', error);
+      setError('Failed to fetch provider information');
+      setLoading(false);
+    }
+  };
+
   const fetchCustomers = async () => {
+    if (!providerId) {
+      return; // Wait for provider ID to be fetched
+    }
+
     try {
       setLoading(true);
       const token = localStorage.getItem('providerToken');
@@ -51,20 +97,50 @@ export default function MyBuyersPage() {
         const data = await response.json();
         const bookings = data.bookings || [];
         
+        // Fetch reviews for better customer ratings
+        let reviews = [];
+        if (providerId) {
+          try {
+            const reviewsResponse = await fetch(`http://localhost:8000/api/v1/reviews/provider/${providerId}`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+              },
+            });
+            if (reviewsResponse.ok) {
+              const reviewsData = await reviewsResponse.json();
+              reviews = reviewsData.reviews || [];
+            }
+          } catch (error) {
+            console.log('Reviews API not available, using default ratings');
+          }
+        }
+        
         // Aggregate customer data from bookings
         const customerMap = new Map<string, Customer>();
         
         bookings.forEach((booking: any) => {
           const customerId = booking.customer?.id || booking.customerId || 'unknown';
-          const customerName = booking.customer?.name || booking.customerName || 'Unknown Customer';
+          const customerName = booking.customer?.firstName && booking.customer?.lastName 
+            ? `${booking.customer.firstName} ${booking.customer.lastName}`.trim()
+            : booking.customer?.name || booking.customerName || 'Unknown Customer';
           const customerEmail = booking.customer?.email || booking.customerEmail || '';
           const customerPhone = booking.customer?.phone || booking.customerPhone || '';
           const serviceName = booking.service?.name || booking.serviceName || 'Unknown Service';
-          const amount = booking.totalAmount || booking.price || 0;
+          const amount = parseFloat(booking.totalPrice) || 0; // Fixed: use totalPrice from booking entity and parse as float
           const status = booking.status || 'pending';
-          const scheduledAt = booking.scheduledAt || booking.date || new Date().toISOString();
+          const scheduledAt = booking.startTime || booking.scheduledAt || booking.date || new Date().toISOString();
 
           if (!customerMap.has(customerId)) {
+            // Calculate average rating from reviews for this customer
+            const customerReviews = reviews.filter((review: any) => 
+              review.customer?.id === customerId || review.customerId === customerId
+            );
+            const averageRating = customerReviews.length > 0 
+              ? customerReviews.reduce((sum: number, review: any) => sum + (review.rating || 0), 0) / customerReviews.length
+              : null; // Use null instead of default rating when no reviews exist
+
             customerMap.set(customerId, {
               id: customerId,
               name: customerName,
@@ -72,7 +148,7 @@ export default function MyBuyersPage() {
               phone: customerPhone,
               totalBookings: 0,
               totalSpent: 0,
-              averageRating: 4.5, // Default rating - would come from reviews in real implementation
+              averageRating: averageRating,
               lastBooking: scheduledAt,
               status: 'active',
               completedBookings: 0,
@@ -83,7 +159,11 @@ export default function MyBuyersPage() {
 
           const customer = customerMap.get(customerId)!;
           customer.totalBookings += 1;
-          customer.totalSpent += amount;
+          
+          // Only count completed or confirmed bookings for total spent
+          if (status === 'completed' || status === 'confirmed') {
+            customer.totalSpent += amount;
+          }
 
           if (status === 'completed') {
             customer.completedBookings += 1;
@@ -582,15 +662,17 @@ export default function MyBuyersPage() {
                               fontWeight: '700', 
                               color: '#d97706'
                             }}>
-                              {customer.averageRating.toFixed(1)}
+                              {customer.averageRating ? customer.averageRating.toFixed(1) : 'N/A'}
                             </span>
-                            <span style={{ color: '#fbbf24' }}>⭐</span>
+                            <span style={{ color: '#fbbf24' }}>
+                              {customer.averageRating ? '⭐' : ''}
+                            </span>
                           </div>
                           <div style={{ 
                             fontSize: '12px', 
                             color: '#64748b'
                           }}>
-                            Average Rating
+                            {customer.averageRating ? 'Average Rating' : 'No Reviews Yet'}
                           </div>
                         </div>
 

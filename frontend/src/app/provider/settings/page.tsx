@@ -95,11 +95,7 @@ const SettingsPage = () => {
   const settingSections = [
     { id: 'profile', label: 'Profile Settings', icon: '👤' },
     { id: 'account', label: 'Account & Security', icon: '🔒' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔' },
-    { id: 'payment', label: 'Payment Methods', icon: '💳' },
-    { id: 'billing', label: 'Billing & Tax', icon: '📋' },
-    { id: 'privacy', label: 'Privacy & Data', icon: '🛡️' },
-    { id: 'preferences', label: 'Preferences', icon: '⚙️' }
+    { id: 'notifications', label: 'Notifications', icon: '🔔' }
   ];
 
   const handleSave = () => {

@@ -19,6 +19,7 @@ import {
   Payout,
   CartItem,
   ContactMessage
+  // Notification, Message, Reminder - temporarily removed
 } from '../entities';
 
 export default registerAs(
@@ -34,10 +35,11 @@ export default registerAs(
       User, Provider, Service, Booking, Payment, Refund, Review, Category,
       ProviderWorkingHours, ProviderTimeOff, Favorite, Role, Permission, 
       RolePermission, OAuthAccount, Payout, CartItem, ContactMessage
+      // Notification, Message, Reminder - temporarily removed for testing
     ],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
-    synchronize: process.env.NODE_ENV === 'development', // Only for development
-    logging: process.env.NODE_ENV === 'development',
+    synchronize: false, // Temporarily disabled to avoid index conflicts
+    logging: false, // Disabled for cleaner output
     ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
   }),
 );

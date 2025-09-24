@@ -65,13 +65,13 @@ export default function TransactionsPage() {
         const bookings = bookingsData.bookings || [];
 
         bookings.forEach((booking: any) => {
-          const amount = booking.totalAmount || booking.price || 0;
+          const amount = booking.totalPrice || 0; // Fixed: use totalPrice from booking entity
           const fee = Math.round(amount * 0.1); // Assume 10% platform fee
           const netAmount = amount - fee;
           const date = booking.scheduledAt || booking.createdAt || new Date().toISOString();
 
-          // Create earning transaction for completed bookings
-          if (booking.status === 'completed' && booking.paymentStatus === 'paid') {
+          // Create earning transaction for completed or confirmed bookings
+          if (booking.status === 'completed' || booking.status === 'confirmed') {
             allTransactions.push({
               id: `TXN-${booking.id}`,
               type: 'earning',
@@ -369,7 +369,7 @@ export default function TransactionsPage() {
               color: '#16a34a',
               marginBottom: '8px'
             }}>
-              ${stats.totalEarnings.toFixed(2)}
+              ${(Number(stats.totalEarnings) || 0).toFixed(2)}
             </div>
             <div style={{ color: '#64748b', fontSize: '14px' }}>Total Earnings</div>
           </div>
@@ -387,7 +387,7 @@ export default function TransactionsPage() {
               color: '#2563eb',
               marginBottom: '8px'
             }}>
-              ${stats.totalWithdrawals.toFixed(2)}
+              ${(Number(stats.totalWithdrawals) || 0).toFixed(2)}
             </div>
             <div style={{ color: '#64748b', fontSize: '14px' }}>Total Withdrawals</div>
           </div>
@@ -405,7 +405,7 @@ export default function TransactionsPage() {
               color: '#d97706',
               marginBottom: '8px'
             }}>
-              ${stats.totalFees.toFixed(2)}
+              ${(Number(stats.totalFees) || 0).toFixed(2)}
             </div>
             <div style={{ color: '#64748b', fontSize: '14px' }}>Total Fees</div>
           </div>
@@ -423,7 +423,7 @@ export default function TransactionsPage() {
               color: '#16a34a',
               marginBottom: '8px'
             }}>
-              ${stats.netTotal.toFixed(2)}
+              ${(Number(stats.netTotal) || 0).toFixed(2)}
             </div>
             <div style={{ color: '#64748b', fontSize: '14px' }}>Net Total</div>
           </div>
@@ -656,7 +656,7 @@ export default function TransactionsPage() {
                         color: amountColor
                       }}>
                         {(transaction.type === 'withdrawal' || transaction.type === 'refund' || transaction.type === 'penalty') 
-                          ? '-' : '+'}${transaction.amount.toFixed(2)}
+                          ? '-' : '+'}${(Number(transaction.amount) || 0).toFixed(2)}
                       </div>
 
                       {/* Fee */}
@@ -664,16 +664,16 @@ export default function TransactionsPage() {
                         fontSize: '14px', 
                         color: '#64748b'
                       }}>
-                        ${transaction.fee.toFixed(2)}
+                        ${(Number(transaction.fee) || 0).toFixed(2)}
                       </div>
 
                       {/* Net Amount */}
                       <div style={{ 
                         fontSize: '14px', 
                         fontWeight: '600', 
-                        color: transaction.netAmount >= 0 ? '#16a34a' : '#dc2626'
+                        color: (Number(transaction.netAmount) || 0) >= 0 ? '#16a34a' : '#dc2626'
                       }}>
-                        {transaction.netAmount >= 0 ? '+' : ''}${transaction.netAmount.toFixed(2)}
+                        {(Number(transaction.netAmount) || 0) >= 0 ? '+' : ''}${(Number(transaction.netAmount) || 0).toFixed(2)}
                       </div>
 
                       {/* Date & Time */}

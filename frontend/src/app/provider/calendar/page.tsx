@@ -17,12 +17,33 @@ interface CalendarBooking {
   status: string;
 }
 
+interface Service {
+  id: string;
+  name: string;
+  basePrice: number;
+  durationMinutes: number;
+}
+
 export default function ProviderCalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [bookings, setBookings] = useState<CalendarBooking[]>([]);
+  const [services, setServices] = useState<Service[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [view, setView] = useState<'month' | 'week' | 'day'>('month');
+  const [showAddBookingModal, setShowAddBookingModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [providerId, setProviderId] = useState<string>('');
+  const [addBookingForm, setAddBookingForm] = useState({
+    customerName: '',
+    customerEmail: '',
+    customerPhone: '',
+    serviceId: '',
+    time: '',
+    duration: 60,
+    price: 0,
+    notes: ''
+  });
 
   // Get current month/year for display
   const currentMonth = currentDate.getMonth();
@@ -34,8 +55,59 @@ export default function ProviderCalendarPage() {
 
   // Fetch bookings from API
   useEffect(() => {
+    fetchProviderInfo();
     fetchBookings();
   }, [currentDate]);
+
+  useEffect(() => {
+    if (providerId) {
+      fetchServices();
+    }
+  }, [providerId]);
+
+  const fetchProviderInfo = async () => {
+    try {
+      const token = localStorage.getItem('providerToken');
+      const response = await fetch('http://localhost:8000/api/v1/auth/profile', {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        if (data.provider && data.provider.id) {
+          setProviderId(data.provider.id);
+        } else {
+          setProviderId(data.id);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching provider info:', error);
+    }
+  };
+
+  const fetchServices = async () => {
+    try {
+      if (!providerId) return;
+      
+      const token = localStorage.getItem('providerToken');
+      const response = await fetch(`http://localhost:8000/api/v1/services/provider/${providerId}`, {
+        headers: { 
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setServices(data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching services:', error);
+    }
+  };
 
   const fetchBookings = async () => {
     try {
@@ -48,18 +120,180 @@ export default function ProviderCalendarPage() {
         return;
       }
 
-      // For now, simulate API call - replace with real API when backend is ready
-      setTimeout(() => {
+      const response = await fetch('http://localhost:8000/api/v1/bookings/my-bookings?limit=1000', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        // Transform the API response to match calendar interface
+        const transformedBookings = data.bookings?.map((booking: any) => ({
+          id: booking.id,
+          customer: {
+            name: `${booking.customer?.firstName || ''} ${booking.customer?.lastName || ''}`.trim() || 'Unknown Customer',
+            email: booking.customer?.email || ''
+          },
+          service: {
+            name: booking.service?.name || 'Unknown Service',
+            duration: booking.service?.duration || 60,
+            price: parseFloat(booking.totalPrice) || 0
+          },
+          scheduledAt: booking.startTime || booking.createdAt,
+          status: booking.status || 'pending'
+        })) || [];
+        
+        setBookings(transformedBookings);
+        setError(null);
+      } else if (response.status === 401) {
+        setError('Unauthorized access. Please login again.');
+      } else {
+        console.log('API call failed, showing empty calendar');
         setBookings([]);
         setError(null);
-        setLoading(false);
-      }, 1000);
-
+      }
     } catch (error: any) {
       console.error('Error fetching bookings:', error);
       setBookings([]);
       setError(null);
+    } finally {
       setLoading(false);
+    }
+  };
+
+  // Handle adding new booking from calendar
+  const handleAddBooking = (date?: Date) => {
+    if (date) {
+      setSelectedDate(date);
+    } else {
+      setSelectedDate(new Date());
+    }
+    setError(null); // Clear any previous errors
+    setShowAddBookingModal(true);
+  };
+
+  const handleBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    console.log('Form submitted with data:', addBookingForm);
+    
+    try {
+      const token = localStorage.getItem('providerToken');
+      if (!token) {
+        setError('Authentication token not found');
+        return;
+      }
+
+      // Validate required fields
+      if (!addBookingForm.customerName.trim()) {
+        setError('Customer name is required');
+        return;
+      }
+      if (!addBookingForm.customerEmail.trim()) {
+        setError('Customer email is required');
+        return;
+      }
+      if (!addBookingForm.serviceId.trim()) {
+        setError('Service selection is required');
+        return;
+      }
+      if (!addBookingForm.time.trim()) {
+        setError('Time is required');
+        return;
+      }
+
+      // Combine selected date with time
+      const bookingDate = selectedDate || new Date();
+      const timeStr = addBookingForm.time.trim();
+      
+      // Validate time format
+      if (!timeStr.includes(':')) {
+        setError('Invalid time format. Please use HH:MM format');
+        return;
+      }
+      
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      
+      if (isNaN(hours) || isNaN(minutes) || hours < 0 || hours > 23 || minutes < 0 || minutes > 59) {
+        setError('Invalid time. Please enter a valid time in HH:MM format');
+        return;
+      }
+      
+      const startDateTime = new Date(bookingDate);
+      startDateTime.setHours(hours, minutes, 0, 0);
+      const endDateTime = new Date(startDateTime.getTime() + addBookingForm.duration * 60000);
+
+      // For manual bookings by providers, we'll use a fallback approach
+      // In a real implementation, you'd want to either:
+      // 1. Have a customer search/creation system
+      // 2. Use a special "manual booking" customer account
+      // 3. Extend the API to handle customer creation in booking
+      
+      // For now, let's use the provider's user ID as a fallback
+      // This is not ideal but will allow testing the booking creation
+      const fallbackCustomerId = '123e4567-e89b-12d3-a456-426614174000'; // Default customer ID from backend
+      
+      const bookingData = {
+        serviceId: addBookingForm.serviceId,
+        providerId: providerId,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        totalPrice: addBookingForm.price,
+        notes: `Manual booking for ${addBookingForm.customerName} (${addBookingForm.customerEmail}${addBookingForm.customerPhone ? ', ' + addBookingForm.customerPhone : ''}). ${addBookingForm.notes}`.trim(),
+        status: 'confirmed'
+      };
+
+      console.log('Sending booking data:', bookingData);
+
+      const response = await fetch('http://localhost:8000/api/v1/bookings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      console.log('Response status:', response.status);
+      
+      if (response.ok) {
+        const responseData = await response.json();
+        console.log('Booking created successfully:', responseData);
+        
+        // Refresh calendar data
+        fetchBookings();
+        
+        // Close modal and reset form
+        setShowAddBookingModal(false);
+        setAddBookingForm({
+          customerName: '',
+          customerEmail: '',
+          customerPhone: '',
+          serviceId: '',
+          time: '',
+          duration: 60,
+          price: 0,
+          notes: ''
+        });
+        
+        setError(null);
+        alert('Booking created successfully!');
+      } else {
+        const errorData = await response.text();
+        console.error('API Error:', errorData);
+        
+        // Special handling for the customerId issue
+        if (response.status === 400) {
+          setError(`API Error: The current booking system is designed for customer-initiated bookings. To create manual bookings as a provider, the backend needs to be extended with a dedicated manual booking endpoint. Error details: ${errorData}`);
+        } else {
+          throw new Error(`Failed to create booking: ${response.status} ${errorData}`);
+        }
+      }
+    } catch (error: any) {
+      console.error('Error creating booking:', error);
+      setError(error.message || 'Failed to create booking');
     }
   };
 
@@ -150,7 +384,10 @@ export default function ProviderCalendarPage() {
               >
                 Today
               </button>
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">
+              <button 
+                onClick={() => handleAddBooking()}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+              >
                 Add Booking
               </button>
             </div>
@@ -226,11 +463,13 @@ export default function ProviderCalendarPage() {
                 return (
                   <div
                     key={index}
+                    onClick={() => date && handleAddBooking(date)}
                     className={`
                       min-h-[120px] border border-gray-200 rounded-lg p-2 
                       ${date ? 'bg-white hover:bg-gray-50' : 'bg-gray-50'}
                       ${isCurrentDay ? 'ring-2 ring-blue-500 bg-blue-50' : ''}
-                      transition cursor-pointer
+                      ${date ? 'cursor-pointer' : 'cursor-default'}
+                      transition
                     `}
                   >
                     {date && (
@@ -332,6 +571,187 @@ export default function ProviderCalendarPage() {
           </div>
         </div>
       </div>
+
+      {/* Add Booking Modal */}
+      {showAddBookingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-gray-900">
+                  Add New Booking 
+                  {selectedDate && (
+                    <span className="text-blue-600 ml-2">
+                      - {selectedDate.toLocaleDateString()}
+                    </span>
+                  )}
+                </h2>
+                <button 
+                  onClick={() => setShowAddBookingModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <form onSubmit={handleBookingSubmit} className="p-6">
+              {error && (
+                <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center">
+                    <svg className="w-5 h-5 text-red-400 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span className="text-red-700 text-sm">{error}</span>
+                  </div>
+                </div>
+              )}
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Customer Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={addBookingForm.customerName}
+                    onChange={(e) => setAddBookingForm(prev => ({...prev, customerName: e.target.value}))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter customer name"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Customer Email *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    value={addBookingForm.customerEmail}
+                    onChange={(e) => setAddBookingForm(prev => ({...prev, customerEmail: e.target.value}))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="customer@example.com"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Customer Phone
+                  </label>
+                  <input
+                    type="tel"
+                    value={addBookingForm.customerPhone}
+                    onChange={(e) => setAddBookingForm(prev => ({...prev, customerPhone: e.target.value}))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="+1 (555) 123-4567"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Service *
+                  </label>
+                  <select
+                    required
+                    value={addBookingForm.serviceId}
+                    onChange={(e) => {
+                      const selectedService = services.find(s => s.id === e.target.value);
+                      setAddBookingForm(prev => ({
+                        ...prev, 
+                        serviceId: e.target.value,
+                        price: selectedService ? selectedService.basePrice : 0,
+                        duration: selectedService ? selectedService.durationMinutes : 60
+                      }));
+                    }}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select a service</option>
+                    {services.map(service => (
+                      <option key={service.id} value={service.id}>
+                        {service.name} - ${service.basePrice} ({service.durationMinutes} min)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Time *
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={addBookingForm.time}
+                    onChange={(e) => setAddBookingForm(prev => ({...prev, time: e.target.value}))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Duration (minutes) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="15"
+                    step="15"
+                    value={addBookingForm.duration}
+                    onChange={(e) => setAddBookingForm(prev => ({...prev, duration: parseInt(e.target.value)}))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Price ($) *
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min="0"
+                    step="0.01"
+                    value={addBookingForm.price}
+                    onChange={(e) => setAddBookingForm(prev => ({...prev, price: parseFloat(e.target.value)}))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Special Notes
+                  </label>
+                  <textarea
+                    rows={3}
+                    value={addBookingForm.notes}
+                    onChange={(e) => setAddBookingForm(prev => ({...prev, notes: e.target.value}))}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Any special requests or notes..."
+                  />
+                </div>
+              </div>
+              
+              <div className="mt-6 flex gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowAddBookingModal(false)}
+                  className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                >
+                  Create Booking
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

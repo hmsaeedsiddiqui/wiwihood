@@ -1,0 +1,80 @@
+import { AppDataSource } from '../data-source';
+import { Notification } from '../entities/notification.entity';
+import { User } from '../entities/user.entity';
+
+async function createTestNotifications() {
+  try {
+    await AppDataSource.initialize();
+    console.log('Database connected');
+
+    const notificationRepository = AppDataSource.getRepository(Notification);
+    const userRepository = AppDataSource.getRepository(User);
+
+    // Find or create a test user
+    let testUser = await userRepository.findOne({ 
+      where: { email: 'provider@test.com' } 
+    });
+
+    if (!testUser) {
+      // Create a test user
+      testUser = userRepository.create({
+        firstName: 'Test',
+        lastName: 'Provider',
+        email: 'provider@test.com',
+        password: 'hashedpassword', // This should be hashed in real scenario
+        role: 'provider',
+        isEmailVerified: true,
+        isActive: true,
+      });
+      await userRepository.save(testUser);
+      console.log('Test user created:', testUser.id);
+    }
+
+    // Create test notifications
+    const notifications = [
+      {
+        userId: testUser.id,
+        title: 'New Booking Request',
+        message: 'Sarah Johnson has requested a booking for Hair Cut on Dec 15, 2024 at 2:00 PM',
+        type: 'booking',
+        isRead: false
+      },
+      {
+        userId: testUser.id,
+        title: 'Payment Received',
+        message: 'Payment of $75.00 received from Michael Davis for Beard Trim service',
+        type: 'payment',
+        isRead: false
+      },
+      {
+        userId: testUser.id,
+        title: 'New Review',
+        message: 'Emma Wilson left a 5-star review for your Facial Treatment service',
+        type: 'review',
+        isRead: true
+      },
+      {
+        userId: testUser.id,
+        title: 'Upcoming Appointment Reminder',
+        message: 'You have an appointment with Alex Chen tomorrow at 11:00 AM',
+        type: 'reminder',
+        isRead: true
+      }
+    ];
+
+    for (const notificationData of notifications) {
+      const notification = notificationRepository.create(notificationData);
+      await notificationRepository.save(notification);
+      console.log('Created notification:', notification.title);
+    }
+
+    console.log('Test notifications created successfully!');
+    
+  } catch (error) {
+    console.error('Error creating test notifications:', error);
+  } finally {
+    await AppDataSource.destroy();
+  }
+}
+
+createTestNotifications();

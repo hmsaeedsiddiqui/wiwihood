@@ -28,7 +28,7 @@ export const ReviewSummary: React.FC<ReviewSummaryProps> = ({
   const loadStats = async () => {
     try {
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/reviews/provider/${providerId}/stats`
+        `http://localhost:8000/api/v1/reviews/provider/${providerId}/stats`
       );
       
       if (response.ok) {

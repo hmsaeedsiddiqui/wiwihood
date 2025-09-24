@@ -133,10 +133,14 @@ export class BookingsController {
   })
   async findMyBookings(
     @Request() req,
-    @Query('page', new ParseIntPipe({ optional: true })) page: number = 1,
-    @Query('limit', new ParseIntPipe({ optional: true })) limit: number = 10,
+    @Query('page') pageQuery?: string,
+    @Query('limit') limitQuery?: string,
     @Query('status') status?: string,
   ): Promise<BookingsListResponseDto> {
+    // Parse page and limit with better error handling
+    const page = pageQuery ? parseInt(pageQuery, 10) || 1 : 1;
+    const limit = limitQuery ? parseInt(limitQuery, 10) || 10 : 10;
+    
     // Use fallback for testing when no auth - using a proper UUID format
     const userId = req.user?.id || '123e4567-e89b-12d3-a456-426614174000';
     const userRole = req.user?.role || 'customer';

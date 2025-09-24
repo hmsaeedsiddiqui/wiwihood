@@ -43,7 +43,45 @@ export default function BookServicePage() {
   const [loading, setLoading] = useState(false)
   const [bookingLoading, setBookingLoading] = useState(false)
 
-  // Generate sample time slots
+  // Fetch real available time slots from backend
+  const fetchAvailableTimeSlots = async (providerId: string, serviceId: string, date: string) => {
+    try {
+      const response = await fetch(
+        `http://localhost:8000/api/v1/bookings/availability/${providerId}/${serviceId}?date=${date}`,
+        {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Available time slots from API:', data);
+        
+        // Convert backend time slots to our format
+        const slots: TimeSlot[] = data.timeSlots.map((timeSlot: string) => ({
+          time: new Date(timeSlot).toLocaleTimeString('en-US', { 
+            hour: '2-digit', 
+            minute: '2-digit',
+            hour12: false 
+          }),
+          available: true // All slots from API are available
+        }));
+        
+        return slots;
+      } else {
+        console.error('Failed to fetch availability:', response.statusText);
+        return generateTimeSlots(); // Fallback to dummy data
+      }
+    } catch (error) {
+      console.error('Error fetching availability:', error);
+      return generateTimeSlots(); // Fallback to dummy data
+    }
+  };
+
+  // Generate sample time slots (fallback)
   const generateTimeSlots = () => {
     const slots: TimeSlot[] = []
     for (let hour = 9; hour <= 17; hour++) {
@@ -64,11 +102,80 @@ export default function BookServicePage() {
     tomorrow.setDate(tomorrow.getDate() + 1)
     setSelectedDate(tomorrow.toISOString().split('T')[0])
     
-    // Generate time slots
-    setTimeSlots(generateTimeSlots())
-
-    // Mock service and provider data
+    // Fetch real service and provider data
     if (serviceId && providerId) {
+      fetchServiceAndProviderData(serviceId, providerId);
+      
+      // Fetch initial time slots for tomorrow
+      fetchAndSetTimeSlots(providerId, serviceId, tomorrow.toISOString().split('T')[0]);
+    }
+  }, [serviceId, providerId])
+
+  // Fetch real service and provider data from API
+  const fetchServiceAndProviderData = async (serviceId: string, providerId: string) => {
+    try {
+      setLoading(true);
+      
+      // Fetch service data
+      const serviceResponse = await fetch(`http://localhost:8000/api/v1/services/${serviceId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      // Fetch provider data
+      const providerResponse = await fetch(`http://localhost:8000/api/v1/providers/${providerId}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (serviceResponse.ok && providerResponse.ok) {
+        const serviceData = await serviceResponse.json();
+        const providerData = await providerResponse.json();
+        
+        // Convert backend data to frontend format
+        setService({
+          id: serviceData.id,
+          name: serviceData.name,
+          description: serviceData.description,
+          price: serviceData.basePrice, // Backend uses 'basePrice'
+          duration: serviceData.durationMinutes,
+          category: serviceData.category?.name || 'General'
+        });
+        
+        setProvider({
+          id: providerData.id,
+          businessName: providerData.businessName,
+          user: {
+            firstName: providerData.user?.firstName || '',
+            lastName: providerData.user?.lastName || ''
+          }
+        });
+      } else {
+        console.error('Failed to fetch service or provider data');
+        // Fallback to mock data if API fails
+        setService({
+          id: serviceId,
+          name: 'Professional Haircut & Styling',
+          description: 'Complete hair styling service including wash, cut, and blow dry',
+          price: 75,
+          duration: 60,
+          category: 'Hair'
+        });
+        
+        setProvider({
+          id: providerId,
+          businessName: 'Elite Beauty Salon',
+          user: {
+            firstName: 'Sarah',
+            lastName: 'Johnson'
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Error fetching service/provider data:', error);
+      // Fallback to mock data on error
       setService({
         id: serviceId,
         name: 'Professional Haircut & Styling',
@@ -76,7 +183,7 @@ export default function BookServicePage() {
         price: 75,
         duration: 60,
         category: 'Hair'
-      })
+      });
       
       setProvider({
         id: providerId,
@@ -85,9 +192,37 @@ export default function BookServicePage() {
           firstName: 'Sarah',
           lastName: 'Johnson'
         }
-      })
+      });
+    } finally {
+      setLoading(false);
     }
-  }, [serviceId, providerId])
+  };
+
+  // Fetch time slots when date changes
+  useEffect(() => {
+    if (selectedDate && providerId && serviceId) {
+      fetchAndSetTimeSlots(providerId, serviceId, selectedDate);
+    }
+  }, [selectedDate, providerId, serviceId])
+
+  // Handle date change to refresh time slots and reset time selection
+  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setSelectedDate(e.target.value)
+    setSelectedTime('') // Reset selected time when date changes
+  }
+
+  const fetchAndSetTimeSlots = async (providerId: string, serviceId: string, date: string) => {
+    setLoading(true);
+    try {
+      const slots = await fetchAvailableTimeSlots(providerId, serviceId, date);
+      setTimeSlots(slots);
+    } catch (error) {
+      console.error('Error loading time slots:', error);
+      setTimeSlots(generateTimeSlots()); // Fallback
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleBooking = async () => {
     if (!selectedDate || !selectedTime || !service || !provider) {
@@ -223,7 +358,7 @@ export default function BookServicePage() {
             <input
               type="date"
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              onChange={handleDateChange}
               min={new Date().toISOString().split('T')[0]}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
             />
@@ -232,24 +367,30 @@ export default function BookServicePage() {
           {/* Time Selection */}
           <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">Select Time</label>
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-              {timeSlots.map((slot) => (
-                <button
-                  key={slot.time}
-                  onClick={() => slot.available && setSelectedTime(slot.time)}
-                  disabled={!slot.available}
-                  className={`p-3 text-sm font-medium rounded-lg transition ${
-                    selectedTime === slot.time
-                      ? 'bg-purple-600 text-white'
-                      : slot.available
-                      ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                      : 'bg-gray-50 text-gray-400 cursor-not-allowed'
-                  }`}
-                >
-                  {slot.time}
-                </button>
-              ))}
-            </div>
+            {loading ? (
+              <div className="flex items-center justify-center py-8">
+                <div className="text-gray-500">Loading available times...</div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                {timeSlots.map((slot) => (
+                  <button
+                    key={slot.time}
+                    onClick={() => slot.available && setSelectedTime(slot.time)}
+                    disabled={!slot.available}
+                    className={`p-3 text-sm font-medium rounded-lg transition ${
+                      selectedTime === slot.time
+                        ? 'bg-purple-600 text-white'
+                        : slot.available
+                        ? 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                        : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                    }`}
+                  >
+                    {slot.time}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Notes */}

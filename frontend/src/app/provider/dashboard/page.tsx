@@ -96,15 +96,15 @@ export default function ProviderDashboard() {
       setBookingStats(stats);
 
       // Calculate financial data
-      const completedBookings = bookings.filter((b: any) => b.status === 'completed');
+      const earnedBookings = bookings.filter((b: any) => b.status === 'completed' || b.status === 'confirmed');
       const cancelledBookings = bookings.filter((b: any) => b.status === 'cancelled');
       
-      const totalEarnings = completedBookings.reduce((sum: number, booking: any) => {
-        return sum + (parseFloat(booking.totalAmount) || 0);
+      const totalEarnings = earnedBookings.reduce((sum: number, booking: any) => {
+        return sum + (parseFloat(booking.totalPrice) || 0);
       }, 0);
 
       const totalRefunds = cancelledBookings.reduce((sum: number, booking: any) => {
-        return sum + (parseFloat(booking.totalAmount) || 0);
+        return sum + (parseFloat(booking.totalPrice) || 0);
       }, 0);
 
       // Try to fetch payouts data for withdrawals
@@ -146,9 +146,11 @@ export default function ProviderDashboard() {
         .slice(0, 4)
         .map((booking: any) => ({
           id: booking.id,
-          customerName: booking.customer?.name || booking.customerName || 'Unknown Customer',
+          customerName: booking.customer 
+            ? `${booking.customer.firstName || ''} ${booking.customer.lastName || ''}`.trim()
+            : booking.customerName || 'Unknown Customer',
           serviceName: booking.service?.name || booking.serviceName || 'Service',
-          amount: parseFloat(booking.totalAmount) || 0,
+          amount: parseFloat(booking.totalPrice) || 0,
           status: booking.status,
           createdAt: booking.createdAt
         }));
@@ -173,12 +175,12 @@ export default function ProviderDashboard() {
       });
 
       const revenue = monthBookings
-        .filter((b: any) => b.status === 'completed')
-        .reduce((sum: number, b: any) => sum + (parseFloat(b.totalAmount) || 0), 0);
+        .filter((b: any) => b.status === 'completed' || b.status === 'confirmed')
+        .reduce((sum: number, b: any) => sum + (parseFloat(b.totalPrice) || 0), 0);
 
       const withdraw = monthBookings
         .filter((b: any) => b.status === 'cancelled')
-        .reduce((sum: number, b: any) => sum + (parseFloat(b.totalAmount) || 0), 0);
+        .reduce((sum: number, b: any) => sum + (parseFloat(b.totalPrice) || 0), 0);
 
       return {
         month,

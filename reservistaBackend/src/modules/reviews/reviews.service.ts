@@ -133,7 +133,7 @@ export class ReviewsService {
   async findOne(id: string): Promise<Review> {
     const review = await this.reviewRepository.findOne({
       where: { id },
-      relations: ['customer', 'provider', 'booking', 'booking.service']
+      relations: ['customer', 'provider', 'provider.user', 'booking', 'booking.service']
     });
 
     if (!review) {
@@ -247,6 +247,43 @@ export class ReviewsService {
       averageRating,
       ratingDistribution
     };
+  }
+
+  async fixOrphanReviews(): Promise<{ fixed: number; message: string }> {
+    try {
+      // Find all reviews without provider ID
+      const orphanReviews = await this.reviewRepository.find({
+        where: { providerId: null },
+        relations: ['booking']
+      });
+
+      let fixed = 0;
+
+      for (const review of orphanReviews) {
+        if (review.bookingId) {
+          // Get the booking to find the correct provider ID
+          const booking = await this.bookingRepository.findOne({
+            where: { id: review.bookingId },
+            relations: ['provider']
+          });
+
+          if (booking && booking.providerId) {
+            // Update the review with the correct provider ID
+            await this.reviewRepository.update(review.id, {
+              providerId: booking.providerId
+            });
+            fixed++;
+          }
+        }
+      }
+
+      return {
+        fixed,
+        message: `Fixed ${fixed} orphan reviews out of ${orphanReviews.length} found.`
+      };
+    } catch (error) {
+      throw new BadRequestException(`Failed to fix orphan reviews: ${error.message}`);
+    }
   }
 
   private async updateServiceRating(serviceId: string): Promise<void> {

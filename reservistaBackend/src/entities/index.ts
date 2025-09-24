@@ -20,6 +20,8 @@ export { Payout } from './payout.entity';
 
 // TODO: Export remaining entities as they are created
 export { Notification } from './notification.entity';
+export { Message } from './message.entity';
+export { Reminder } from './reminder.entity';
 export { SupportTicket } from './support-ticket.entity';
 // export { CalendarAccount } from './calendar-account.entity';
 // export { Payout } from './payout.entity';

@@ -27,6 +27,18 @@ export default function ProviderBookings() {
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [selectedBooking, setSelectedBooking] = useState<any>(null);
   const [showDetailsModal, setShowDetailsModal] = useState(false);
+  const [showManualBookingModal, setShowManualBookingModal] = useState(false);
+  const [manualBookingForm, setManualBookingForm] = useState({
+    customerName: '',
+    customerEmail: '',
+    customerPhone: '',
+    service: '',
+    date: '',
+    time: '',
+    duration: 60,
+    price: 0,
+    notes: ''
+  });
 
   // Fetch bookings from API
   useEffect(() => {
@@ -57,18 +69,18 @@ export default function ProviderBookings() {
         // Transform the API response to match our interface
         const transformedBookings = data.bookings?.map((booking: any) => ({
           id: booking.id,
-          customerName: booking.customer?.name || booking.customerName || 'Unknown Customer',
-          customerEmail: booking.customer?.email || booking.customerEmail || '',
-          customerPhone: booking.customer?.phone || booking.customerPhone || '',
-          service: booking.service?.name || booking.serviceName || 'Unknown Service',
-          date: booking.scheduledAt ? new Date(booking.scheduledAt).toISOString().split('T')[0] : booking.date,
-          time: booking.scheduledAt ? new Date(booking.scheduledAt).toLocaleTimeString('en-US', { 
+          customerName: `${booking.customer?.firstName || ''} ${booking.customer?.lastName || ''}`.trim() || 'Unknown Customer',
+          customerEmail: booking.customer?.email || '',
+          customerPhone: booking.customer?.phone || '',
+          service: booking.service?.name || 'Unknown Service',
+          date: booking.startTime ? new Date(booking.startTime).toISOString().split('T')[0] : '',
+          time: booking.startTime ? new Date(booking.startTime).toLocaleTimeString('en-US', { 
             hour: 'numeric', 
             minute: '2-digit',
             hour12: true 
-          }) : booking.time,
-          duration: booking.service?.duration || booking.duration || 60,
-          price: booking.totalAmount || booking.price || 0,
+          }) : '',
+          duration: booking.service?.duration || 60,
+          price: parseFloat(booking.totalPrice) || 0,
           status: booking.status || 'pending',
           notes: booking.notes || '',
           bookingDate: booking.createdAt ? new Date(booking.createdAt).toISOString().split('T')[0] : '',
@@ -95,12 +107,189 @@ export default function ProviderBookings() {
     }
   };
 
+  // Update booking status
+  const updateBookingStatus = async (bookingId: string, newStatus: string) => {
+    try {
+      const token = localStorage.getItem('providerToken');
+      if (!token) {
+        setError('Authentication token not found');
+        return;
+      }
+
+      let response;
+      
+      // Use specific endpoints based on the status
+      if (newStatus === 'cancelled') {
+        response = await fetch(`http://localhost:8000/api/v1/bookings/${bookingId}/cancel`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+        });
+      } else if (newStatus === 'completed') {
+        response = await fetch(`http://localhost:8000/api/v1/bookings/${bookingId}/complete`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({}), // Empty body for completion
+        });
+      } else {
+        // For confirmed status, use general update endpoint
+        response = await fetch(`http://localhost:8000/api/v1/bookings/${bookingId}`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
+          },
+          body: JSON.stringify({ status: newStatus }),
+        });
+      }
+
+      if (response.ok) {
+        // Update the booking in the local state
+        setBookings(prev => prev.map(booking => 
+          booking.id === bookingId 
+            ? { ...booking, status: newStatus }
+            : booking
+        ));
+        
+        // Show success message (you can add a toast notification here)
+        console.log(`Booking status updated to ${newStatus}`);
+      } else {
+        throw new Error('Failed to update booking status');
+      }
+    } catch (error: any) {
+      console.error('Error updating booking status:', error);
+      setError('Failed to update booking status');
+    }
+  };
+
+  // Function to check in a booking
+  const checkInBooking = async (bookingId: string) => {
+    try {
+      const token = localStorage.getItem('providerToken');
+      if (!token) {
+        setError('Authentication token not found');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:8000/api/v1/bookings/${bookingId}/checkin`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({}), // Empty body for check-in
+      });
+
+      if (response.ok) {
+        // Update the booking in the local state to in_progress
+        setBookings(prev => prev.map(booking => 
+          booking.id === bookingId 
+            ? { ...booking, status: 'in_progress' }
+            : booking
+        ));
+        
+        console.log('Customer checked in successfully');
+      } else {
+        throw new Error('Failed to check in customer');
+      }
+    } catch (error: any) {
+      console.error('Error checking in customer:', error);
+      setError('Failed to check in customer');
+    }
+  };
+
+  const handleAcceptBooking = (bookingId: string) => {
+    updateBookingStatus(bookingId, 'confirmed');
+  };
+
+  const handleDeclineBooking = (bookingId: string) => {
+    updateBookingStatus(bookingId, 'cancelled');
+  };
+
+  const handleCompleteBooking = (bookingId: string) => {
+    updateBookingStatus(bookingId, 'completed');
+  };
+
+  const handleCheckInBooking = (bookingId: string) => {
+    checkInBooking(bookingId);
+  };
+
+  // Manual booking handlers
+  const handleManualBookingSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const token = localStorage.getItem('providerToken');
+      if (!token) {
+        setError('Authentication token not found');
+        return;
+      }
+
+      // Combine date and time for the API
+      const startDateTime = new Date(`${manualBookingForm.date}T${manualBookingForm.time}`);
+      const endDateTime = new Date(startDateTime.getTime() + manualBookingForm.duration * 60000);
+
+      const bookingData = {
+        customerName: manualBookingForm.customerName,
+        customerEmail: manualBookingForm.customerEmail,
+        customerPhone: manualBookingForm.customerPhone,
+        serviceName: manualBookingForm.service,
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
+        totalPrice: manualBookingForm.price,
+        notes: manualBookingForm.notes,
+        status: 'confirmed' // Manual bookings are typically confirmed
+      };
+
+      const response = await fetch('http://localhost:8000/api/v1/bookings/manual', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(bookingData),
+      });
+
+      if (response.ok) {
+        // Refresh bookings list
+        fetchBookings();
+        
+        // Close modal and reset form
+        setShowManualBookingModal(false);
+        setManualBookingForm({
+          customerName: '',
+          customerEmail: '',
+          customerPhone: '',
+          service: '',
+          date: '',
+          time: '',
+          duration: 60,
+          price: 0,
+          notes: ''
+        });
+        
+        console.log('Manual booking created successfully');
+      } else {
+        throw new Error('Failed to create manual booking');
+      }
+    } catch (error: any) {
+      console.error('Error creating manual booking:', error);
+      setError('Failed to create manual booking');
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case "confirmed":
         return "bg-green-100 text-green-800";
       case "pending":
         return "bg-yellow-100 text-yellow-800";
+      case "in_progress":
+        return "bg-purple-100 text-purple-800";
       case "completed":
         return "bg-blue-100 text-blue-800";
       case "cancelled":
@@ -133,6 +322,7 @@ export default function ProviderBookings() {
       all: bookings.length,
       pending: bookings.filter(b => b.status === "pending").length,
       confirmed: bookings.filter(b => b.status === "confirmed").length,
+      in_progress: bookings.filter(b => b.status === "in_progress").length,
       completed: bookings.filter(b => b.status === "completed").length,
       cancelled: bookings.filter(b => b.status === "cancelled").length,
     };
@@ -195,7 +385,10 @@ export default function ProviderBookings() {
               <p className="text-gray-600 mt-1">Manage your appointments and client bookings</p>
             </div>
             <div className="flex gap-3">
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center">
+              <button 
+                onClick={() => setShowManualBookingModal(true)}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition flex items-center"
+              >
                 <span className="mr-2">+</span>
                 Add Manual Booking
               </button>
@@ -247,14 +440,11 @@ export default function ProviderBookings() {
           <div className="bg-white rounded-lg p-6 shadow-sm border border-gray-200">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">Today's Revenue</p>
-                <p className="text-2xl font-bold text-green-600">
-                  ${bookings.filter(b => b.date === new Date().toISOString().split('T')[0] && b.paymentStatus === 'paid')
-                    .reduce((sum, b) => sum + b.price, 0)}
-                </p>
+                <p className="text-sm font-medium text-gray-600">In Progress</p>
+                <p className="text-2xl font-bold text-purple-600">{counts.in_progress}</p>
               </div>
-              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                💰
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                �
               </div>
             </div>
           </div>
@@ -268,6 +458,7 @@ export default function ProviderBookings() {
                 { key: "all", label: "All", count: counts.all },
                 { key: "pending", label: "Pending", count: counts.pending },
                 { key: "confirmed", label: "Confirmed", count: counts.confirmed },
+                { key: "in_progress", label: "In Progress", count: counts.in_progress },
                 { key: "completed", label: "Completed", count: counts.completed },
                 { key: "cancelled", label: "Cancelled", count: counts.cancelled },
               ].map((tab) => (
@@ -364,10 +555,16 @@ export default function ProviderBookings() {
                       
                       {booking.status === "pending" && (
                         <>
-                          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">
+                          <button 
+                            onClick={() => handleAcceptBooking(booking.id)}
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
+                          >
                             Accept
                           </button>
-                          <button className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm">
+                          <button 
+                            onClick={() => handleDeclineBooking(booking.id)}
+                            className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition text-sm"
+                          >
                             Decline
                           </button>
                         </>
@@ -375,11 +572,28 @@ export default function ProviderBookings() {
                       
                       {booking.status === "confirmed" && (
                         <>
-                          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm">
-                            Mark Complete
+                          <button 
+                            onClick={() => handleCheckInBooking(booking.id)}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition text-sm"
+                          >
+                            Check In Customer
                           </button>
                           <button className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition text-sm">
                             Reschedule
+                          </button>
+                        </>
+                      )}
+                      
+                      {booking.status === "in_progress" && (
+                        <>
+                          <button 
+                            onClick={() => handleCompleteBooking(booking.id)}
+                            className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition text-sm"
+                          >
+                            Mark Complete
+                          </button>
+                          <button className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition text-sm">
+                            Add Notes
                           </button>
                         </>
                       )}
@@ -450,6 +664,156 @@ export default function ProviderBookings() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Manual Booking Modal */}
+      {showManualBookingModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold text-gray-900">Add Manual Booking</h2>
+                <button 
+                  onClick={() => setShowManualBookingModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+            
+            <form onSubmit={handleManualBookingSubmit} className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-4">Customer Information</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Customer Name *</label>
+                      <input
+                        type="text"
+                        required
+                        value={manualBookingForm.customerName}
+                        onChange={(e) => setManualBookingForm(prev => ({ ...prev, customerName: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter customer name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Email *</label>
+                      <input
+                        type="email"
+                        required
+                        value={manualBookingForm.customerEmail}
+                        onChange={(e) => setManualBookingForm(prev => ({ ...prev, customerEmail: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="customer@example.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
+                      <input
+                        type="tel"
+                        value={manualBookingForm.customerPhone}
+                        onChange={(e) => setManualBookingForm(prev => ({ ...prev, customerPhone: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="+1 (555) 123-4567"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                <div>
+                  <h3 className="font-semibold text-gray-900 mb-4">Booking Details</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Service *</label>
+                      <input
+                        type="text"
+                        required
+                        value={manualBookingForm.service}
+                        onChange={(e) => setManualBookingForm(prev => ({ ...prev, service: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Enter service name"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+                      <input
+                        type="date"
+                        required
+                        value={manualBookingForm.date}
+                        onChange={(e) => setManualBookingForm(prev => ({ ...prev, date: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Time *</label>
+                      <input
+                        type="time"
+                        required
+                        value={manualBookingForm.time}
+                        onChange={(e) => setManualBookingForm(prev => ({ ...prev, time: e.target.value }))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Duration (min) *</label>
+                        <input
+                          type="number"
+                          required
+                          min="1"
+                          value={manualBookingForm.duration}
+                          onChange={(e) => setManualBookingForm(prev => ({ ...prev, duration: parseInt(e.target.value) || 60 }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Price ($) *</label>
+                        <input
+                          type="number"
+                          required
+                          min="0"
+                          step="0.01"
+                          value={manualBookingForm.price}
+                          onChange={(e) => setManualBookingForm(prev => ({ ...prev, price: parseFloat(e.target.value) || 0 }))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-6">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Special Notes</label>
+                <textarea
+                  value={manualBookingForm.notes}
+                  onChange={(e) => setManualBookingForm(prev => ({ ...prev, notes: e.target.value }))}
+                  rows={3}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="Any special instructions or notes..."
+                />
+              </div>
+              
+              <div className="mt-6 flex gap-3">
+                <button 
+                  type="button"
+                  onClick={() => setShowManualBookingModal(false)}
+                  className="flex-1 border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition"
+                >
+                  Create Booking
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

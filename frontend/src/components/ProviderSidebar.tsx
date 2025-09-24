@@ -32,7 +32,7 @@ export default function ProviderSidebar() {
       title: 'CLIENTS',
       items: [
         { name: 'My Buyers', href: '/provider/buyers', icon: '👥' },
-        { name: 'Visited', href: '/provider/visited', icon: '👁️' },
+        { name: 'Messages', href: '/provider/messages', icon: '💬' },
         { name: 'Transactions', href: '/provider/transactions', icon: '💳' },
       ]
     },
