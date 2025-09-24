@@ -13,6 +13,7 @@ const ProviderNav = () => {
     { name: "Dashboard", href: "/provider/dashboard", icon: "🏠" },
     { name: "Bookings", href: "/provider/bookings", icon: "📅" },
     { name: "Services", href: "/provider/services", icon: "🛍️" },
+    { name: "Availability", href: "/provider/availability", icon: "🕒" },
     { name: "Calendar", href: "/provider/calendar", icon: "📆" },
     { name: "Analytics", href: "/provider/analytics", icon: "📊" },
     { name: "Profile", href: "/provider/profile", icon: "👤" },

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Star, X, Check } from 'lucide-react';
 import * as Dialog from '@radix-ui/react-dialog';
+import { getAuthHeaders } from '@/lib/auth';
 
 interface ReviewModalProps {
   isOpen: boolean;
@@ -40,15 +41,11 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
 
     setLoading(true);
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/reviews`,
+        `http://localhost:8000/api/v1/reviews`,
         {
           method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
+          headers: getAuthHeaders(),
           body: JSON.stringify({
             ...formData,
             bookingId

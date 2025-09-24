@@ -213,6 +213,26 @@ export class ReviewsController {
     return await this.reviewsService.toggleVerifiedStatus(id);
   }
 
+  @ApiOperation({ summary: 'Fix orphan reviews by associating them with correct providers' })
+  @ApiResponse({
+    status: 200,
+    description: 'Orphan reviews fixed successfully',
+    schema: {
+      type: 'object',
+      properties: {
+        fixed: { type: 'number' },
+        message: { type: 'string' }
+      }
+    }
+  })
+  @ApiBearerAuth()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'provider')
+  @Post('fix-orphan-reviews')
+  async fixOrphanReviews(@Req() req: any): Promise<{ fixed: number; message: string }> {
+    return await this.reviewsService.fixOrphanReviews();
+  }
+
   @ApiOperation({ summary: 'Delete review' })
   @ApiResponse({
     status: 204,

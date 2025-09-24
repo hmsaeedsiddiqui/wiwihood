@@ -181,4 +181,28 @@ export class ProvidersController {
     await this.providersService.remove(id);
     return { message: 'Provider deleted successfully' };
   }
+
+  @Get('me/availability')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get provider availability settings' })
+  @ApiResponse({
+    status: 200,
+    description: 'Provider availability retrieved successfully',
+  })
+  async getMyAvailability(@Request() req): Promise<any> {
+    return this.providersService.getAvailability(req.user.sub);
+  }
+
+  @Post('me/availability')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update provider availability settings' })
+  @ApiResponse({
+    status: 200,
+    description: 'Provider availability updated successfully',
+  })
+  async updateMyAvailability(@Request() req, @Body() availabilityData: any): Promise<any> {
+    return this.providersService.updateAvailability(req.user.sub, availabilityData);
+  }
 }

@@ -27,6 +27,7 @@ import { FavoritesModule } from './modules/favorites/favorites.module';
 import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { ContactModule } from './modules/contact/contact.module';
+import { MessagesModule } from './modules/messages/messages.module';
 
 @Module({
   imports: [
@@ -63,6 +64,7 @@ import { ContactModule } from './modules/contact/contact.module';
     ReviewsModule,
     PayoutsModule,
     NotificationsModule,
+    MessagesModule, // Register MessagesModule
     SupportTicketsModule,
     CmsModule,
     LogsModule,

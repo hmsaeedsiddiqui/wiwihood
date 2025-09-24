@@ -14,8 +14,10 @@ async function bootstrap() {
 
   // Enable CORS for frontend
   app.enableCors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:7000',
+    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
   });
 
   // Global validation pipe
@@ -82,7 +84,7 @@ async function bootstrap() {
     },
   });
 
-  const port = process.env.PORT || 3002;
+  const port = process.env.PORT || 8000;
   await app.listen(port);
   
   console.log(`🚀 Reservista API is running on: http://localhost:${port}`);

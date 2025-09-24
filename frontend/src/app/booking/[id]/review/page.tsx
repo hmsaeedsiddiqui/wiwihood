@@ -7,6 +7,7 @@ import Link from 'next/link';
 import ReviewFlow from '@/components/ReviewFlow';
 import ReviewModal from '@/components/ReviewModal';
 import ReviewSummary from '@/components/ReviewSummary';
+import { getAuthHeaders } from '@/lib/auth';
 
 interface Booking {
   id: string;
@@ -43,7 +44,7 @@ interface Booking {
 
 export default function BookingReviewPage() {
   const params = useParams();
-  const bookingId = params.id as string;
+  const bookingId = params?.id as string;
   
   const [booking, setBooking] = useState<Booking | null>(null);
   const [loading, setLoading] = useState(true);
@@ -51,20 +52,18 @@ export default function BookingReviewPage() {
   const [currentUser, setCurrentUser] = useState<any>(null);
 
   useEffect(() => {
-    loadBooking();
-    loadCurrentUser();
+    if (bookingId) {
+      loadBooking();
+      loadCurrentUser();
+    }
   }, [bookingId]);
 
   const loadBooking = async () => {
     try {
-      const token = localStorage.getItem('token');
       const response = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/api/v1/bookings/${bookingId}`,
+        `http://localhost:8000/api/v1/bookings/${bookingId}`,
         {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          }
+          headers: getAuthHeaders()
         }
       );
 
