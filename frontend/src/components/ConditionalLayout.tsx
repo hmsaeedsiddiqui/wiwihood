@@ -14,9 +14,16 @@ export default function ConditionalLayout({
   const pathname = usePathname();
   const isProviderPage = pathname?.startsWith('/provider');
   const isProviderAuthPage = pathname?.startsWith('/auth/provider');
+  const isAdminPage = pathname?.startsWith('/admin');
+  const isAdminAuthPage = pathname?.startsWith('/auth/admin');
 
   if (isProviderPage || isProviderAuthPage) {
     // Provider pages - completely isolated layout (no AuthProvider, no Header, no Cart)
+    return <>{children}</>;
+  }
+
+  if (isAdminPage || isAdminAuthPage) {
+    // Admin pages - completely isolated layout (no customer header, no cart, etc.)
     return <>{children}</>;
   }
 

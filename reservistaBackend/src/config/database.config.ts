@@ -1,10 +1,10 @@
 import { registerAs } from '@nestjs/config';
 import { TypeOrmModuleOptions } from '@nestjs/typeorm';
-import { 
-  User, 
-  Provider, 
-  Service, 
-  Booking, 
+import {
+  User,
+  Provider,
+  Service,
+  Booking,
   Payment,
   Refund,
   Review,
@@ -18,11 +18,18 @@ import {
   OAuthAccount,
   Payout,
   CartItem,
-  ContactMessage
-  // Notification, Message, Reminder - temporarily removed
-} from '../entities';
-
-export default registerAs(
+  ContactMessage,
+  SupportTicket,
+  Analytics,
+  SystemSetting,
+  Log,
+  CalendarEvent,
+  Notification,
+  Message,
+  Reminder,
+  UserNotificationPreferences,
+  CmsPage
+} from '../entities';export default registerAs(
   'database',
   (): TypeOrmModuleOptions => ({
     type: process.env.DATABASE_TYPE as any || 'postgres',
@@ -34,8 +41,9 @@ export default registerAs(
     entities: [
       User, Provider, Service, Booking, Payment, Refund, Review, Category,
       ProviderWorkingHours, ProviderTimeOff, Favorite, Role, Permission, 
-      RolePermission, OAuthAccount, Payout, CartItem, ContactMessage
-      // Notification, Message, Reminder - temporarily removed for testing
+      RolePermission, OAuthAccount, Payout, CartItem, ContactMessage, SupportTicket,
+      Analytics, SystemSetting, Log, CalendarEvent, Notification, Message, 
+      Reminder, UserNotificationPreferences, CmsPage
     ],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     synchronize: false, // Temporarily disabled to avoid index conflicts
