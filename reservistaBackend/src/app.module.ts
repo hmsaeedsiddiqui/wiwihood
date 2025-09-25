@@ -28,6 +28,7 @@ import { CloudinaryModule } from './modules/cloudinary/cloudinary.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { ContactModule } from './modules/contact/contact.module';
 import { MessagesModule } from './modules/messages/messages.module';
+import { AdminModule } from './modules/admin/admin.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { MessagesModule } from './modules/messages/messages.module';
     CloudinaryModule, // Register CloudinaryModule
     UploadModule, // Register UploadModule
     ContactModule, // Register ContactModule
+    AdminModule, // Register AdminModule
   ],
   controllers: [AppController, PaymentController],
   providers: [AppService, PaymentService],
