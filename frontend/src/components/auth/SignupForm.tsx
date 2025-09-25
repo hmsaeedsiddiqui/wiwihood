@@ -38,8 +38,8 @@ export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   return (
-    <div className="auth-form-container">
-      <div className="auth-form-card">
+    <div className="bg-gray-50 p-3 rounded-2xl">
+      <div className="">
         <h2 className="auth-form-title">Create Account</h2>
         
         {error && (
@@ -53,8 +53,8 @@ export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
         )}
         
         <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-row">
-            <div className="form-group">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="">
               <input
                 type="text"
                 value={firstName}
@@ -65,7 +65,7 @@ export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
                 autoComplete="given-name"
               />
             </div>
-            <div className="form-group">
+            <div className="">
               <input
                 type="text"
                 value={lastName}
@@ -120,11 +120,16 @@ export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
           </button>
         </form>
         
-        <div className="auth-link">
-          Already have an account?{' '}
-          <a href="/auth/login" className="auth-link-anchor">
-            Sign in here
-          </a>
+        <div className="text-center mt-6">
+          <p className="text-gray-600">
+            Already have an account?{' '}
+            <a 
+              href="/auth/login" 
+              className="text-green-600 font-semibold hover:text-green-500 transition-colors"
+            >
+              Sign in here
+            </a>
+          </p>
         </div>
       </div>
     </div>

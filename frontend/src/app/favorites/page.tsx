@@ -8,7 +8,7 @@ const demoFavorites = [
     rating: 4.8,
     reviews: 120,
     city: 'Downtown',
-    image: '/blog1.jpg',
+    image: 'https://images.pexels.com/photos/3993427/pexels-photo-3993427.jpeg?auto=compress&cs=tinysrgb&w=640&h=480&dpr=2',
   },
   {
     id: 2,
@@ -17,7 +17,7 @@ const demoFavorites = [
     rating: 4.9,
     reviews: 98,
     city: 'Wellness Blvd',
-    image: '/blog2.jpg',
+    image: 'https://images.pexels.com/photos/3993427/pexels-photo-3993427.jpeg?auto=compress&cs=tinysrgb&w=640&h=480&dpr=2',
   },
   {
     id: 3,
@@ -26,7 +26,7 @@ const demoFavorites = [
     rating: 4.7,
     reviews: 75,
     city: 'Beauty Lane',
-    image: '/blog3.jpg',
+   image: 'https://images.pexels.com/photos/3993427/pexels-photo-3993427.jpeg?auto=compress&cs=tinysrgb&w=640&h=480&dpr=2',
   },
 ];
 

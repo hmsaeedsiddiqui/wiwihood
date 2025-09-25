@@ -6,15 +6,15 @@ import Footer from "../../components/Footer";
 export default function BrowsePage() {
   return (
     <>
-      <div style={{ minHeight: "80vh", background: "#fff", padding: "48px 0" }}>
-        <div style={{ maxWidth: 900, margin: "0 auto" }}>
-          <h1 style={{ fontSize: "2.2rem", fontWeight: 800, fontFamily: "Manrope, sans-serif", marginBottom: 18 }}>
+      <div className="min-h-[80vh] bg-white py-12">
+        <div className="w-[95%] max-w-[1400px] mx-auto px-4">
+          <h1 className="text-4xl font-extrabold font-[Manrope] mb-4">
             Browse All Services & Offers
           </h1>
-          <p style={{ color: "#6b7280", fontSize: 17, marginBottom: 38, fontWeight: 500, maxWidth: 600 }}>
+          <p className="text-gray-500 text-lg mb-10 font-medium max-w-2xl">
             Explore all available services, top-rated providers, and exclusive offers. Click any service to view details or add to cart.
           </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 32 }}>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
             {/* 20 visually rich cards for demo */}
             {[
               {
@@ -138,11 +138,11 @@ export default function BrowsePage() {
                 desc: "7 Coaches"
               }
             ].map((card, i) => (
-              <Link key={i} href={card.href} style={{ width: 270, borderRadius: 16, overflow: "hidden", boxShadow: "0 8px 32px rgba(0,0,0,0.12)", background: "#f3fdf6", textDecoration: "none", color: "#222", display: "block" }}>
-                <img src={card.img} alt={card.title} style={{ width: "100%", height: 160, objectFit: "cover" }} />
-                <div style={{ padding: 18 }}>
-                  <div style={{ fontWeight: 700, fontSize: 19 }}>{card.title}</div>
-                  <div style={{ color: "#6b7280", fontSize: 15 }}>{card.desc}</div>
+              <Link key={i} href={card.href} className=" rounded-2xl overflow-hidden shadow-xl bg-green-50 no-underline text-gray-900 block hover:shadow-2xl transition-shadow duration-300">
+                <img src={card.img} alt={card.title} className="w-full h-40 object-cover" />
+                <div className="p-4">
+                  <div className="font-bold text-lg">{card.title}</div>
+                  <div className="text-gray-500 text-sm">{card.desc}</div>
                 </div>
               </Link>
             ))}

@@ -42,41 +42,25 @@ export default function ContactPage() {
   };
 
   return (
-    <>
-      <style jsx global>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
-      <div style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: 'Manrope, sans-serif', padding: '60px 0' }}>
-        <div style={{ maxWidth: 600, margin: '0 auto', padding: '0 24px' }}>
-          <h1 style={{ fontSize: 36, fontWeight: 800, textAlign: 'center', marginBottom: 40, letterSpacing: '-1px', color: '#222' }}>Contact Us</h1>
+    <div className="bg-slate-50 min-h-screen py-16">
+      <div className="max-w-2xl mx-auto px-6">
+        <h1 className="text-4xl font-extrabold text-center mb-10 tracking-tight text-gray-900">Contact Us</h1>
         {submitted ? (
-          <div style={{ background: '#d4f4dd', padding: 32, borderRadius: 12, textAlign: 'center', color: '#10b981', fontWeight: 600 }}>
+          <div className="bg-green-100 p-8 rounded-xl text-center text-green-600 font-semibold">
             Thank you for contacting us! We'll get back to you soon.
-            <div style={{ marginTop: 16 }}>
+            <div className="mt-4">
               <button
                 onClick={() => setSubmitted(false)}
-                style={{ 
-                  background: '#10b981', 
-                  color: '#fff', 
-                  padding: '8px 16px', 
-                  borderRadius: 6, 
-                  border: 'none', 
-                  cursor: 'pointer',
-                  fontSize: 14,
-                  fontWeight: 600
-                }}
+                className="bg-green-500 text-white px-4 py-2 rounded-md border-none cursor-pointer text-sm font-semibold hover:bg-green-600 transition-colors"
               >
                 Send Another Message
               </button>
             </div>
           </div>
         ) : (
-          <form onSubmit={handleSubmit} style={{ background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: 32, display: 'flex', flexDirection: 'column', gap: 20 }}>
+          <form onSubmit={handleSubmit} className="bg-white rounded-xl shadow-xl p-8 flex flex-col gap-5">
             {error && (
-              <div style={{ background: '#fef2f2', border: '1px solid #fecaca', color: '#dc2626', padding: 16, borderRadius: 8, fontSize: 14 }}>
+              <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg text-sm">
                 {error}
               </div>
             )}
@@ -88,14 +72,9 @@ export default function ContactPage() {
               onChange={handleChange} 
               required 
               disabled={loading}
-              style={{ 
-                padding: 14, 
-                borderRadius: 8, 
-                border: '1px solid #e5e7eb', 
-                fontSize: 16,
-                backgroundColor: loading ? '#f9fafb' : '#fff',
-                opacity: loading ? 0.7 : 1
-              }} 
+              className={`p-3.5 rounded-lg border border-gray-300 text-base transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none ${
+                loading ? 'bg-gray-50 opacity-70 cursor-not-allowed' : 'bg-white'
+              }`}
             />
             <input 
               name="email" 
@@ -105,14 +84,9 @@ export default function ContactPage() {
               onChange={handleChange} 
               required 
               disabled={loading}
-              style={{ 
-                padding: 14, 
-                borderRadius: 8, 
-                border: '1px solid #e5e7eb', 
-                fontSize: 16,
-                backgroundColor: loading ? '#f9fafb' : '#fff',
-                opacity: loading ? 0.7 : 1
-              }} 
+              className={`p-3.5 rounded-lg border border-gray-300 text-base transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none ${
+                loading ? 'bg-gray-50 opacity-70 cursor-not-allowed' : 'bg-white'
+              }`}
             />
             <textarea 
               name="message" 
@@ -122,36 +96,22 @@ export default function ContactPage() {
               required 
               rows={5} 
               disabled={loading}
-              style={{ 
-                padding: 14, 
-                borderRadius: 8, 
-                border: '1px solid #e5e7eb', 
-                fontSize: 16,
-                backgroundColor: loading ? '#f9fafb' : '#fff',
-                opacity: loading ? 0.7 : 1
-              }} 
+              className={`p-3.5 rounded-lg border border-gray-300 text-base transition-all focus:border-blue-500 focus:ring-2 focus:ring-blue-200 outline-none resize-none ${
+                loading ? 'bg-gray-50 opacity-70 cursor-not-allowed' : 'bg-white'
+              }`}
             />
             <button 
               type="submit" 
               disabled={loading}
-              style={{ 
-                background: loading ? '#9ca3af' : '#10b981', 
-                color: '#fff', 
-                padding: '14px 0', 
-                borderRadius: 8, 
-                fontWeight: 700, 
-                fontSize: 16, 
-                border: 'none', 
-                cursor: loading ? 'not-allowed' : 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 8
-              }}
+              className={`py-3.5 px-0 rounded-lg font-bold text-base border-none flex items-center justify-center gap-2 transition-all ${
+                loading 
+                  ? 'bg-gray-400 cursor-not-allowed' 
+                  : 'bg-green-500 hover:bg-green-600 cursor-pointer'
+              } text-white`}
             >
               {loading ? (
                 <>
-                  <span style={{ width: 16, height: 16, border: '2px solid #fff', borderTop: '2px solid transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></span>
+                  <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
                   Sending...
                 </>
               ) : (
@@ -162,6 +122,5 @@ export default function ContactPage() {
         )}
       </div>
     </div>
-    </>
   );
 }

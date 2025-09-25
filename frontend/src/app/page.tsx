@@ -29,7 +29,7 @@ import {
 
 // Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, Pagination, Autoplay } from 'swiper/modules';
+import { Navigation, } from 'swiper/modules';
 
 // Swiper CSS imports
 import 'swiper/css';
@@ -60,28 +60,7 @@ const testimonials = [
 const HomePage = () => {
   const router = useRouter(); 
   const servicesSwiper = useRef<any>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [disableTransition, setDisableTransition] = useState(false);
-
-  const nextSlide = () => {
-    if (currentIndex === testimonials.length - 1) {
-      setDisableTransition(true);
-      setCurrentIndex(0);
-      setTimeout(() => setDisableTransition(false), 50);
-    } else {
-      setCurrentIndex((prev) => prev + 1);
-    }
-  };
-
-  const prevSlide = () => {
-    if (currentIndex === 0) {
-      setDisableTransition(true);
-      setCurrentIndex(testimonials.length - 1);
-      setTimeout(() => setDisableTransition(false), 50);
-    } else {
-      setCurrentIndex((prev) => prev - 1);
-    }
-  };
+  // Testimonials now handled by Swiper
   
   useEffect(() => {
     fetchServiceCards();
@@ -240,11 +219,11 @@ const HomePage = () => {
             <div className="space-y-8">
               <h1 className="text-white text-4xl lg:text-5xl font-extrabold leading-none mb-4">
                 Find{' '}
-                <span className="inline-block italic font-bold text-3xl lg:text-4xl bg-emerald-500 text-white px-4 py-1 mx-1 border-2  border-white">
+                <span className="inline-block italic rounded-xl font-bold text-3xl lg:text-4xl bg-emerald-500 text-white px-4 py-1 mx-1 border-2  border-white">
                   Trusted Providers
                 </span>{' '}
                 &<br />
-                <span className="inline-block italic font-bold text-3xl lg:text-4xl bg-emerald-500 text-white  px-4 py-1 mx-1 border-2 border-white">
+                <span className="inline-block rounded-xl italic font-bold text-3xl lg:text-4xl bg-emerald-500 text-white  px-4 py-1 mx-1 border-2 border-white">
                   Book Services
                 </span>{' '}
                 at the<br />
@@ -257,7 +236,7 @@ const HomePage = () => {
               
               {/* SEARCH BAR - Fixed Tailwind classes */}
               <div className="w-full max-w-2xl mb-4">
-                <div className="flex flex-col sm:flex-row gap-2 bg-white shadow-2xl p-2">
+                <div className="flex flex-col sm:flex-row gap-2 rounded-xl bg-white shadow-2xl p-2">
                   <div className="flex-1 flex items-center gap-3 bg-gray-100 rounded-lg px-4 py-3">
                     <i className="fa fa-search text-emerald-500 text-lg"></i>
                     <input 
@@ -275,7 +254,7 @@ const HomePage = () => {
                       <option value="islamabad">Islamabad</option>
                     </select>
                   </div>
-                  <button className="bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-lg border-0  px-8 py-3 cursor-pointer transition-all duration-200 whitespace-nowrap transform hover:scale-105">
+                  <button className="bg-emerald-500 rounded-xl hover:bg-emerald-600 text-white font-bold text-lg border-0  px-8 py-3 cursor-pointer transition-all duration-200 whitespace-nowrap transform hover:scale-105">
                     Find Providers
                   </button>
                 </div>
@@ -756,64 +735,36 @@ const HomePage = () => {
       
     
     
-     {/* Testimonials Section - 100% Design Match */}
-    <section style={{
-      width: '100%',
-      minHeight: '420px',
-      background: 'linear-gradient(rgba(31,41,55,0.65),rgba(31,41,55,0.65)), url("https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&w=1200&q=80") center center / cover no-repeat',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      position: 'relative',
-      zIndex: 1,
-    }}>
-      <div style={{
-        width: '100%',
-        maxWidth: '900px',
-        margin: '0 auto',
-        textAlign: 'center',
-        position: 'relative',
-        zIndex: 2,
-      }}>
-        <div style={{ fontSize: '15px', color: '#e5e7eb', fontFamily: 'Manrope, sans-serif', fontWeight: 600, marginBottom: '10px' }}>Testimonials</div>
+     {/* Testimonials Section - Tailwind CSS */}
+    <section 
+      className="w-full min-h-[420px] flex items-center justify-center relative z-[1]"
+      style={{
+        background: 'linear-gradient(rgba(31,41,55,0.65),rgba(31,41,55,0.65)), url("https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&w=1200&q=80") center center / cover no-repeat'
+      }}
+    >
+      <div className="w-full max-w-[900px] mx-auto text-center relative z-[2]">
+        <div className="text-[15px] text-gray-300 font-[Manrope,sans-serif] font-semibold mb-[10px]">Testimonials</div>
 
         {/* Slider */}
-        <div style={{
-          overflow: 'hidden',
-          position: 'relative',
-          width: '100%',
-          minHeight: '220px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}>
-          <div style={{
-            display: 'flex',
-            transition: disableTransition ? 'none' : 'transform 1.2s ease-in-out',
-            transform: `translateX(-${currentIndex * 100}%)`,
-            width: `${testimonials.length * 100}%`,
-          }}>
+        <div className="overflow-hidden relative w-full min-h-[220px] flex items-center justify-center">
+          <Swiper
+            modules={[Navigation]}
+            spaceBetween={30}
+            slidesPerView={1}
+            navigation={{
+              nextEl: '.testimonials-button-next',
+              prevEl: '.testimonials-button-prev',
+            }}
+            loop={true}
+            className="testimonials-swiper w-full h-[220px]"
+          >
             {testimonials.map((item, index) => (
-              <div key={index} style={{
-                width: '100%',
-                flexShrink: 0,
-                padding: '40px 20px',
-                boxSizing: 'border-box',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}>
-                <h2 style={{
-                  color: '#fff',
-                  fontFamily: 'Manrope, sans-serif',
-                  fontWeight: 800,
-                  fontSize: '32px',
-                  marginBottom: '16px',
-                }}>What they say about us</h2>
-                <div style={{ marginBottom: '12px' }}>
+              <SwiperSlide key={index}>
+                <div className="w-full py-10 px-5 box-border flex flex-col items-center justify-center h-full">
+                <h2 className="text-white font-[Manrope,sans-serif] font-extrabold text-[32px] mb-4">What they say about us</h2>
+                <div className="mb-3">
                   {[...Array(5)].map((_, i) => (
-                    <i key={i} className="fa-solid fa-star" style={{ color: '#fbbf24', fontSize: '22px', margin: '0 2px' }}></i>
+                    <i key={i} className="fa-solid fa-star text-amber-400 text-[22px] mx-[2px]"></i>
                   ))}
                 </div>
                 <div style={{
@@ -827,31 +778,16 @@ const HomePage = () => {
                 }}>
                   <strong>“{item.quote}”</strong> {item.detail}
                 </div>
-              </div>
+                </div>
+              </SwiperSlide>
             ))}
-          </div>
+          </Swiper>
         </div>
 
-        {/* Dots */}
-        <div style={{ marginTop: '20px', display: 'flex', justifyContent: 'center', gap: '10px' }}>
-          {testimonials.map((_, index) => (
-            <button
-              key={index}
-              onClick={() => setCurrentIndex(index)}
-              style={{
-                width: '10px',
-                height: '10px',
-                borderRadius: '50%',
-                backgroundColor: currentIndex === index ? '#10b981' : '#d1d5db',
-                border: 'none',
-                cursor: 'pointer',
-              }}
-            />
-          ))}
-        </div>
+        {/* Swiper Pagination will be handled automatically */}
 
-        {/* Arrows */}
-        <button onClick={prevSlide} style={{
+        {/* Navigation Arrows */}
+        <button className="testimonials-button-prev" style={{
           position: 'absolute',
           left: '-60px',
           top: '50%',
@@ -870,7 +806,7 @@ const HomePage = () => {
         }}>
           <i className="fa-solid fa-chevron-left" style={{ color: '#10b981', fontSize: '22px' }}></i>
         </button>
-        <button onClick={nextSlide} style={{
+        <button className="testimonials-button-next" style={{
           position: 'absolute',
           right: '-60px',
           top: '50%',

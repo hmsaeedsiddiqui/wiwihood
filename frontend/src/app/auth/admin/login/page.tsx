@@ -66,77 +66,34 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div style={{
-      minHeight: 'calc(100vh - 80px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f9fafb',
-      padding: '48px 24px'
-    }}>
-      <div style={{
-        backgroundColor: '#ffffff',
-        padding: '48px',
-        borderRadius: '12px',
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
+    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-6">
+      <div className="bg-white p-12 rounded-xl shadow-lg w-full max-w-md">
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            width: '64px',
-            height: '64px',
-            backgroundColor: '#dc2626',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 16px auto'
-          }}>
-            <Shield style={{ width: '32px', height: '32px', color: '#ffffff' }} />
+        <div className="text-center mb-8">
+          <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Shield className="w-8 h-8 text-white" />
           </div>
-          <h2 style={{
-            fontSize: '24px',
-            fontWeight: '700',
-            color: '#111827',
-            marginBottom: '8px'
-          }}>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">
             Admin Portal
           </h2>
-          <p style={{ color: '#6b7280', fontSize: '14px' }}>
+          <p className="text-gray-500 text-sm">
             Sign in to access the admin dashboard
           </p>
         </div>
 
         {/* Error Message */}
         {error && (
-          <div style={{
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            color: '#dc2626',
-            padding: '12px',
-            borderRadius: '8px',
-            marginBottom: '24px',
-            fontSize: '14px',
-            textAlign: 'center'
-          }}>
+          <div className="bg-red-50 border border-red-200 text-red-600 p-3 rounded-lg mb-6 text-sm text-center">
             {error}
           </div>
         )}
 
         {/* Login Form */}
         <form onSubmit={handleSubmit}>
-          <div style={{ marginBottom: '24px' }}>
+          <div className="mb-6">
             <label 
               htmlFor="email" 
-              style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#374151',
-                marginBottom: '8px'
-              }}
+              className="block text-sm font-medium text-gray-700 mb-2"
             >
               Email Address
             </label>
@@ -147,35 +104,19 @@ export default function AdminLoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                fontSize: '16px',
-                outline: 'none',
-                transition: 'border-color 0.2s',
-              }}
-              onFocus={(e) => e.target.style.borderColor = '#dc2626'}
-              onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+              className="w-full p-3 border border-gray-300 rounded-lg text-base outline-none transition-colors focus:border-red-600 focus:ring-2 focus:ring-red-100"
               placeholder="Enter your admin email"
             />
           </div>
 
-          <div style={{ marginBottom: '24px' }}>
+          <div className="mb-6">
             <label 
               htmlFor="password" 
-              style={{
-                display: 'block',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#374151',
-                marginBottom: '8px'
-              }}
+              className="block text-sm font-medium text-gray-700 mb-2"
             >
               Password
             </label>
-            <div style={{ position: 'relative' }}>
+            <div className="relative">
               <input
                 id="password"
                 name="password"
@@ -183,39 +124,18 @@ export default function AdminLoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  paddingRight: '48px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '16px',
-                  outline: 'none',
-                  transition: 'border-color 0.2s',
-                }}
-                onFocus={(e) => e.target.style.borderColor = '#dc2626'}
-                onBlur={(e) => e.target.style.borderColor = '#d1d5db'}
+                className="w-full p-3 pr-12 border border-gray-300 rounded-lg text-base outline-none transition-colors focus:border-red-600 focus:ring-2 focus:ring-red-100"
                 placeholder="Enter your password"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  color: '#6b7280',
-                  cursor: 'pointer',
-                  padding: '4px'
-                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 bg-transparent border-none text-gray-500 cursor-pointer p-1 hover:text-gray-700 transition-colors"
               >
                 {showPassword ? (
-                  <EyeOff style={{ width: '20px', height: '20px' }} />
+                  <EyeOff className="w-5 h-5" />
                 ) : (
-                  <Eye style={{ width: '20px', height: '20px' }} />
+                  <Eye className="w-5 h-5" />
                 )}
               </button>
             </div>
@@ -224,62 +144,32 @@ export default function AdminLoginPage() {
           <button
             type="submit"
             disabled={loading}
-            style={{
-              width: '100%',
-              backgroundColor: loading ? '#9ca3af' : '#dc2626',
-              color: '#ffffff',
-              padding: '12px',
-              borderRadius: '8px',
-              border: 'none',
-              fontSize: '16px',
-              fontWeight: '600',
-              cursor: loading ? 'not-allowed' : 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              transition: 'background-color 0.2s',
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) e.target.style.backgroundColor = '#b91c1c';
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) e.target.style.backgroundColor = '#dc2626';
-            }}
+            className={`w-full p-3 rounded-lg border-none text-base font-semibold flex items-center justify-center gap-2 transition-colors ${
+              loading 
+                ? 'bg-gray-400 cursor-not-allowed text-white' 
+                : 'bg-red-600 hover:bg-red-700 cursor-pointer text-white'
+            }`}
           >
-            {loading && <Loader2 style={{ width: '16px', height: '16px', animation: 'spin 1s linear infinite' }} />}
+            {loading && <Loader2 className="w-4 h-4 animate-spin" />}
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
         </form>
 
         {/* Footer */}
-        <div style={{
-          textAlign: 'center',
-          marginTop: '32px',
-          paddingTop: '24px',
-          borderTop: '1px solid #e5e7eb'
-        }}>
-          <p style={{ fontSize: '14px', color: '#6b7280' }}>
+        <div className="text-center mt-8 pt-6 border-t border-gray-200">
+          <p className="text-sm text-gray-500">
             Need help?{' '}
             <Link 
               href="/contact" 
-              style={{ 
-                color: '#dc2626', 
-                textDecoration: 'none',
-                fontWeight: '500'
-              }}
+              className="text-red-600 no-underline font-medium hover:text-red-700 transition-colors"
             >
               Contact Support
             </Link>
           </p>
-          <div style={{ marginTop: '16px' }}>
+          <div className="mt-4">
             <Link 
               href="/" 
-              style={{ 
-                color: '#6b7280', 
-                textDecoration: 'none',
-                fontSize: '14px'
-              }}
+              className="text-gray-500 no-underline text-sm hover:text-gray-700 transition-colors"
             >
               ← Back to Homepage
             </Link>

@@ -26,7 +26,7 @@ export default function RegisterPage() {
   // Show loading while checking auth status
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-500 mx-auto"></div>
           <p className="mt-4 text-gray-600">Loading...</p>
@@ -41,24 +41,14 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="w-[95%] mx-auto max-w-[1400px] py-10 flex items-center justify-center ">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h1>
           <p className="text-gray-600">Join Reservista to book amazing services</p>
         </div>
         <SignupForm onSuccess={handleSignupSuccess} />
-        <div className="text-center mt-6">
-          <p className="text-gray-600">
-            Already have an account?{' '}
-            <a 
-              href="/auth/login" 
-              className="text-green-600 font-semibold hover:text-green-500 transition-colors"
-            >
-              Sign in here
-            </a>
-          </p>
-        </div>
+       
       </div>
     </div>
   );

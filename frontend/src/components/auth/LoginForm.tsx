@@ -27,8 +27,8 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   return (
-    <div className="auth-form-container">
-      <div className="auth-form-card">
+    <div className="bg-gray-50 p-3 rounded-2xl">
+      <div className="">
         <h2 className="auth-form-title">Sign In</h2>
         
         {error && (
@@ -78,14 +78,19 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
           >
             {loading ? "Signing in..." : "Sign In"}
           </button>
+           <div className="text-center mt-6">
+          <p className="text-gray-600">
+            Don't have an account?{' '}
+            <a 
+              href="/auth/register" 
+              className="text-green-600 font-semibold hover:text-green-500 transition-colors"
+            >
+              Sign up here
+            </a>
+          </p>
+        </div>
         </form>
         
-        <div className="auth-link">
-          Don't have an account?{' '}
-          <a href="/auth/register" className="auth-link-anchor">
-            Sign up here
-          </a>
-        </div>
       </div>
     </div>
   );

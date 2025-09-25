@@ -80,21 +80,21 @@ export default function MyAppointmentsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-6 py-8">
+      <div className="w-[95%] max-w-[1400px] mx-auto py-8">
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center justify-between flex-wrap mb-8">
           <div>
-            <h1 className="text-4xl font-bold text-purple-900 mb-2">My Appointments</h1>
+            <h1 className="sm:text-4xl text-3xl font-bold text-purple-900 mb-2">My Appointments</h1>
             <p className="text-gray-600 text-lg">Track and manage all you beauty & wellness appointments</p>
           </div>
-          <button className="flex items-center gap-2 text-gray-600 hover:text-gray-800">
+          <button className="flex items-center gap-2 mt-2 text-gray-600 hover:text-gray-800">
             <span className="text-xl">👤</span>
             <span className="font-medium">Customer View</span>
           </button>
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
           <div className="bg-purple-100 rounded-2xl p-6 text-center">
             <div className="w-12 h-12 bg-purple-200 rounded-xl flex items-center justify-center mx-auto mb-3">
               <span className="text-2xl">📅</span>

@@ -67,3 +67,27 @@
 .services-cards-swiper .swiper-slide > div {
   height: 100% !important;
 }
+
+/* Testimonials Swiper Styles */
+.testimonials-swiper {
+  padding-bottom: 30px !important;
+}
+
+.testimonials-swiper .swiper-slide {
+  height: 220px !important;
+}
+
+/* Custom pagination bullets for testimonials */
+
+
+.testimonials-pagination-bullet-active {
+  background: #10b981 !important;
+}
+
+/* Hide testimonials navigation on mobile */
+@media (max-width: 640px) {
+  .testimonials-button-prev,
+  .testimonials-button-next {
+    display: none !important;
+  }
+}

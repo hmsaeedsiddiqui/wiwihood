@@ -39,24 +39,14 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="py-20  flex items-center justify-center w-[95%] mx-auto max-w-[1400px]">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
           <p className="text-gray-600">Sign in to your account to continue</p>
         </div>
-        <LoginForm onSuccess={handleLoginSuccess} />
-        <div className="text-center mt-6">
-          <p className="text-gray-600">
-            Don't have an account?{' '}
-            <a 
-              href="/auth/register" 
-              className="text-green-600 font-semibold hover:text-green-500 transition-colors"
-            >
-              Sign up here
-            </a>
-          </p>
-        </div>
+        <LoginForm onSuccess={handleLoginSuccess}  />
+       
       </div>
     </div>
   );

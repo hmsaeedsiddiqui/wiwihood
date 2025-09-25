@@ -69,7 +69,7 @@ export function Header() {
       </div>
 
       {/* Info Bar (desktop only) */}
-      <div className="hidden md:block max-w-[1400px] w-[95%] mx-auto bg-white border-b border-gray-200 text-[13px] font-medium text-gray-800 py-1.5 w-full">
+      <div className="hidden md:block max-w-[1400px] w-[95%] mx-auto bg-white border-b border-gray-200 text-[13px] font-medium text-gray-800 py-1.5">
         <div className="flex items-center justify-between">
           <span>
             We book appointments from <span className="text-orange-500 font-bold">7:00 to 22:00</span>
