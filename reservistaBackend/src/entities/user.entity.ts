@@ -19,6 +19,7 @@ import { Booking } from './booking.entity';
 // import { Review } from './review.entity';
 import { Favorite } from './favorite.entity';
 import { CartItem } from './cart-item.entity';
+import { SupportTicket } from './support-ticket.entity';
 
 @Entity('users')
 export class User {
@@ -126,8 +127,8 @@ export class User {
   // @OneToMany(() => Notification, (notification) => notification.user)
   // notifications: Notification[];
 
-  // @OneToMany(() => SupportTicket, (ticket) => ticket.user)
-  // supportTickets: SupportTicket[];
+  @OneToMany(() => SupportTicket, (ticket) => ticket.user)
+  supportTickets: SupportTicket[];
 
   // @OneToMany(() => CalendarAccount, (calendar) => calendar.user)
   // calendarAccounts: CalendarAccount[];

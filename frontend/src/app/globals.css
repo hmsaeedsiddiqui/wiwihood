@@ -1,3 +1,7 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 /* Provider Signup Custom Styles */
 .provider-signup-bg {
   min-height: 100vh;
