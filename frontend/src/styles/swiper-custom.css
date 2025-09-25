@@ -1,0 +1,69 @@
+/* Custom Swiper Styles for Blog Cards */
+.blog-cards-swiper {
+  padding-bottom: 50px !important;
+}
+
+/* Custom Swiper Styles for Services Cards */
+.services-cards-swiper {
+  padding-bottom: 50px !important;
+}
+
+.services-cards-swiper .swiper-button-next,
+.services-cards-swiper .swiper-button-prev {
+  color: #10b981 !important;
+  background: white !important;
+  width: 44px !important;
+  height: 44px !important;
+  border-radius: 50% !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+  border: 1px solid #e5e7eb !important;
+}
+
+.services-cards-swiper .swiper-button-next:after,
+.services-cards-swiper .swiper-button-prev:after {
+  font-size: 18px !important;
+  font-weight: bold !important;
+}
+
+/* Ensure arrows are visible and clickable */
+.services-cards-swiper .swiper-button-next,
+.services-cards-swiper .swiper-button-prev {
+  margin-top: 0 !important;
+  z-index: 10 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+.services-cards-swiper .swiper-button-disabled {
+  opacity: 0.5 !important;
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  .blog-swiper-button-prev,
+  .blog-swiper-button-next,
+  .services-swiper-button-prev,
+  .services-swiper-button-next,
+  .services-cards-swiper .swiper-button-next,
+  .services-cards-swiper .swiper-button-prev,
+  .services-nav-button {
+    display: none !important;
+  }
+}
+
+/* Equal height for all slides */
+.blog-cards-swiper .swiper-slide {
+  height: auto !important;
+}
+
+.blog-cards-swiper .swiper-slide > div {
+  height: 100% !important;
+}
+
+.services-cards-swiper .swiper-slide {
+  height: auto !important;
+}
+
+.services-cards-swiper .swiper-slide > div {
+  height: 100% !important;
+}

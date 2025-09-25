@@ -1,4 +1,8 @@
+
+@tailwind utilities;
+
 /* Provider Signup Custom Styles */
+@import "tailwindcss";
 .provider-signup-bg {
   min-height: 100vh;
   display: flex;
@@ -2164,4 +2168,18 @@ html {
 
 .btn-primary-enhanced:hover::before {
   left: 100%;
+}
+
+@import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap');
+
+/* Ensure proper box sizing */
+* {
+  box-sizing: border-box;
+}
+
+/* Remove any conflicting styles */
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Manrope', sans-serif;
 }

@@ -18,7 +18,7 @@ import { PayoutsModule } from './modules/payouts/payouts.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { SupportTicketsModule } from './modules/support-tickets/support-tickets.module';
 import { CmsModule } from './modules/cms/cms.module';
-import { LogsModule } from './modules/logs/logs.module';
+// import { LogsModule } from './modules/logs/logs.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { CalendarModule } from './modules/calendar/calendar.module';
 import { SystemSettingsModule } from './modules/system-settings/system-settings.module';
@@ -67,7 +67,7 @@ import { MessagesModule } from './modules/messages/messages.module';
     MessagesModule, // Register MessagesModule
     SupportTicketsModule,
     CmsModule,
-    LogsModule,
+    // LogsModule,
     AnalyticsModule,
     CalendarModule,
     SystemSettingsModule,

@@ -28,9 +28,9 @@ export default registerAs(
     type: process.env.DATABASE_TYPE as any || 'postgres',
     host: process.env.DATABASE_HOST || 'localhost',
     port: parseInt(process.env.DATABASE_PORT) || 5432,
-    username: process.env.DATABASE_USERNAME || 'reservista_user',
-    password: process.env.DATABASE_PASSWORD || 'reservista_password',
-    database: process.env.DATABASE_NAME || 'reservista_clean',
+    username: process.env.DATABASE_USERNAME || 'postgres',
+    password: process.env.DATABASE_PASSWORD || 'ansar123',
+    database: process.env.DATABASE_NAME || 'reservista',
     entities: [
       User, Provider, Service, Booking, Payment, Refund, Review, Category,
       ProviderWorkingHours, ProviderTimeOff, Favorite, Role, Permission, 
