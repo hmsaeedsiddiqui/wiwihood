@@ -48,6 +48,18 @@ import {
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     synchronize: false, // Temporarily disabled to avoid index conflicts
     logging: false, // Disabled for cleaner output
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
+    ssl: process.env.DATABASE_SSL === 'true' ? { 
+      rejectUnauthorized: false,
+      // Allow connections from any IP
+      servername: process.env.DATABASE_HOST
+    } : false,
+    // Connection pool configuration for better performance across IPs
+    extra: {
+      connectionLimit: 20,
+      acquireTimeout: 60000,
+      timeout: 60000,
+      // Allow connections from any origin
+      charset: 'utf8mb4_unicode_ci'
+    },
   }),
 );
