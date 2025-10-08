@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import LoginForm from '../../../components/auth/LoginForm';
+import Footer from '@/components/Footer';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -17,8 +18,8 @@ export default function LoginPage() {
   }, [isAuthenticated, isLoading, router]);
 
   const handleLoginSuccess = () => {
-    // Redirect to profile page after successful login
-    router.push('/profile');
+    // Redirect to home page after successful login
+    router.push('/');
   };
 
   // Show loading while checking auth status
@@ -39,6 +40,7 @@ export default function LoginPage() {
   }
 
   return (
+    <div>
     <div className="py-20  flex items-center justify-center w-[95%] mx-auto max-w-[1400px]">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
@@ -48,6 +50,10 @@ export default function LoginPage() {
         <LoginForm onSuccess={handleLoginSuccess}  />
        
       </div>
+     
     </div>
+     <Footer />
+    </div>
+    
   );
 }

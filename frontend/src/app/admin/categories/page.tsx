@@ -181,7 +181,7 @@ export default function AdminCategories() {
     };
 
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-xl shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
           <div className="p-6 border-b border-gray-200">
             <div className="flex items-center justify-between">
@@ -304,7 +304,7 @@ export default function AdminCategories() {
               </label>
             </div>
 
-            <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <div className="flex justify-end space-x-3 pt-4 gap-4 border-t border-gray-200">
               <button
                 type="button"
                 onClick={onClose}
@@ -326,7 +326,7 @@ export default function AdminCategories() {
   };
 
   const CategoryDetailModal = ({ category, onClose }: any) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
@@ -430,13 +430,13 @@ export default function AdminCategories() {
                       setEditingCategory(category);
                       onClose();
                     }}
-                    className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                    className="w-full px-4 py-2 cursor-pointer mb-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                   >
                     Edit Category
                   </button>
                   <button 
                     onClick={() => toggleCategoryStatus(category.id)}
-                    className={`w-full px-4 py-2 rounded-lg ${
+                    className={`w-full px-4 py-2 cursor-pointer mb-4 rounded-lg ${
                       category.isActive 
                         ? 'bg-red-600 text-white hover:bg-red-700' 
                         : 'bg-green-600 text-white hover:bg-green-700'
@@ -448,7 +448,7 @@ export default function AdminCategories() {
                       deleteCategory(category.id);
                       onClose();
                     }}
-                    className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    className="w-full px-4 py-2 cursor-pointer mb-4 bg-red-600 text-white rounded-lg hover:bg-red-700"
                   >
                     Delete Category
                   </button>
@@ -462,10 +462,10 @@ export default function AdminCategories() {
   );
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
+    <div className="w-[95%] mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4 ">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Category Management</h1>
             <p className="text-gray-600 mt-1">Organize and manage service categories for your platform</p>
@@ -473,7 +473,7 @@ export default function AdminCategories() {
           <div className="flex items-center space-x-3">
             <button 
               onClick={() => setShowAddModal(true)}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <Plus className="h-4 w-4 mr-2" />
               Add Category
@@ -483,7 +483,7 @@ export default function AdminCategories() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <Tag className="h-8 w-8 text-blue-600" />
@@ -563,9 +563,9 @@ export default function AdminCategories() {
                   className="text-gray-400 hover:text-gray-600"
                 >
                   {category.isActive ? (
-                    <ToggleRight className="h-5 w-5 text-green-600" />
+                    <ToggleRight className="h-5 w-5 cursor-pointer text-green-600" />
                   ) : (
-                    <ToggleLeft className="h-5 w-5 text-gray-400" />
+                    <ToggleLeft className="h-5 w-5 cursor-pointer text-gray-400" />
                   )}
                 </button>
               </div>
@@ -614,19 +614,19 @@ export default function AdminCategories() {
               <div className="flex items-center space-x-2">
                 <button 
                   onClick={() => setSelectedCategory(category)}
-                  className="text-blue-600 hover:text-blue-700"
+                  className="text-blue-600 cursor-pointer hover:text-blue-700"
                 >
                   <Eye className="h-4 w-4" />
                 </button>
                 <button 
                   onClick={() => setEditingCategory(category)}
-                  className="text-gray-600 hover:text-gray-700"
+                  className="text-gray-600 cursor-pointer hover:text-gray-700"
                 >
                   <Edit className="h-4 w-4" />
                 </button>
                 <button 
                   onClick={() => deleteCategory(category.id)}
-                  className="text-red-600 hover:text-red-700"
+                  className="text-red-600 cursor-pointer hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4" />
                 </button>

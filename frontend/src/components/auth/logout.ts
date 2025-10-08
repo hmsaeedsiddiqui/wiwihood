@@ -6,7 +6,7 @@ export async function logout() {
   if (!token) return;
   try {
     await axios.post(
-      `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/auth/logout`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/logout`,
       {},
       {
         headers: { Authorization: `Bearer ${token}` },

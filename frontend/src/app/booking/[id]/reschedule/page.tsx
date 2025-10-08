@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Calendar, Clock, ArrowLeft, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { getAuthHeaders } from '@/lib/auth';
+import Footer from '@/components/Footer';
 
 interface Booking {
   id: string;
@@ -287,7 +288,8 @@ export default function RescheduleBookingPage() {
             </div>
           </div>
         </div>
-      </div>
+      </div> 
+        <Footer />
     </div>
   );
 }

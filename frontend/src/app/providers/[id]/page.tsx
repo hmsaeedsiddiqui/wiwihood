@@ -1,13 +1,14 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import { apiService, Provider } from "@/lib/api";
 import Link from "next/link";
 import { CloudinaryImage } from "@/components/CloudinaryImage";
 
 export default function ProviderDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const { id } = params as { id: string };
   const [provider, setProvider] = useState<Provider | null>(null);
   const [loading, setLoading] = useState(true);
@@ -18,7 +19,7 @@ export default function ProviderDetailPage() {
       try {
         // There is no getProviderById in apiService, so fetch all and filter (for now)
         const result = await apiService.getProviders();
-        const found = (result.data || []).find((p: Provider) => p.id === id);
+        const found = (result.providers || []).find((p: Provider) => p.id === id);
         setProvider(found || null);
       } catch (e) {
         setProvider(null);
@@ -86,6 +87,66 @@ export default function ProviderDetailPage() {
             <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Email: {provider.businessEmail || 'N/A'}</div>
             <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Website: {provider.websiteUrl ? <a href={provider.websiteUrl} target="_blank" rel="noopener noreferrer">{provider.websiteUrl}</a> : 'N/A'}</div>
             <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 24 }}>Owner: {provider.user?.firstName} {provider.user?.lastName}</div>
+            
+            {/* Message Provider Button */}
+            <div style={{ marginBottom: 24 }}>
+              <button
+                onClick={() => {
+                  router.push(`/customer/messages?providerId=${provider.id}`);
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '16px 32px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  marginRight: '12px',
+                  boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(16, 185, 129, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(16, 185, 129, 0.3)';
+                }}
+              >
+                💬 Message Provider
+              </button>
+              
+              <button
+                onClick={() => {
+                  router.push(`/shop/${provider.id}`);
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '12px',
+                  padding: '16px 32px',
+                  fontSize: '16px',
+                  fontWeight: '600',
+                  cursor: 'pointer',
+                  boxShadow: '0 4px 12px rgba(59, 130, 246, 0.3)',
+                  transition: 'all 0.3s ease'
+                }}
+                onMouseOver={(e) => {
+                  e.currentTarget.style.transform = 'translateY(-2px)';
+                  e.currentTarget.style.boxShadow = '0 6px 20px rgba(59, 130, 246, 0.4)';
+                }}
+                onMouseOut={(e) => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 4px 12px rgba(59, 130, 246, 0.3)';
+                }}
+              >
+                🏪 View Shop
+              </button>
+            </div>
             {/* List services offered by this provider */}
             <div style={{ marginTop: 24 }}>
               <h2 style={{ fontSize: 22, fontWeight: 700, color: '#222', marginBottom: 12 }}>Services Offered</h2>

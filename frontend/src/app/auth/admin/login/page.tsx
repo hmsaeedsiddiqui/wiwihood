@@ -70,7 +70,7 @@ export default function AdminLoginPage() {
       <div className="bg-white p-12 rounded-xl shadow-lg w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -104,7 +104,7 @@ export default function AdminLoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg text-base outline-none transition-colors focus:border-red-600 focus:ring-2 focus:ring-red-100"
+              className="w-full p-3 border border-gray-300 rounded-lg text-base outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
               placeholder="Enter your admin email"
             />
           </div>
@@ -124,7 +124,7 @@ export default function AdminLoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-3 pr-12 border border-gray-300 rounded-lg text-base outline-none transition-colors focus:border-red-600 focus:ring-2 focus:ring-red-100"
+                className="w-full p-3 pr-12 border border-gray-300 rounded-lg text-base outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
                 placeholder="Enter your password"
               />
               <button
@@ -147,7 +147,7 @@ export default function AdminLoginPage() {
             className={`w-full p-3 rounded-lg border-none text-base font-semibold flex items-center justify-center gap-2 transition-colors ${
               loading 
                 ? 'bg-gray-400 cursor-not-allowed text-white' 
-                : 'bg-red-600 hover:bg-red-700 cursor-pointer text-white'
+                : 'bg-emerald-500 hover:bg-emerald-600 cursor-pointer text-white'
             }`}
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -161,7 +161,7 @@ export default function AdminLoginPage() {
             Need help?{' '}
             <Link 
               href="/contact" 
-              className="text-red-600 no-underline font-medium hover:text-red-700 transition-colors"
+              className="text-emerald-500 no-underline font-medium hover:text-emerald-600 transition-colors"
             >
               Contact Support
             </Link>

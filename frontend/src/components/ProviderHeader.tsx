@@ -3,36 +3,47 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import axios from "axios";
+import ProviderSidebar from "./ProviderSidebar";
 
 export default function ProviderHeader() {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   const profileRef = useRef<HTMLDivElement>(null);
 
+  // Responsive check
+  useEffect(() => {
+    const checkScreen = () => setIsMobile(window.innerWidth < 1024);
+    checkScreen();
+    window.addEventListener("resize", checkScreen);
+    return () => window.removeEventListener("resize", checkScreen);
+  }, []);
+
+  // Auth check
   useEffect(() => {
     const checkAuth = async () => {
-      const token = typeof window !== 'undefined' ? localStorage.getItem('providerToken') : null;
-      
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("providerToken") : null;
       if (token) {
         try {
           const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/auth/profile`,
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/profile`,
             {
               headers: { Authorization: `Bearer ${token}` },
               withCredentials: true,
             }
           );
-
-          if (response.data && response.data.role === 'provider') {
+          if (response.data && response.data.role === "provider") {
             setUser(response.data);
             setIsLoggedIn(true);
           } else {
             setIsLoggedIn(false);
             setUser(null);
           }
-        } catch (error) {
+        } catch {
           setIsLoggedIn(false);
           setUser(null);
         }
@@ -41,11 +52,10 @@ export default function ProviderHeader() {
         setUser(null);
       }
     };
-
     checkAuth();
   }, []);
 
-  // Click outside handler for profile dropdown
+  // Outside click for profile dropdown
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
@@ -63,18 +73,13 @@ export default function ProviderHeader() {
   const handleLogout = async () => {
     try {
       await axios.post(
-  `${process.env.NEXT_PUBLIC_API_URL}/auth/logout`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/logout`,
         {},
         { withCredentials: true }
       );
-      localStorage.removeItem("providerToken");
-      localStorage.removeItem("provider");
-      setIsLoggedIn(false);
-      setUser(null);
-      router.push("/auth/provider/login");
     } catch (err) {
       console.error("Logout failed", err);
-      // Still clear local storage and redirect even if API call fails
+    } finally {
       localStorage.removeItem("providerToken");
       localStorage.removeItem("provider");
       setIsLoggedIn(false);
@@ -84,29 +89,49 @@ export default function ProviderHeader() {
   };
 
   return (
-    <header style={{
-      backgroundColor: '#ffffff',
-      borderBottom: '1px solid #e5e7eb',
-      height: '64px',
-      width: '100%',
-      position: 'fixed',
-      top: 0,
-      left: 0,
-      right: 0,
-      zIndex: 1000
-    }}>
-      <div style={{
-        height: '100%',
-        maxWidth: '100%',
-        margin: '0 auto',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '0 24px'
-      }}>
-        
-        {/* Left - Logo and Brand */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+    <>
+      <header className="bg-white shadow-sm  top-0 z-40 fixed w-full mb-[10px]">
+        <div className="flex items-center justify-between px-4 py-3 lg:px-8">
+          {/* Left side */}
+          <div className="flex items-center space-x-4">
+            {isMobile && (
+              <button
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                style={{
+                  // padding: "8px 12px",
+                 
+                  backgroundColor: sidebarOpen ? "#fff" : "#fff",
+                  color: "rgb(34, 197, 94)",
+                  
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  transition: "all 0.2s",
+                  width: "50px",
+                  height: "50px",
+                  position: "relative",
+                }}
+                aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+              >
+                {sidebarOpen ? (
+                  // Cross icon
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgb(34, 197, 94)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                ) : (
+                  // Hamburger icon
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="rgb(34, 197, 94)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <line x1="4" y1="7" x2="20" y2="7" />
+                    <line x1="4" y1="12" x2="20" y2="12" />
+                    <line x1="4" y1="17" x2="20" y2="17" />
+                  </svg>
+                )}
+              </button>
+            )}
+
+            {!isMobile && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Link href="/provider/dashboard" style={{ 
             display: 'flex', 
             alignItems: 'center', 
@@ -132,297 +157,216 @@ export default function ProviderHeader() {
             </span>
           </Link>
         </div>
-
-        {/* Center - Search Bar */}
-        <div style={{
-          flex: '1',
-          maxWidth: '500px',
-          margin: '0 60px'
-        }}>
-          <div style={{ position: 'relative' }}>
-            <div style={{
-              position: 'absolute',
-              top: '50%',
-              left: '16px',
-              transform: 'translateY(-50%)',
-              pointerEvents: 'none'
-            }}>
-              <svg style={{ height: '20px', width: '20px', color: '#9ca3af' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-              </svg>
-            </div>
-            <input
-              type="text"
-              placeholder="Search orders, customers, services..."
-              style={{
-                width: '100%',
-                paddingLeft: '48px',
-                paddingRight: '16px',
-                paddingTop: '12px',
-                paddingBottom: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '8px',
-                backgroundColor: '#f9fafb',
-                fontSize: '14px',
-                color: '#374151',
-                outline: 'none',
-                transition: 'all 0.2s ease-in-out'
-              }}
-              onFocus={(e) => {
-                const target = e.target as HTMLInputElement;
-                target.style.backgroundColor = '#ffffff';
-                target.style.borderColor = '#3b82f6';
-                target.style.boxShadow = '0 0 0 3px rgba(59, 130, 246, 0.1)';
-              }}
-              onBlur={(e) => {
-                const target = e.target as HTMLInputElement;
-                target.style.backgroundColor = '#f9fafb';
-                target.style.borderColor = '#d1d5db';
-                target.style.boxShadow = 'none';
-              }}
-            />
+            )}
           </div>
-        </div>
 
-        {/* Right - Notifications and Profile */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '20px'
-        }}>
-          {isLoggedIn && user ? (
-            <>
-              {/* Notification Bell */}
-              <button style={{
-                position: 'relative',
-                padding: '8px',
-                backgroundColor: 'transparent',
-                border: 'none',
-                cursor: 'pointer',
-                color: '#6b7280',
-                borderRadius: '6px',
-                transition: 'all 0.2s ease-in-out'
+          {/* Search bar (desktop only) */}
+          {!isMobile && (
+            <div className="flex-1 max-w-md mx-6">
+              <input
+                type="text"
+                placeholder="Search bookings..."
+                className="w-full px-4 py-2 border rounded-lg"
+              />
+            </div>
+          )}
+
+          {/* Right side */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: isMobile ? "10px" : "20px",
+            }}
+          >
+            {/* Notification Bell */}
+            <button
+              style={{
+                position: "relative",
+                padding: "8px",
+                backgroundColor: "transparent",
+                border: "none",
+                cursor: "pointer",
+                color: "#6b7280",
+                borderRadius: "6px",
+                transition: "all 0.2s ease-in-out",
               }}
               onMouseEnter={(e) => {
                 const target = e.target as HTMLButtonElement;
-                target.style.color = '#374151';
-                target.style.backgroundColor = '#f3f4f6';
+                target.style.color = "#374151";
+                target.style.backgroundColor = "#f3f4f6";
               }}
               onMouseLeave={(e) => {
                 const target = e.target as HTMLButtonElement;
-                target.style.color = '#6b7280';
-                target.style.backgroundColor = 'transparent';
-              }}>
-                <svg style={{ height: '24px', width: '24px' }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-3-3V9a6 6 0 10-12 0v5l-3 3h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                </svg>
-                <span style={{
-                  position: 'absolute',
-                  top: '6px',
-                  right: '6px',
-                  height: '8px',
-                  width: '8px',
-                  backgroundColor: '#ef4444',
-                  borderRadius: '50%',
-                  border: '2px solid #ffffff'
-                }}></span>
-              </button>
+                target.style.color = "#6b7280";
+                target.style.backgroundColor = "transparent";
+              }}
+            >
+              <svg
+                style={{ height: "24px", width: "24px" }}
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M15 17h5l-3-3V9a6 6 0 10-12 0v5l-3 3h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+              <span
+                style={{
+                  position: "absolute",
+                  top: "6px",
+                  right: "6px",
+                  height: "8px",
+                  width: "8px",
+                  backgroundColor: "#ef4444",
+                  borderRadius: "50%",
+                  border: "2px solid #ffffff",
+                }}
+              />
+            </button>
 
-              {/* User Profile */}
+            {/* Profile / Auth */}
+            {isLoggedIn && user ? (
               <div className="relative" ref={profileRef}>
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    padding: '6px 12px',
-                    backgroundColor: 'transparent',
-                    border: 'none',
-                    cursor: 'pointer',
-                    borderRadius: '8px',
-                    transition: 'background-color 0.2s ease-in-out'
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "12px",
+                    padding: "6px 12px",
+                    backgroundColor: "transparent",
+                    border: "none",
+                    cursor: "pointer",
+                    borderRadius: "8px",
+                    transition: "background-color 0.2s ease-in-out",
                   }}
                   onMouseEnter={(e) => {
                     const target = e.target as HTMLButtonElement;
-                    target.style.backgroundColor = '#f3f4f6';
+                    target.style.backgroundColor = "#f3f4f6";
                   }}
                   onMouseLeave={(e) => {
                     const target = e.target as HTMLButtonElement;
-                    target.style.backgroundColor = 'transparent';
+                    target.style.backgroundColor = "transparent";
                   }}
                 >
-                  <div style={{ textAlign: 'right' }}>
-                    <div style={{
-                      fontSize: '16px',
-                      fontWeight: '600',
-                      color: '#1f2937',
-                      lineHeight: '1.25'
-                    }}>
+                  <div style={{ textAlign: "right" }}>
+                    <div
+                      style={{
+                        fontSize: "16px",
+                        fontWeight: "600",
+                        color: "#1f2937",
+                        lineHeight: "1.25",
+                      }}
+                    >
                       {user.firstName} {user.lastName}
                     </div>
-                    <div style={{
-                      fontSize: '13px',
-                      color: '#6b7280',
-                      lineHeight: '1.25'
-                    }}>
+                    <div
+                      style={{
+                        fontSize: "13px",
+                        color: "#6b7280",
+                        lineHeight: "1.25",
+                      }}
+                    >
                       Provider
                     </div>
                   </div>
-                  <div style={{
-                    width: '44px',
-                    height: '44px',
-                    backgroundColor: '#3b82f6',
-                    borderRadius: '50%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '18px',
-                    fontWeight: '600',
-                    color: '#ffffff',
-                    border: '2px solid #e5e7eb'
-                  }}>
-                    {user.firstName?.[0]}{user.lastName?.[0]}
+                  <div
+                    style={{
+                      width: "44px",
+                      height: "44px",
+                      backgroundColor: "#3b82f6",
+                      borderRadius: "50%",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: "18px",
+                      fontWeight: "600",
+                      color: "#ffffff",
+                      border: "2px solid #e5e7eb",
+                    }}
+                  >
+                    {user.firstName?.[0]}
+                    {user.lastName?.[0]}
                   </div>
                 </button>
 
                 {/* Profile Dropdown */}
                 {isProfileOpen && (
-                  <div style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: '100%',
-                    marginTop: '8px',
-                    width: '200px',
-                    backgroundColor: 'white',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: '8px',
-                    boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                    zIndex: 50,
-                    padding: '8px'
-                  }}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      right: 0,
+                      top: "100%",
+                      marginTop: "8px",
+                      width: "200px",
+                      backgroundColor: "white",
+                      border: "1px solid #e5e7eb",
+                      borderRadius: "8px",
+                      boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.1)",
+                      zIndex: 50,
+                      padding: "8px",
+                    }}
+                  >
                     <Link
                       href="/provider/profile"
                       onClick={() => setIsProfileOpen(false)}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        textAlign: 'left',
-                        padding: '8px 12px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        color: '#374151',
-                        borderRadius: '4px',
-                        textDecoration: 'none',
-                        transition: 'background-color 0.2s ease-in-out'
-                      }}
-                      onMouseOver={(e) => (e.target as HTMLAnchorElement).style.backgroundColor = '#f3f4f6'}
-                      onMouseOut={(e) => (e.target as HTMLAnchorElement).style.backgroundColor = 'transparent'}
+                      className="block px-4 py-2 hover:bg-gray-100"
                     >
                       👤 Profile
                     </Link>
                     <Link
+                      href="/provider/account"
+                      onClick={() => setIsProfileOpen(false)}
+                      className="block px-4 py-2 hover:bg-gray-100"
+                    >
+                      🧑‍💼 Account Settings
+                    </Link>
+                    <Link
                       href="/provider/settings"
                       onClick={() => setIsProfileOpen(false)}
-                      style={{
-                        display: 'block',
-                        width: '100%',
-                        textAlign: 'left',
-                        padding: '8px 12px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        color: '#374151',
-                        borderRadius: '4px',
-                        textDecoration: 'none',
-                        transition: 'background-color 0.2s ease-in-out'
-                      }}
-                      onMouseOver={(e) => (e.target as HTMLAnchorElement).style.backgroundColor = '#f3f4f6'}
-                      onMouseOut={(e) => (e.target as HTMLAnchorElement).style.backgroundColor = 'transparent'}
+                      className="block px-4 py-2 hover:bg-gray-100"
                     >
                       ⚙️ Settings
                     </Link>
-                    <div style={{ height: '1px', backgroundColor: '#e5e7eb', margin: '4px 0' }}></div>
+                    <div className="border-t my-2" />
                     <button
                       onClick={handleLogout}
-                      style={{
-                        width: '100%',
-                        textAlign: 'left',
-                        padding: '8px 12px',
-                        backgroundColor: 'transparent',
-                        border: 'none',
-                        cursor: 'pointer',
-                        fontSize: '14px',
-                        color: '#ef4444',
-                        borderRadius: '4px',
-                        transition: 'background-color 0.2s ease-in-out'
-                      }}
-                      onMouseOver={(e) => (e.target as HTMLButtonElement).style.backgroundColor = '#fef2f2'}
-                      onMouseOut={(e) => (e.target as HTMLButtonElement).style.backgroundColor = 'transparent'}
+                      className="w-full text-left px-4 py-2 text-red-600 hover:bg-red-50"
                     >
                       🚪 Sign Out
                     </button>
                   </div>
                 )}
               </div>
-            </>
-          ) : (
-            /* Login/Signup buttons for non-authenticated users */
-            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <Link
-                href="/auth/provider/login"
-                style={{
-                  color: '#6b7280',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  textDecoration: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  transition: 'all 0.2s ease-in-out'
-                }}
-                onMouseOver={(e) => {
-                  const target = e.target as HTMLAnchorElement;
-                  target.style.color = '#374151';
-                  target.style.backgroundColor = '#f3f4f6';
-                }}
-                onMouseOut={(e) => {
-                  const target = e.target as HTMLAnchorElement;
-                  target.style.color = '#6b7280';
-                  target.style.backgroundColor = 'transparent';
-                }}
-              >
-                Sign In
-              </Link>
-              <Link
-                href="/auth/provider/signup"
-                style={{
-                  backgroundColor: '#3b82f6',
-                  color: '#ffffff',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  textDecoration: 'none',
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  transition: 'background-color 0.2s ease-in-out'
-                }}
-                onMouseOver={(e) => {
-                  const target = e.target as HTMLAnchorElement;
-                  target.style.backgroundColor = '#2563eb';
-                }}
-                onMouseOut={(e) => {
-                  const target = e.target as HTMLAnchorElement;
-                  target.style.backgroundColor = '#3b82f6';
-                }}
-              >
-                Join as Provider
-              </Link>
-            </div>
-          )}
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                <Link
+                  href="/auth/provider/login"
+                  className="px-4 py-2 rounded hover:bg-gray-100 text-gray-600"
+                >
+                  Sign In
+                </Link>
+                <Link
+                  href="/auth/provider/signup"
+                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                >
+                  Sign Up
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </header>
+      </header>
+
+      {/* Sidebar (mobile only) */}
+      {isMobile && (
+        <ProviderSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
+      )}
+    </>
   );
 }

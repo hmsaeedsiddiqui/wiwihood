@@ -609,10 +609,10 @@ export default function AdminSettings() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
+    <div className="w-[95%] mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">System Settings</h1>
             <p className="text-gray-600 mt-1">Configure your platform settings and preferences</p>
@@ -622,7 +622,7 @@ export default function AdminSettings() {
               <div className="flex items-center">
                 {saveStatus === 'saving' && (
                   <div className="flex items-center text-blue-600">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2"></div>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 mr-2" />
                     Saving...
                   </div>
                 )}
@@ -637,7 +637,7 @@ export default function AdminSettings() {
             <button 
               onClick={handleSave}
               disabled={saveStatus === 'saving'}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+              className="flex cursor-pointer items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
             >
               <Save className="h-4 w-4 mr-2" />
               Save Changes

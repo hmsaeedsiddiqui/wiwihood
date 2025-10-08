@@ -48,13 +48,7 @@ const adminNavItems = [
       { name: 'Categories', href: '/admin/categories', icon: Tags },
     ]
   },
-  {
-    label: 'Content',
-    items: [
-      { name: 'CMS', href: '/admin/cms', icon: FileText },
-      { name: 'Reviews', href: '/admin/reviews', icon: Star },
-    ]
-  },
+
   {
     label: 'Financial',
     items: [
@@ -233,7 +227,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <div className="relative">
                 <button
                   onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                  className="flex items-center space-x-3 p-2 gap-2 rounded-lg hover:bg-gray-100 transition-colors"
                 >
                   <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full flex items-center justify-center">
                     <User className="h-4 w-4 text-white" />
@@ -289,7 +283,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+          className="fixed inset-0 z-40 bg-black/30 bg-opacity-50 lg:hidden"
           onClick={() => setSidebarOpen(false)}
         />
       )}

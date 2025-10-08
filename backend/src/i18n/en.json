@@ -1,0 +1,86 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "forgotPassword": "Forgot Password",
+    "resetPassword": "Reset Password",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "loginSuccess": "Login successful",
+    "loginFailed": "Login failed",
+    "registerSuccess": "Registration successful",
+    "invalidCredentials": "Invalid credentials"
+  },
+  "booking": {
+    "bookNow": "Book Now",
+    "selectService": "Select Service",
+    "selectDate": "Select Date",
+    "selectTime": "Select Time",
+    "bookingConfirmed": "Booking Confirmed",
+    "bookingCancelled": "Booking Cancelled",
+    "reschedule": "Reschedule",
+    "cancel": "Cancel Booking",
+    "upcoming": "Upcoming Bookings",
+    "past": "Past Bookings",
+    "noBookings": "No bookings found"
+  },
+  "services": {
+    "haircut": "Haircut",
+    "massage": "Massage",
+    "facial": "Facial",
+    "nails": "Nail Care",
+    "spa": "Spa Treatment",
+    "beauty": "Beauty Services",
+    "wellness": "Wellness Services"
+  },
+  "notifications": {
+    "bookingReminder": "Booking Reminder",
+    "bookingConfirmation": "Booking Confirmation",
+    "newMessage": "New Message",
+    "paymentReceived": "Payment Received"
+  },
+  "sms": {
+    "templates": {
+      "bookingConfirmation": "🎉 Your booking has been confirmed! Service: {{serviceName}} on {{date}} at {{time}}. See you soon!",
+      "verificationCode": "Your verification code is: {{code}}. This code will expire in 10 minutes.",
+      "bookingReminder": "📅 Reminder: You have a {{serviceName}} appointment tomorrow at {{time}}. Location: {{location}}",
+      "bookingCancellation": "❌ Your booking for {{serviceName}} on {{date}} has been cancelled. Refund will be processed within 24 hours.",
+      "welcomeMessage": "🌟 Welcome to Reservista! Your account has been created successfully. Start booking your favorite services now!",
+      "paymentConfirmation": "💳 Payment confirmed! Amount: {{amount}} for {{serviceName}}. Thank you for your business!"
+    },
+    "status": {
+      "sent": "SMS sent successfully",
+      "failed": "SMS sending failed",
+      "pending": "SMS is being sent",
+      "delivered": "SMS delivered",
+      "undelivered": "SMS not delivered"
+    }
+  },
+  "languages": {
+    "en": "English",
+    "zh": "中文",
+    "ur": "اردو",
+    "ar": "العربية",
+    "es": "Español",
+    "fr": "Français"
+  }
+}

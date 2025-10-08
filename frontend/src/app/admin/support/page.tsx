@@ -529,25 +529,25 @@ export default function AdminSupport() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
+    <div className="w-[95%]  mx-auto ">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Support Tickets</h1>
             <p className="text-gray-600 mt-1">Manage customer and provider support requests</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center gap-4 space-x-3">
             <button 
               onClick={() => setShowFilters(!showFilters)}
-              className="flex items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+              className="flex cursor-pointer items-center px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
             >
               <Filter className="h-4 w-4 mr-2" />
               Filters
             </button>
             <button 
               onClick={() => window.location.reload()}
-              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex cursor-pointer items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
               <RefreshCw className="h-4 w-4 mr-2" />
               Refresh
@@ -674,22 +674,23 @@ export default function AdminSupport() {
         
         <div className="divide-y divide-gray-200">
           {filteredTickets.map((ticket) => (
-            <div key={ticket.id} className="p-6 hover:bg-gray-50 transition-colors">
-              <div className="flex items-start justify-between">
+            <div
+              key={ticket.id}
+              className="p-4 sm:p-6 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
                 <div className="flex-1">
-                  <div className="flex items-center space-x-3 mb-2">
-                    <h4 className="text-lg font-medium text-gray-900">{ticket.subject}</h4>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[ticket.status]}`}>
+                  <div className="flex flex-wrap items-center gap-2 sm:space-x-3 mb-2">
+                    <h4 className="text-base sm:text-lg font-medium text-gray-900">{ticket.subject}</h4>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${statusColors[ticket.status]}`}> 
                       {ticket.status.replace('-', ' ')}
                     </span>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${priorityColors[ticket.priority]}`}>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${priorityColors[ticket.priority]}`}> 
                       {ticket.priority}
                     </span>
                   </div>
-                  
-                  <p className="text-gray-600 mb-3 line-clamp-2">{ticket.description}</p>
-                  
-                  <div className="flex items-center space-x-6 text-sm text-gray-500">
+                  <p className="text-gray-600 mb-2 sm:mb-3 line-clamp-2">{ticket.description}</p>
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:space-x-6 text-sm text-gray-500">
                     <div className="flex items-center">
                       <span className="mr-2">{categoryIcons[ticket.category] || '❓'}</span>
                       <span className="capitalize">{ticket.category.replace('-', ' ')}</span>
@@ -711,9 +712,8 @@ export default function AdminSupport() {
                       </div>
                     )}
                   </div>
-                  
                   {ticket.tags && ticket.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2 mt-3">
+                    <div className="flex flex-wrap gap-2 mt-2 sm:mt-3">
                       {ticket.tags.map((tag, index) => (
                         <span key={index} className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded">
                           {tag}
@@ -722,8 +722,7 @@ export default function AdminSupport() {
                     </div>
                   )}
                 </div>
-                
-                <div className="flex items-center space-x-2 ml-4">
+                <div className="flex items-center gap-2 sm:space-x-2 sm:ml-4">
                   <button
                     onClick={() => setSelectedTicket(ticket)}
                     className="flex items-center px-3 py-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"

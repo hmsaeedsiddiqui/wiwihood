@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { 
   Users, 
   Calendar, 
@@ -21,12 +22,14 @@ import {
 import { adminApi } from '../../../lib/adminApi';
 
 export default function AdminDashboard() {
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [stats, setStats] = useState<any>(null);
   const [recentBookings, setRecentBookings] = useState<any[]>([]);
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [dashboardData, setDashboardData] = useState<any>(null);
+  const [selectedTab, setSelectedTab] = useState(0);
 
   useEffect(() => {
     loadDashboardData();
@@ -101,6 +104,23 @@ export default function AdminDashboard() {
     } catch (error) {
       console.error('Failed to reject provider:', error);
     }
+  };
+
+  // Quick Actions handlers
+  const handleAddNewUser = () => {
+    router.push('/admin/users');
+  };
+
+  const handleQuickApproveProvider = () => {
+    router.push('/admin/providers');
+  };
+
+  const handleViewAnalytics = () => {
+    router.push('/admin/analytics');
+  };
+
+  const handleSystemAlerts = () => {
+    router.push('/admin/alerts');
   };
 
   const StatCard = ({ title, value, change, icon: Icon, prefix = '', suffix = '' }: {
@@ -185,9 +205,9 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
+    <div className="w-[95%] mx-auto">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between flex-wrap gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <p className="text-gray-600 mt-1">Welcome back! Here's what's happening with your platform today.</p>
@@ -195,7 +215,7 @@ export default function AdminDashboard() {
         <button
           onClick={loadDashboardData}
           disabled={loading}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center px-4 cursor-pointer py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
           <Activity className="h-4 w-4 mr-2" />
           Refresh
@@ -203,7 +223,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         <StatCard
           title="Total Users"
           value={stats.totalUsers}
@@ -235,24 +255,28 @@ export default function AdminDashboard() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
         {/* Revenue Chart */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
             <h3 className="text-lg font-semibold text-gray-900">Revenue Overview</h3>
             <div className="flex items-center space-x-2">
-              <button className="px-3 py-1 text-sm font-medium text-blue-600 bg-blue-50 rounded-md">
-                30 Days
+              {['30 Days', '90 Days', '1 Year'].map((label, idx) => (
+              <button
+                key={label}
+                className={`px-3 py-1 text-sm cursor-pointer font-medium rounded-md ${
+                idx === selectedTab
+                  ? 'text-blue-600 bg-blue-50'
+                  : 'text-gray-600 hover:bg-gray-50'
+                }`}
+                onClick={() => setSelectedTab(idx)}
+              >
+                {label}
               </button>
-              <button className="px-3 py-1 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md">
-                90 Days
-              </button>
-              <button className="px-3 py-1 text-sm font-medium text-gray-600 hover:bg-gray-50 rounded-md">
-                1 Year
-              </button>
+              ))}
             </div>
           </div>
           
           {/* Simple Chart Mockup */}
           <div className="h-64 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg flex items-end justify-center p-4">
-            <div className="flex items-end space-x-2 h-full w-full max-w-md">
+            <div className="flex items-end space-x-2 h-full w-full max-w-md gap-2">
               {[65, 85, 45, 75, 95, 55, 80, 90, 70, 100, 85, 75].map((height, index) => (
                 <div
                   key={index}
@@ -263,7 +287,7 @@ export default function AdminDashboard() {
             </div>
           </div>
           
-          <div className="mt-4 flex justify-center space-x-6 text-sm">
+          <div className="mt-4 flex justify-center space-x-6 gap-2 text-sm">
             <div className="flex items-center">
               <div className="w-3 h-3 bg-blue-600 rounded-full mr-2"></div>
               <span className="text-gray-600">Revenue</span>
@@ -279,7 +303,10 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-4">Quick Actions</h3>
           <div className="space-y-3">
-            <button className="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors">
+            <button 
+              onClick={handleAddNewUser}
+              className="w-full flex items-center justify-between mb-4 p-3 cursor-pointer bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+            >
               <div className="flex items-center">
                 <Users className="h-5 w-5 text-blue-600 mr-3" />
                 <span className="font-medium text-blue-900">Add New User</span>
@@ -287,7 +314,10 @@ export default function AdminDashboard() {
               <ArrowUpRight className="h-4 w-4 text-blue-600" />
             </button>
             
-            <button className="w-full flex items-center justify-between p-3 bg-green-50 hover:bg-green-100 rounded-lg transition-colors">
+            <button 
+              onClick={handleQuickApproveProvider}
+              className="w-full flex items-center justify-between mb-4 p-3 cursor-pointer bg-green-50 hover:bg-green-100 rounded-lg transition-colors"
+            >
               <div className="flex items-center">
                 <Building2 className="h-5 w-5 text-green-600 mr-3" />
                 <span className="font-medium text-green-900">Approve Provider</span>
@@ -295,7 +325,10 @@ export default function AdminDashboard() {
               <ArrowUpRight className="h-4 w-4 text-green-600" />
             </button>
             
-            <button className="w-full flex items-center justify-between p-3 bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors">
+            <button 
+              onClick={handleViewAnalytics}
+              className="w-full flex items-center justify-between mb-4 p-3 cursor-pointer bg-purple-50 hover:bg-purple-100 rounded-lg transition-colors"
+            >
               <div className="flex items-center">
                 <BarChart3 className="h-5 w-5 text-purple-600 mr-3" />
                 <span className="font-medium text-purple-900">View Analytics</span>
@@ -303,7 +336,10 @@ export default function AdminDashboard() {
               <ArrowUpRight className="h-4 w-4 text-purple-600" />
             </button>
             
-            <button className="w-full flex items-center justify-between p-3 bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors">
+            <button 
+              onClick={handleSystemAlerts}
+              className="w-full flex items-center justify-between mb-4 p-3 cursor-pointer bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors"
+            >
               <div className="flex items-center">
                 <AlertCircle className="h-5 w-5 text-orange-600 mr-3" />
                 <span className="font-medium text-orange-900">System Alerts</span>
@@ -320,7 +356,7 @@ export default function AdminDashboard() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-semibold text-gray-900">Recent Bookings</h3>
-            <button className="text-sm font-medium text-blue-600 hover:text-blue-700">
+            <button className="text-sm cursor-pointer font-medium text-blue-600 hover:text-blue-700">
               View All
             </button>
           </div>

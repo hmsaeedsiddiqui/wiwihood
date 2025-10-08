@@ -148,7 +148,7 @@ export default function AdminUsers() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'active': return 'bg-green-100 text-green-800';
+      case 'active': return 'bg-green-100 text-green-800 ';
       case 'suspended': return 'bg-red-100 text-red-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'inactive': return 'bg-gray-100 text-gray-800';
@@ -157,20 +157,20 @@ export default function AdminUsers() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
+    <div className="w-[95%] mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">User Management</h1>
             <p className="text-gray-600 mt-1">Manage customers, providers, and administrators</p>
           </div>
-          <div className="flex items-center space-x-3">
-            <button className="flex items-center px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
+          <div className="flex items-center space-x-3 gap-3">
+            <button className="flex items-center px-4 cursor-pointer py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50">
               <Download className="h-4 w-4 mr-2" />
               Export
             </button>
-            <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+            <button className="flex items-center px-4 cursor-pointer py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
               <Plus className="h-4 w-4 mr-2" />
               Add User
             </button>
@@ -179,7 +179,7 @@ export default function AdminUsers() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <User className="h-8 w-8 text-blue-600" />
@@ -229,7 +229,7 @@ export default function AdminUsers() {
 
       {/* Search and Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-4">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex-1 relative">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
             <input
@@ -241,7 +241,7 @@ export default function AdminUsers() {
             />
           </div>
           
-          <div className="flex space-x-4">
+          <div className="flex space-x-4 items-center justify-between gap-4 ">
             <select
               value={roleFilter}
               onChange={(e) => setRoleFilter(e.target.value)}
@@ -326,7 +326,7 @@ export default function AdminUsers() {
                     <select
                       value={user.status}
                       onChange={(e) => handleStatusChange(user.id, e.target.value)}
-                      className={`text-xs font-medium px-2 py-1 rounded-full border-0 focus:ring-2 focus:ring-blue-500 ${getStatusColor(user.status)}`}
+                      className={`text-xs font-medium px-3 py-2 border cursor-pointer rounded-xl focus:ring-2 focus:ring-blue-500 ${getStatusColor(user.status)}`}
                     >
                       <option value="active">Active</option>
                       <option value="suspended">Suspended</option>

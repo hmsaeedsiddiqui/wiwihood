@@ -89,10 +89,32 @@ export default function AdminAnalytics() {
     try {
       setLoading(true);
       const response = await adminApi.getAnalytics({ granularity: dateRange });
-      setAnalytics(response || mockAnalytics);
+      
+      // Normalize analytics data to ensure all required properties exist
+      const normalizedAnalytics = {
+        overview: {
+          totalRevenue: response?.overview?.totalRevenue || 0,
+          totalBookings: response?.overview?.totalBookings || 0,
+          activeUsers: response?.overview?.activeUsers || 0,
+          averageBookingValue: response?.overview?.averageBookingValue || 0,
+          conversionRate: response?.overview?.conversionRate || 0,
+          customerRetentionRate: response?.overview?.customerRetentionRate || 0,
+        },
+        trends: {
+          revenue: response?.trends?.revenue || [],
+          bookings: response?.trends?.bookings || [],
+        },
+        categoryBreakdown: response?.categoryBreakdown || [],
+        topProviders: response?.topProviders || [],
+        recentActivity: response?.recentActivity || [],
+        ...response
+      };
+      
+      setAnalytics(normalizedAnalytics);
     } catch (error) {
       console.error('Failed to load analytics:', error);
       // Keep using mock data as fallback
+      setAnalytics(mockAnalytics);
     } finally {
       setLoading(false);
     }
@@ -129,12 +151,12 @@ export default function AdminAnalytics() {
 
   const SimpleChart = ({ data, color = '#3B82F6', height = 200 }: any) => (
     <div className={`flex items-end space-x-1 h-${height} p-4`}>
-      {data.map((item, index) => (
+      {data.map((item: any, index: number) => (
         <div key={index} className="flex-1 flex flex-col items-center">
           <div
             className="w-full rounded-t-sm transition-all duration-300 hover:opacity-80 cursor-pointer"
             style={{ 
-              height: `${(item.value / Math.max(...data.map(d => d.value))) * 100}%`,
+              height: `${(item.value / Math.max(...data.map((d: any) => d.value))) * 100}%`,
               backgroundColor: color,
               minHeight: '4px'
             }}
@@ -169,19 +191,19 @@ export default function AdminAnalytics() {
   };
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
+    <div className="w-[95%] mx-auto ">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Analytics & Reports</h1>
             <p className="text-gray-600 mt-1">Comprehensive insights into your platform performance</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 gap-4 flex-wrap">
             <select
               value={dateRange}
               onChange={(e) => setDateRange(e.target.value)}
-              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-4 py-2 cursor-pointer border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="7d">Last 7 days</option>
               <option value="30d">Last 30 days</option>
@@ -191,12 +213,12 @@ export default function AdminAnalytics() {
             <button 
               onClick={refreshData}
               disabled={loading}
-              className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
+              className="flex items-center cursor-pointer px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:opacity-50"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
-            <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button className="flex items-center cursor-pointer px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
               <Download className="h-4 w-4 mr-2" />
               Export Report
             </button>
@@ -208,40 +230,40 @@ export default function AdminAnalytics() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         <StatCard
           title="Total Revenue"
-          value={analytics.overview.totalRevenue}
+          value={analytics?.overview?.totalRevenue}
           change={23.4}
           icon={DollarSign}
           prefix="$"
         />
         <StatCard
           title="Total Bookings"
-          value={analytics.overview.totalBookings}
+          value={analytics?.overview?.totalBookings}
           change={15.2}
           icon={Calendar}
         />
         <StatCard
           title="Active Users"
-          value={analytics.overview.activeUsers}
+          value={analytics?.overview?.activeUsers || 0}
           change={12.5}
           icon={Users}
         />
         <StatCard
           title="Avg. Booking Value"
-          value={analytics.overview.averageBookingValue}
+          value={analytics?.overview?.averageBookingValue || 0}
           change={8.7}
           icon={TrendingUp}
           prefix="$"
         />
         <StatCard
           title="Conversion Rate"
-          value={analytics.overview.conversionRate}
+          value={analytics?.overview?.conversionRate || 0}
           change={-2.1}
           icon={Activity}
           suffix="%"
         />
         <StatCard
           title="Customer Retention"
-          value={analytics.overview.customerRetentionRate}
+          value={analytics?.overview?.customerRetentionRate || 0}
           change={5.3}
           icon={Users}
           suffix="%"
@@ -261,7 +283,7 @@ export default function AdminAnalytics() {
               </div>
             </div>
           </div>
-          <SimpleChart data={analytics.trends.revenue} color="#3B82F6" />
+          <SimpleChart data={analytics?.trends?.revenue || []} color="#3B82F6" />
         </div>
 
         {/* Bookings Trend */}
@@ -275,7 +297,7 @@ export default function AdminAnalytics() {
               </div>
             </div>
           </div>
-          <SimpleChart data={analytics.trends.bookings} color="#10B981" />
+          <SimpleChart data={analytics?.trends?.bookings || []} color="#10B981" />
         </div>
       </div>
 
@@ -284,9 +306,9 @@ export default function AdminAnalytics() {
         {/* Service Categories */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Service Categories</h3>
-          <PieChartMockup data={analytics.categoryBreakdown} />
+          <PieChartMockup data={analytics?.categoryBreakdown || []} />
           <div className="mt-6 space-y-3">
-            {analytics.categoryBreakdown.map((category, index) => (
+            {(analytics?.categoryBreakdown || []).map((category, index) => (
               <div key={index} className="flex items-center justify-between">
                 <div className="flex items-center">
                   <div 
@@ -305,19 +327,19 @@ export default function AdminAnalytics() {
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <h3 className="text-lg font-semibold text-gray-900 mb-6">Top Performing Providers</h3>
           <div className="space-y-4">
-            {analytics.topProviders.map((provider, index) => (
+            {(analytics?.topProviders || []).map((provider, index) => (
               <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                     <Building2 className="h-5 w-5 text-blue-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900">{provider.name}</p>
-                    <p className="text-sm text-gray-600">{provider.bookings} bookings • ⭐ {provider.rating}</p>
+                    <p className="font-medium text-gray-900">{provider?.name}</p>
+                    <p className="text-sm text-gray-600">{provider?.bookings} bookings • ⭐ {provider.rating}</p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-medium text-gray-900">${provider.revenue.toLocaleString()}</p>
+                  <p className="font-medium text-gray-900">${provider?.revenue?.toLocaleString()}</p>
                   <p className="text-sm text-gray-600">Revenue</p>
                 </div>
               </div>
@@ -328,17 +350,17 @@ export default function AdminAnalytics() {
 
       {/* Recent Activity */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
           <h3 className="text-lg font-semibold text-gray-900">Real-time Activity</h3>
-          <button className="text-sm font-medium text-blue-600 hover:text-blue-700">
+          <button className="text-sm cursor-pointer font-medium text-blue-600 hover:text-blue-700">
             View All Activity
           </button>
         </div>
         
         <div className="space-y-4">
-          {analytics.recentActivity.map((activity, index) => (
+          {(analytics?.recentActivity || []).map((activity, index) => (
             <div key={index} className="flex items-center justify-between p-3 border-l-4 border-blue-200 bg-blue-50 rounded-r-lg">
-              <div className="flex items-center">
+              <div className="flex items-center ">
                 <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center mr-3">
                   {activity.type === 'booking' && <Calendar className="h-4 w-4 text-blue-600" />}
                   {activity.type === 'registration' && <Users className="h-4 w-4 text-green-600" />}

@@ -6,18 +6,35 @@ const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/a
 
 interface Booking {
   id: string;
-  serviceName: string;
-  providerName: string;
-  address: string;
-  date: string;
-  time: string;
-  duration: string;
-  price: string;
+  customer: {
+    id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone?: string;
+  };
+  service: {
+    id: string;
+    name: string;
+    duration: number;
+    price: number;
+  };
+  provider: {
+    id: string;
+    businessName: string;
+    user: {
+      firstName: string;
+      lastName: string;
+    };
+  };
+  startTime: string;
+  endTime: string;
+  totalPrice: number;
+  platformFee: number;
   status: string;
-  paymentStatus: string;
   notes?: string;
-  imageUrl?: string;
-  hasReview?: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface BookingSummary {
@@ -38,17 +55,54 @@ export default function CustomerBookingsPage() {
     fetchBookings();
   }, []);
 
+  const getAuthHeaders = () => {
+    const token = localStorage.getItem('customerToken') || 
+                  localStorage.getItem('auth-token') || 
+                  localStorage.getItem('providerToken');
+    
+    if (!token) return null;
+    
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+  };
+
   async function fetchBookings() {
     try {
       setLoading(true);
       setError("");
-      const response = await axios.get(`${API_BASE_URL}/bookings/customer`);
-      const data = response.data.data || response.data;
+      
+      const headers = getAuthHeaders();
+      if (!headers) {
+        setError("Authentication required. Please log in.");
+        setLoading(false);
+        return;
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/bookings/my-bookings`, {
+        headers
+      });
+      const data = response.data;
       setBookings(data.bookings || []);
-      setSummary(data.summary || { total: 0, upcoming: 0, completed: 0, cancelled: 0, spent: 0 });
-    } catch (err) {
+      
+      // Calculate summary from the bookings data
+      const bookings: Booking[] = data.bookings || [];
+      const summary = {
+        total: bookings.length,
+        upcoming: bookings.filter((b: Booking) => ['pending', 'confirmed'].includes(b.status)).length,
+        completed: bookings.filter((b: Booking) => b.status === 'completed').length,
+        cancelled: bookings.filter((b: Booking) => b.status === 'cancelled').length,
+        spent: bookings.filter((b: Booking) => b.status === 'completed').reduce((sum: number, b: Booking) => sum + (typeof b.totalPrice === 'number' ? b.totalPrice : 0), 0)
+      };
+      setSummary(summary);
+    } catch (err: any) {
       console.error('Error fetching bookings:', err);
-      setError("Failed to load bookings. Please try again.");
+      if (err.response?.status === 401) {
+        setError("Authentication failed. Please log in again.");
+      } else {
+        setError("Failed to load bookings. Please try again.");
+      }
       setBookings([]);
     } finally {
       setLoading(false);
@@ -105,14 +159,14 @@ export default function CustomerBookingsPage() {
             <div key={booking.id} style={{ display: 'flex', background: '#f9fafb', borderRadius: 14, boxShadow: '0 2px 8px rgba(0,0,0,0.04)', overflow: 'hidden', border: '1px solid #e5e7eb' }}>
               <div style={{ minWidth: 110, maxWidth: 110, height: 110, background: '#e5e7eb', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 <img 
-                  src={booking.imageUrl || "https://via.placeholder.com/90x90?text=Service"} 
+                  src="https://via.placeholder.com/90x90?text=Service" 
                   alt="Service" 
                   style={{ width: 90, height: 90, borderRadius: 10, objectFit: 'cover' }} 
                 />
               </div>
               <div style={{ flex: 1, padding: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontWeight: 700, fontSize: 18 }}>{booking.serviceName}</span>
+                  <span style={{ fontWeight: 700, fontSize: 18 }}>{booking.service.name}</span>
                   <span style={{ 
                     fontSize: 13, 
                     fontWeight: 600, 
@@ -123,23 +177,14 @@ export default function CustomerBookingsPage() {
                   }}>
                     {booking.status}
                   </span>
-                  <span style={{ 
-                    fontSize: 13, 
-                    fontWeight: 600, 
-                    color: booking.paymentStatus === 'paid' ? '#10b981' : '#f59e42',
-                    background: booking.paymentStatus === 'paid' ? '#d1fae5' : '#fef3c7',
-                    borderRadius: 6, 
-                    padding: '2px 10px'
-                  }}>
-                    {booking.paymentStatus}
-                  </span>
+
                 </div>
-                <div style={{ fontWeight: 500, color: '#374151', fontSize: 15 }}>{booking.providerName}</div>
-                <div style={{ color: '#6b7280', fontSize: 14 }}>{booking.address}</div>
+                <div style={{ fontWeight: 500, color: '#374151', fontSize: 15 }}>{booking.provider.businessName}</div>
+
                 <div style={{ display: 'flex', alignItems: 'center', gap: 16, margin: '6px 0' }}>
-                  <span style={{ fontSize: 15 }}>📅 {booking.date} 🕐 {booking.time}</span>
-                  <span style={{ fontSize: 15 }}>⏱️ {booking.duration}</span>
-                  <span style={{ fontSize: 15 }}>💵 {booking.price}</span>
+                  <span style={{ fontSize: 15 }}>📅 {new Date(booking.startTime).toLocaleDateString()} 🕐 {new Date(booking.startTime).toLocaleTimeString()}</span>
+                  <span style={{ fontSize: 15 }}>⏱️ {booking.service.duration} min</span>
+                  <span style={{ fontSize: 15 }}>💵 ${typeof booking.totalPrice === 'number' ? booking.totalPrice.toFixed(2) : booking.totalPrice}</span>
                 </div>
                 <div style={{ color: '#6b7280', fontSize: 14, marginBottom: 4 }}>
                   <strong>Notes:</strong> {booking.notes || "No notes"}
@@ -160,23 +205,6 @@ export default function CustomerBookingsPage() {
                     View Details
                   </button>
                   {booking.status === 'completed' ? (
-                    booking.hasReview ? (
-                      <button 
-                        onClick={() => window.location.href = `/booking/${booking.id}/review`}
-                        style={{ 
-                          background: '#10b981', 
-                          color: '#fff', 
-                          border: 'none', 
-                          borderRadius: 6, 
-                          padding: '7px 18px', 
-                          fontWeight: 600, 
-                          fontSize: 15, 
-                          cursor: 'pointer' 
-                        }}
-                      >
-                        👁️ View Review
-                      </button>
-                    ) : (
                       <button 
                         onClick={() => window.location.href = `/booking/${booking.id}/review`}
                         style={{ 
@@ -192,7 +220,6 @@ export default function CustomerBookingsPage() {
                       >
                         ⭐ Write Review
                       </button>
-                    )
                   ) : booking.status === 'confirmed' || booking.status === 'pending' ? (
                     <>
                       <button style={{ 

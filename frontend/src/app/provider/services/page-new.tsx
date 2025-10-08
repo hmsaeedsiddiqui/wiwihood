@@ -75,7 +75,7 @@ export default function ServicesPage() {
   const fetchCategories = async () => {
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/categories`
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/categories`
       );
       setCategories(response.data || []);
     } catch (error) {
@@ -89,7 +89,7 @@ export default function ServicesPage() {
       
       const token = localStorage.getItem('providerToken');
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/services/provider/${providerId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/services/provider/${providerId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -130,7 +130,7 @@ export default function ServicesPage() {
       if (editingService) {
         // Update existing service
         await axios.patch(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/services/${editingService.id}`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/services/${editingService.id}`,
           submitData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -140,7 +140,7 @@ export default function ServicesPage() {
       } else {
         // Create new service
         await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/services/provider/${providerId}`,
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/services/provider/${providerId}`,
           submitData,
           {
             headers: { Authorization: `Bearer ${token}` },
@@ -180,7 +180,7 @@ export default function ServicesPage() {
     try {
       const token = localStorage.getItem('providerToken');
       await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/services/${serviceId}`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/services/${serviceId}`,
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -197,7 +197,7 @@ export default function ServicesPage() {
     try {
       const token = localStorage.getItem('providerToken');
       await axios.patch(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/services/${serviceId}/toggle-active`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/services/${serviceId}/toggle-active`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },

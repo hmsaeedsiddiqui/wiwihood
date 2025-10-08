@@ -21,6 +21,30 @@ import {
 } from 'lucide-react';
 import { adminApi } from '../../../lib/adminApi';
 
+interface Provider {
+  id: string;
+  businessName: string;
+  ownerName: string;
+  email: string;
+  phone: string;
+  address: string;
+  category: string;
+  status: string;
+  verification: string;
+  joinDate: string;
+  rating: number;
+  totalReviews: number;
+  totalBookings: number;
+  totalEarnings: number;
+  services: string[];
+  documents: {
+    businessLicense: string;
+    insurance: string;
+    certifications: string;
+  };
+  workingHours: string;
+}
+
 // Mock provider data
 const mockProviders = [
   {
@@ -118,12 +142,12 @@ const mockProviders = [
 ];
 
 export default function AdminProviders() {
-  const [providers, setProviders] = useState(mockProviders);
-  const [filteredProviders, setFilteredProviders] = useState(mockProviders);
+  const [providers, setProviders] = useState<Provider[]>([]);
+  const [filteredProviders, setFilteredProviders] = useState<Provider[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
-  const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null);
   const [loading, setLoading] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -143,12 +167,42 @@ export default function AdminProviders() {
         verified: statusFilter === 'verified' ? true : undefined,
       });
       
-      setProviders(response.providers || mockProviders);
-      setFilteredProviders(response.providers || mockProviders);
-      setTotalPages(response.totalPages || 1);
+      // Normalize provider data to ensure all required properties exist
+      const normalizedProviders = (response?.providers || []).map((provider: any) => ({
+        id: provider.id,
+        businessName: provider.businessName || 'Unknown Business',
+        ownerName: provider.user?.firstName && provider.user?.lastName 
+          ? `${provider.user.firstName} ${provider.user.lastName}` 
+          : 'Unknown Owner',
+        email: provider.user?.email || 'N/A',
+        phone: provider.phone || 'N/A',
+        address: provider.address ? `${provider.address}, ${provider.city || ''}, ${provider.country || ''}` : 'N/A',
+        category: 'General', // This would come from provider's services category
+        status: provider.status || 'pending',
+        verification: provider.isVerified ? 'verified' : 'unverified',
+        joinDate: provider.createdAt ? new Date(provider.createdAt).toLocaleDateString() : 'N/A',
+        rating: provider.averageRating || 0,
+        totalReviews: provider.totalReviews || 0,
+        totalBookings: provider.totalBookings || 0,
+        totalEarnings: 0, // This would need to be calculated from bookings
+        services: [], // This would come from provider's services
+        documents: {
+          businessLicense: provider.licenseNumber ? 'verified' : 'pending',
+          insurance: 'pending',
+          certifications: provider.isVerified ? 'verified' : 'pending'
+        },
+        workingHours: 'N/A' // This would come from provider's working hours
+      }));
+      
+      setProviders(normalizedProviders);
+      setFilteredProviders(normalizedProviders);
+      setTotalPages(response?.totalPages || 1);
+      
+      console.log(`Loaded ${normalizedProviders.length} providers from API`);
     } catch (error) {
       console.error('Failed to load providers:', error);
-      // Keep using mock data as fallback
+      setProviders([]);
+      setFilteredProviders([]);
     } finally {
       setLoading(false);
     }
@@ -228,14 +282,14 @@ export default function AdminProviders() {
   };
 
   const ProviderDetailModal = ({ provider, onClose }: { provider: any; onClose: () => void }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-xl max-w-5xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">Provider Details - {provider.id}</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
+              className="text-gray-400 cursor-pointer hover:text-gray-600 text-2xl"
             >
               ×
             </button>
@@ -301,9 +355,9 @@ export default function AdminProviders() {
               <div>
                 <h3 className="text-lg font-medium text-gray-900 mb-4">Services Offered</h3>
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-2 pb-2">
                     {provider.services.map((service: string, index: number) => (
-                      <span key={index} className="px-3 py-1 bg-blue-100 text-blue-800 text-sm rounded-full">
+                      <span key={index} className="px-3 py-1  bg-blue-100 text-blue-800 text-sm rounded-full">
                         {service}
                       </span>
                     ))}
@@ -373,11 +427,11 @@ export default function AdminProviders() {
                 <div className="bg-gray-50 rounded-lg p-4 space-y-3">
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total Bookings:</span>
-                    <span className="font-medium text-gray-900">{provider.totalBookings.toLocaleString()}</span>
+                    <span className="font-medium text-gray-900">{(provider.totalBookings || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Total Earnings:</span>
-                    <span className="font-medium text-gray-900">${provider.totalEarnings.toLocaleString()}</span>
+                    <span className="font-medium text-gray-900">${(provider.totalEarnings || 0).toLocaleString()}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Reviews:</span>
@@ -409,7 +463,7 @@ export default function AdminProviders() {
                   {provider.status === 'active' && (
                     <button 
                       onClick={() => handleStatusChange(provider.id, 'suspended')}
-                      className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      className="w-full px-4 py-2 cursor-pointer bg-red-600 mb-4 text-white rounded-lg hover:bg-red-700"
                     >
                       Suspend Provider
                     </button>
@@ -418,7 +472,7 @@ export default function AdminProviders() {
                   {provider.status === 'suspended' && (
                     <button 
                       onClick={() => handleStatusChange(provider.id, 'active')}
-                      className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      className="w-full px-4 py-2  bg-green-600 text-white rounded-lg hover:bg-green-700"
                     >
                       Reactivate Provider
                     </button>
@@ -441,10 +495,10 @@ export default function AdminProviders() {
                     </>
                   )}
 
-                  <button className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                  <button className="w-full px-4 py-2 mb-4 cursor-pointer bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                     Send Message
                   </button>
-                  <button className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                  <button className="w-full px-4 py-2 mb-4 cursor-pointer bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                     View Full Profile
                   </button>
                 </div>
@@ -459,16 +513,16 @@ export default function AdminProviders() {
   const categories = [...new Set(providers.map(p => p.category))];
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
+    <div className="w-[95%] mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Provider Management</h1>
             <p className="text-gray-600 mt-1">Manage service providers and their verification status</p>
           </div>
           <div className="flex items-center space-x-3">
-            <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button className="flex items-center px-4 py-2 cursor-pointer bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
               <Plus className="h-4 w-4 mr-2" />
               Add Provider
             </button>
@@ -477,7 +531,7 @@ export default function AdminProviders() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <Building2 className="h-8 w-8 text-blue-600" />
@@ -518,7 +572,7 @@ export default function AdminProviders() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Total Earnings</p>
               <p className="text-2xl font-bold text-gray-900">
-                ${providers.reduce((sum, p) => sum + p.totalEarnings, 0).toLocaleString()}
+                ${providers.reduce((sum, p) => sum + (p.totalEarnings || 0), 0).toLocaleString()}
               </p>
             </div>
           </div>
@@ -527,7 +581,7 @@ export default function AdminProviders() {
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -541,25 +595,25 @@ export default function AdminProviders() {
             </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex items-center justify-between gap-4">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border cursor-pointer border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="all">All Status</option>
-              <option value="active">Active</option>
-              <option value="pending">Pending</option>
-              <option value="suspended">Suspended</option>
-              <option value="inactive">Inactive</option>
+              <option key="all" value="all">All Status</option>
+              <option key="active" value="active">Active</option>
+              <option key="pending" value="pending">Pending</option>
+              <option key="suspended" value="suspended">Suspended</option>
+              <option key="inactive" value="inactive">Inactive</option>
             </select>
             
             <select
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-gray-300 rounded-lg cursor-pointer focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="all">All Categories</option>
+              <option key="all" value="all">All Categories</option>
               {categories.map(category => (
                 <option key={category} value={category}>{category}</option>
               ))}
@@ -621,25 +675,25 @@ export default function AdminProviders() {
                     <div className="text-sm text-gray-900">{provider.category}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(provider.status)}`}>
+                    <span className={`px-4 py-3 text-xs font-medium rounded-xl border-green-400 border ${getStatusColor(provider.status)}`}>
                       {provider.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getVerificationColor(provider.verification)}`}>
+                    <span className={`px-4 py-3 text-xs font-medium rounded-xl border-green-400 border ${getVerificationColor(provider.verification)}`}>
                       {provider.verification}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
-                      {provider.totalBookings > 0 && (
+                      {(provider.totalBookings || 0) > 0 && (
                         <div className="flex items-center">
                           <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
-                          <span>{provider.rating} ({provider.totalReviews})</span>
+                          <span>{provider.rating || 0} ({provider.totalReviews || 0})</span>
                         </div>
                       )}
                       <div className="text-sm text-gray-500">
-                        {provider.totalBookings} bookings • ${provider.totalEarnings.toLocaleString()}
+                        {provider.totalBookings || 0} bookings • ${(provider.totalEarnings || 0).toLocaleString()}
                       </div>
                     </div>
                   </td>
@@ -649,7 +703,7 @@ export default function AdminProviders() {
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button 
                       onClick={() => setSelectedProvider(provider)}
-                      className="text-blue-600 hover:text-blue-700"
+                      className="text-blue-600 cursor-pointer hover:text-blue-700"
                     >
                       <Eye className="h-4 w-4" />
                     </button>

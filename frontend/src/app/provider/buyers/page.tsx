@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 interface Customer {
   id: string;
@@ -17,6 +18,7 @@ interface Customer {
 }
 
 export default function MyBuyersPage() {
+  const router = useRouter();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -243,29 +245,24 @@ export default function MyBuyersPage() {
     return `${Math.floor(diffDays / 30)} months ago`;
   };
 
+  // Handler functions for buttons
+  const handleMessage = (customer: Customer) => {
+    // Navigate to provider messages page and auto-start conversation with this customer
+    router.push(`/provider/messages?customerId=${customer.id}&autoStart=true&customerName=${encodeURIComponent(customer.name)}&customerEmail=${encodeURIComponent(customer.email)}`);
+  };
+
+  const handleViewProfile = (customer: Customer) => {
+    // Navigate to customer profile page or show customer details
+    router.push(`/provider/customers/${customer.id}`);
+  };
+
   if (loading) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#f8fafc',
-        padding: '20px'
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '400px' 
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              border: '4px solid #e2e8f0',
-              borderTop: '4px solid #3b82f6',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }}></div>
-            <span style={{ marginLeft: '16px', color: '#64748b' }}>Loading customers...</span>
+      <div className="min-h-screen bg-slate-50 p-5">
+        <div className="">
+          <div className="flex items-center justify-center h-96">
+            <div className="w-12 h-12 border-4 border-slate-200 border-t-blue-500 rounded-full animate-spin"></div>
+            <span className="ml-4 text-slate-500">Loading customers...</span>
           </div>
         </div>
       </div>
@@ -274,34 +271,16 @@ export default function MyBuyersPage() {
 
   if (error) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#f8fafc',
-        padding: '20px'
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '8px',
-            padding: '16px',
-            marginTop: '20px'
-          }}>
-            <h3 style={{ color: '#991b1b', fontSize: '16px', fontWeight: '600' }}>
+      <div className="min-h-screen bg-slate-50 p-5">
+        <div className="">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mt-5">
+            <h3 className="text-red-800 text-base font-semibold">
               Error loading customers
             </h3>
-            <p style={{ color: '#dc2626', marginTop: '8px' }}>{error}</p>
+            <p className="text-red-600 mt-2">{error}</p>
             <button
               onClick={fetchCustomers}
-              style={{
-                backgroundColor: '#dc2626',
-                color: 'white',
-                padding: '8px 16px',
-                borderRadius: '6px',
-                border: 'none',
-                marginTop: '12px',
-                cursor: 'pointer'
-              }}
+              className="bg-red-600 text-white px-4 py-2 rounded-md border-none mt-3 cursor-var-pointer"
             >
               Retry
             </button>
@@ -312,128 +291,55 @@ export default function MyBuyersPage() {
   }
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: '#f8fafc',
-      padding: '20px'
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="min-h-screen bg-slate-50 ">
+      <div className="">
         {/* Header */}
-        <div style={{ marginBottom: '30px' }}>
-          <h1 style={{ 
-            fontSize: '28px', 
-            fontWeight: '700', 
-            color: '#1e293b',
-            marginBottom: '8px'
-          }}>
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-800 mb-2">
             My Buyers
           </h1>
-          <p style={{ 
-            color: '#64748b', 
-            fontSize: '16px'
-          }}>
+          <p className="text-slate-600 text-base">
             Manage your client relationships and track buyer activity
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-          gap: '20px',
-          marginBottom: '30px'
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <div style={{ 
-              fontSize: '32px', 
-              fontWeight: '700', 
-              color: '#1e293b',
-              marginBottom: '8px'
-            }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-5 mb-8">
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div className="text-3xl font-bold text-slate-800 mb-2">
               {stats.totalCustomers}
             </div>
-            <div style={{ color: '#64748b', fontSize: '14px' }}>Total Buyers</div>
+            <div className="text-slate-600 text-sm">Total Buyers</div>
           </div>
 
-          <div style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <div style={{ 
-              fontSize: '32px', 
-              fontWeight: '700', 
-              color: '#16a34a',
-              marginBottom: '8px'
-            }}>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div className="text-3xl font-bold text-green-600 mb-2">
               {stats.activeCustomers}
             </div>
-            <div style={{ color: '#64748b', fontSize: '14px' }}>Active Buyers</div>
+            <div className="text-slate-600 text-sm">Active Buyers</div>
           </div>
 
-          <div style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <div style={{ 
-              fontSize: '32px', 
-              fontWeight: '700', 
-              color: '#d97706',
-              marginBottom: '8px'
-            }}>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div className="text-3xl font-bold text-amber-600 mb-2">
               {stats.premiumCustomers}
             </div>
-            <div style={{ color: '#64748b', fontSize: '14px' }}>Premium Buyers</div>
+            <div className="text-slate-600 text-sm">Premium Buyers</div>
           </div>
 
-          <div style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <div style={{ 
-              fontSize: '32px', 
-              fontWeight: '700', 
-              color: '#7c3aed',
-              marginBottom: '8px'
-            }}>
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-slate-200">
+            <div className="text-3xl font-bold text-purple-600 mb-2">
               ${stats.totalRevenue.toLocaleString()}
             </div>
-            <div style={{ color: '#64748b', fontSize: '14px' }}>Total Revenue</div>
+            <div className="text-slate-600 text-sm">Total Revenue</div>
           </div>
         </div>
 
         {/* Filters and Search */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0',
-          marginBottom: '24px'
-        }}>
-          <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0' }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '16px'
-            }}>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
+          <div className="p-6 border-b border-slate-200">
+            <div className="flex justify-between items-center flex-wrap gap-4">
               {/* Tabs */}
-              <div style={{ display: 'flex', gap: '8px' }}>
+              <div className="flex gap-2">
                 {[
                   { key: 'all', label: `All (${stats.totalCustomers})` },
                   { key: 'active', label: `Active (${stats.activeCustomers})` },
@@ -442,17 +348,11 @@ export default function MyBuyersPage() {
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      backgroundColor: activeTab === tab.key ? '#3b82f6' : '#f1f5f9',
-                      color: activeTab === tab.key ? 'white' : '#64748b',
-                      transition: 'all 0.2s'
-                    }}
+                    className={`px-4 py-2 rounded-lg border-none text-sm font-medium cursor-var-pointer transition-all duration-200 ${
+                      activeTab === tab.key 
+                        ? 'bg-blue-500 text-white' 
+                        : 'bg-slate-100 text-slate-600'
+                    }`}
                   >
                     {tab.label}
                   </button>
@@ -460,28 +360,15 @@ export default function MyBuyersPage() {
               </div>
 
               {/* Search */}
-              <div style={{ position: 'relative' }}>
+              <div className="relative">
                 <input
                   type="text"
                   placeholder="Search buyers..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  style={{
-                    padding: '10px 40px 10px 12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    width: '250px',
-                    outline: 'none'
-                  }}
+                  className="py-2.5 pr-10 pl-3 border border-gray-300 rounded-lg text-sm w-64 outline-none"
                 />
-                <div style={{
-                  position: 'absolute',
-                  right: '12px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  color: '#9ca3af'
-                }}>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
                   🔍
                 </div>
               </div>
@@ -490,39 +377,16 @@ export default function MyBuyersPage() {
         </div>
 
         {/* Customers List */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0'
-        }}>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200">
           {filteredCustomers.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '60px 20px' 
-            }}>
-              <div style={{
-                width: '96px',
-                height: '96px',
-                backgroundColor: '#f1f5f9',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px',
-                fontSize: '40px'
-              }}>
+            <div className="text-center py-16 px-5">
+              <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
                 👥
               </div>
-              <h3 style={{ 
-                fontSize: '18px', 
-                fontWeight: '600', 
-                color: '#1e293b',
-                marginBottom: '8px'
-              }}>
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">
                 No customers found
               </h3>
-              <p style={{ color: '#64748b' }}>
+              <p className="text-slate-600">
                 {searchTerm 
                   ? `No customers match "${searchTerm}"` 
                   : activeTab === 'all'
@@ -538,183 +402,95 @@ export default function MyBuyersPage() {
                 return (
                   <div 
                     key={customer.id}
-                    style={{
-                      padding: '24px',
-                      borderBottom: index < filteredCustomers.length - 1 ? '1px solid #e2e8f0' : 'none',
-                      transition: 'background-color 0.2s'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.currentTarget.style.backgroundColor = '#f9fafb';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.currentTarget.style.backgroundColor = 'transparent';
-                    }}
+                    className={`p-6 transition-colors duration-200 hover:bg-gray-50 ${
+                      index < filteredCustomers.length - 1 ? 'border-b border-slate-200' : ''
+                    }`}
                   >
-                    <div style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      justifyContent: 'space-between',
-                      flexWrap: 'wrap',
-                      gap: '16px'
-                    }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <div className="flex items-center justify-between flex-wrap gap-4">
+                      <div className="flex items-center gap-4">
                         {/* Avatar */}
-                        <div style={{
-                          width: '50px',
-                          height: '50px',
-                          borderRadius: '50%',
-                          backgroundColor: '#3b82f6',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          color: 'white',
-                          fontWeight: '600',
-                          fontSize: '18px'
-                        }}>
+                        <div className="w-12 h-12 rounded-full bg-blue-500 flex items-center justify-center text-white font-semibold text-lg">
                           {customer.name.charAt(0).toUpperCase()}
                         </div>
 
                         {/* Customer Info */}
                         <div>
-                          <div style={{ 
-                            display: 'flex', 
-                            alignItems: 'center', 
-                            gap: '12px',
-                            marginBottom: '4px'
-                          }}>
-                            <h3 style={{ 
-                              fontSize: '18px', 
-                              fontWeight: '600', 
-                              color: '#1e293b',
-                              margin: 0
-                            }}>
+                          <div className="flex items-center gap-3 mb-1">
+                            <h3 className="text-lg font-semibold text-slate-800 m-0">
                               {customer.name}
                             </h3>
-                            <span style={{
-                              padding: '4px 8px',
-                              borderRadius: '12px',
-                              fontSize: '12px',
-                              fontWeight: '500',
-                              backgroundColor: statusColor.bg,
-                              color: statusColor.text
-                            }}>
+                            <span 
+                              className="px-2 py-1 rounded-xl text-xs font-medium"
+                              style={{
+                                backgroundColor: statusColor.bg,
+                                color: statusColor.text
+                              }}
+                            >
                               {customer.status}
                             </span>
                           </div>
-                          <p style={{ 
-                            color: '#64748b', 
-                            fontSize: '14px',
-                            margin: 0
-                          }}>
+                          <p className="text-slate-600 text-sm m-0">
                             {customer.email}
                           </p>
                         </div>
                       </div>
 
                       {/* Stats */}
-                      <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(4, 1fr)', 
-                        gap: '24px',
-                        textAlign: 'center'
-                      }}>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-6 text-center">
                         <div>
-                          <div style={{ 
-                            fontSize: '20px', 
-                            fontWeight: '700', 
-                            color: '#1e293b'
-                          }}>
+                          <div className="text-xl font-bold text-slate-800">
                             {customer.totalBookings}
                           </div>
-                          <div style={{ 
-                            fontSize: '12px', 
-                            color: '#64748b'
-                          }}>
+                          <div className="text-xs text-slate-600">
                             Total Orders
                           </div>
                         </div>
 
                         <div>
-                          <div style={{ 
-                            fontSize: '20px', 
-                            fontWeight: '700', 
-                            color: '#16a34a'
-                          }}>
+                          <div className="text-xl font-bold text-green-600">
                             ${customer.totalSpent}
                           </div>
-                          <div style={{ 
-                            fontSize: '12px', 
-                            color: '#64748b'
-                          }}>
+                          <div className="text-xs text-slate-600">
                             Total Spent
                           </div>
                         </div>
 
                         <div>
-                          <div style={{ 
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            gap: '4px'
-                          }}>
-                            <span style={{ 
-                              fontSize: '20px', 
-                              fontWeight: '700', 
-                              color: '#d97706'
-                            }}>
+                          <div className="flex items-center justify-center gap-1">
+                            <span className="text-xl font-bold text-amber-600">
                               {customer.averageRating ? customer.averageRating.toFixed(1) : 'N/A'}
                             </span>
-                            <span style={{ color: '#fbbf24' }}>
+                            <span className="text-yellow-400">
                               {customer.averageRating ? '⭐' : ''}
                             </span>
                           </div>
-                          <div style={{ 
-                            fontSize: '12px', 
-                            color: '#64748b'
-                          }}>
+                          <div className="text-xs text-slate-600">
                             {customer.averageRating ? 'Average Rating' : 'No Reviews Yet'}
                           </div>
                         </div>
 
                         <div>
-                          <div style={{ 
-                            fontSize: '14px', 
-                            fontWeight: '600', 
-                            color: '#1e293b'
-                          }}>
+                          <div className="text-sm font-semibold text-slate-800">
                             {formatDate(customer.lastBooking)}
                           </div>
-                          <div style={{ 
-                            fontSize: '12px', 
-                            color: '#64748b'
-                          }}>
+                          <div className="text-xs text-slate-600">
                             Last Order
                           </div>
                         </div>
                       </div>
 
                       {/* Actions */}
-                      <div style={{ display: 'flex', gap: '8px' }}>
-                        <button style={{
-                          backgroundColor: '#3b82f6',
-                          color: 'white',
-                          padding: '8px 16px',
-                          borderRadius: '6px',
-                          border: 'none',
-                          fontSize: '14px',
-                          cursor: 'pointer'
-                        }}>
+                      <div className="flex flex-wrap  gap-2">
+                        <button 
+                          onClick={() => handleMessage(customer)}
+                          className="bg-blue-500 text-white px-4 py-2 rounded-md border-none text-sm cursor-pointer hover:bg-blue-600 transition-colors"
+                        >
                           Message
                         </button>
-                        <button style={{
-                          backgroundColor: 'transparent',
-                          color: '#64748b',
-                          padding: '8px 16px',
-                          borderRadius: '6px',
-                          border: '1px solid #d1d5db',
-                          fontSize: '14px',
-                          cursor: 'pointer'
-                        }}>
+                        <button 
+                          onClick={() => handleViewProfile(customer)}
+                          className="bg-transparent text-slate-600 px-4 py-2 rounded-md border border-gray-300 text-sm cursor-pointer hover:bg-gray-50 transition-colors"
+                        >
                           View Profile
                         </button>
                       </div>
@@ -722,33 +498,22 @@ export default function MyBuyersPage() {
 
                     {/* Additional Details */}
                     {customer.favoriteServices.length > 0 && (
-                      <div style={{ marginTop: '16px', paddingTop: '16px', borderTop: '1px solid #f1f5f9' }}>
-                        <div style={{ 
-                          display: 'flex', 
-                          alignItems: 'center', 
-                          gap: '16px',
-                          fontSize: '14px'
-                        }}>
-                          <span style={{ color: '#64748b', fontWeight: '500' }}>
+                      <div className="mt-4 pt-4 border-t border-slate-100">
+                        <div className="flex items-center gap-4 text-sm">
+                          <span className="text-slate-600 font-medium">
                             Favorite Services:
                           </span>
-                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          <div className="flex gap-2 flex-wrap">
                             {customer.favoriteServices.slice(0, 3).map((service, idx) => (
                               <span 
                                 key={idx}
-                                style={{
-                                  backgroundColor: '#eff6ff',
-                                  color: '#2563eb',
-                                  padding: '4px 8px',
-                                  borderRadius: '12px',
-                                  fontSize: '12px'
-                                }}
+                                className="bg-blue-50 text-blue-600 px-2 py-1 rounded-xl text-xs"
                               >
                                 {service}
                               </span>
                             ))}
                             {customer.favoriteServices.length > 3 && (
-                              <span style={{ color: '#64748b', fontSize: '12px' }}>
+                              <span className="text-slate-600 text-xs">
                                 +{customer.favoriteServices.length - 3} more
                               </span>
                             )}
@@ -763,13 +528,6 @@ export default function MyBuyersPage() {
           )}
         </div>
       </div>
-
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

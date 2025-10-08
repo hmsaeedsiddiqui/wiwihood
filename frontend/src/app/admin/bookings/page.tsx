@@ -286,14 +286,14 @@ export default function AdminBookings() {
   };
 
   const BookingDetailModal = ({ booking, onClose }: { booking: any; onClose: () => void }) => (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div className="p-6 border-b border-gray-200">
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">Booking Details - {booking.id}</h2>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 text-2xl"
+              className="text-gray-400 cursor-pointer hover:text-gray-600 text-2xl"
             >
               ×
             </button>
@@ -435,15 +435,15 @@ export default function AdminBookings() {
                   {booking.booking.status === 'confirmed' && (
                     <button 
                       onClick={() => handleStatusChange(booking.id, 'completed')}
-                      className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      className="w-full px-4 py-2 mb-4 bg-blue-600 cursor-pointer text-white rounded-lg hover:bg-blue-700"
                     >
                       Mark as Completed
                     </button>
                   )}
-                  <button className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                  <button className="w-full px-4 py-2 mb-4 cursor-pointer bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                     Contact Customer
                   </button>
-                  <button className="w-full px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                  <button className="w-full px-4 py-2 mb-4 cursor-pointer bg-gray-600 text-white rounded-lg hover:bg-gray-700">
                     Contact Provider
                   </button>
                 </div>
@@ -456,23 +456,23 @@ export default function AdminBookings() {
   );
 
   return (
-    <div className="px-4 sm:px-6 lg:px-8">
+    <div className="w-[95%] mx-auto">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between flex-wrap gap-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-900">Booking Management</h1>
             <p className="text-gray-600 mt-1">Monitor and manage all bookings across the platform</p>
           </div>
-          <div className="flex items-center space-x-3">
+          <div className="flex items-center space-x-3 gap-4">
             <button 
               onClick={() => setLoading(!loading)}
-              className="flex items-center px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+              className="flex items-center px-4 py-2 cursor-pointer bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
             >
               <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
             </button>
-            <button className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button className="flex items-center px-4 py-2 cursor-pointer bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
               <Download className="h-4 w-4 mr-2" />
               Export
             </button>
@@ -481,7 +481,7 @@ export default function AdminBookings() {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
           <div className="flex items-center">
             <Calendar className="h-8 w-8 text-blue-600" />
@@ -498,7 +498,7 @@ export default function AdminBookings() {
             <div className="ml-4">
               <p className="text-sm font-medium text-gray-600">Confirmed</p>
               <p className="text-2xl font-bold text-gray-900">
-                {bookings.filter(b => b.booking.status === 'confirmed').length}
+                {bookings?.filter(b => b?.booking.status === 'confirmed').length}
               </p>
             </div>
           </div>
@@ -531,7 +531,7 @@ export default function AdminBookings() {
 
       {/* Filters */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex items-center  gap-4 flex-wrap">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -545,11 +545,11 @@ export default function AdminBookings() {
             </div>
           </div>
           
-          <div className="flex gap-2">
+          <div className="flex items-center  gap-4">
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-gray-300 cursor-pointer rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Status</option>
               <option value="pending">Pending</option>
@@ -561,7 +561,7 @@ export default function AdminBookings() {
             <select
               value={dateFilter}
               onChange={(e) => setDateFilter(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="px-3 py-2 border border-gray-300 cursor-pointer rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="all">All Dates</option>
               <option value="today">Today</option>
@@ -650,20 +650,20 @@ export default function AdminBookings() {
                     </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(booking.booking.status)}`}>
+                    <span className={`px-4 py-3 text-xs font-medium rounded-xl border  ${getStatusColor(booking.booking.status)}`}>
                       {booking.booking.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">${booking.payment.amount}</div>
-                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getPaymentStatusColor(booking.payment.status)}`}>
+                    <span className={`px-2 py-2 text-xs font-medium rounded-xl border ${getPaymentStatusColor(booking.payment.status)}`}>
                       {booking.payment.status}
                     </span>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <button 
                       onClick={() => setSelectedBooking(booking)}
-                      className="text-blue-600 hover:text-blue-700 mr-3"
+                      className="text-blue-600 cursor-pointer hover:text-blue-700 mr-3"
                     >
                       <Eye className="h-4 w-4" />
                     </button>

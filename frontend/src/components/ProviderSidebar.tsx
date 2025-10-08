@@ -1,9 +1,9 @@
 "use client";
-import React from 'react';
+import React, { useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-export default function ProviderSidebar() {
+export default function ProviderSidebar({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   const pathname = usePathname();
 
   const menuItems = [
@@ -55,99 +55,156 @@ export default function ProviderSidebar() {
 
   const isActive = (href: string) => pathname === href;
 
+  // Prevent body scroll when sidebar is open on mobile
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      if (isOpen && window.innerWidth < 1024) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        document.body.style.overflow = '';
+      }
+    };
+  }, [isOpen]);
+
+  // Helper to check mobile
+  const [isMobile, setIsMobile] = React.useState(false);
+  useEffect(() => {
+    const checkScreen = () => setIsMobile(window.innerWidth < 1024);
+    checkScreen();
+    window.addEventListener('resize', checkScreen);
+    return () => window.removeEventListener('resize', checkScreen);
+  }, []);
+
+  // Close sidebar on mobile when any link is clicked
+  const handleLinkClick = () => {
+    if (isMobile) onClose();
+  };
+
   return (
-    <div style={{
-      width: '256px',
-      height: '100vh',
-      backgroundColor: '#ffffff',
-      borderRight: '1px solid #e5e7eb',
-      position: 'fixed',
-      left: 0,
-      top: '64px', // Adjust based on header height
-      overflowY: 'auto',
-      zIndex: 10
-    }}>
-      {/* Logo/Brand */}
-      <div style={{
-        padding: '20px 16px',
-        borderBottom: '1px solid #e5e7eb'
-      }}>
-        <Link href="/provider/dashboard" style={{
-          display: 'flex',
-          alignItems: 'center',
-          textDecoration: 'none'
-        }}>
+    <>
+      {/* Overlay for mobile */}
+      {isOpen && isMobile && (
+        <div
+          onClick={onClose}
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            background: 'rgba(0,0,0,0.3)',
+            zIndex: 20
+          }}
+        />
+      )}
+      <div
+        style={{
+          width: '256px',
+          height: 'calc(100vh - 74px)',
+
+          backgroundColor: '#ffffff',
+          borderRight: '1px solid #e5e7eb',
+          position: isMobile ? 'fixed' : 'fixed', // desktop pe bhi fixed
+          left: isMobile ? (isOpen ? 0 : '-256px') : 0,
+          top: '80px', // dono case me header ke neeche
+          overflowY: 'auto',
+          zIndex: 30,
+          transition: isMobile ? 'left 0.3s' : undefined,
+          boxShadow: isOpen && isMobile ? '2px 0 8px rgba(0,0,0,0.08)' : undefined,
+          display: isMobile && !isOpen ? 'none' : 'block',
+        }}
+      >
+        {/* Logo/Brand (hide on mobile) */}
+        {!isMobile && (
           <div style={{
-            width: '32px',
-            height: '32px',
-            backgroundColor: '#22c55e',
-            borderRadius: '8px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginRight: '12px'
+            padding: '20px 16px',
+            borderBottom: '1px solid #e5e7eb',
+            display: 'block'
           }}>
-            <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '16px' }}>R</span>
-          </div>
-          <div>
-            <div style={{ fontSize: '16px', fontWeight: '600', color: '#22c55e' }}>Reservista</div>
-            <div style={{ fontSize: '12px', color: '#6b7280' }}>PROVIDER DASHBOARD</div>
-          </div>
-        </Link>
-      </div>
-
-      {/* Navigation Menu */}
-      <nav style={{ padding: '16px 0' }}>
-        {menuItems.map((section, sectionIndex) => (
-          <div key={sectionIndex} style={{ marginBottom: '24px' }}>
-            {/* Section Title */}
-            <div style={{
-              padding: '0 16px 8px 16px',
-              fontSize: '11px',
-              fontWeight: '600',
-              color: '#6b7280',
-              textTransform: 'uppercase',
-              letterSpacing: '0.05em'
+            <Link href="/provider/dashboard" style={{
+              display: 'flex',
+              alignItems: 'center',
+              textDecoration: 'none'
             }}>
-              {section.title}
-            </div>
-
-            {/* Section Items */}
-            {section.items.map((item, itemIndex) => (
-              <Link
-                key={itemIndex}
-                href={item.href}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  padding: '8px 16px',
-                  margin: '0 8px',
-                  borderRadius: '6px',
-                  textDecoration: 'none',
-                  fontSize: '14px',
-                  transition: 'all 0.2s',
-                  backgroundColor: isActive(item.href) ? '#dcfce7' : 'transparent',
-                  color: isActive(item.href) ? '#16a34a' : '#374151',
-                  borderLeft: isActive(item.href) ? '3px solid #22c55e' : '3px solid transparent'
-                }}
-                onMouseEnter={(e) => {
-                  if (!isActive(item.href)) {
-                    e.currentTarget.style.backgroundColor = '#f9fafb';
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive(item.href)) {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                  }
-                }}
-              >
-                <span style={{ marginRight: '12px', fontSize: '16px' }}>{item.icon}</span>
-                {item.name}
-              </Link>
-            ))}
+              <div style={{
+                width: '32px',
+                height: '32px',
+                backgroundColor: '#22c55e',
+                borderRadius: '8px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                marginRight: '12px'
+              }}>
+                <span style={{ color: '#ffffff', fontWeight: 'bold', fontSize: '16px' }}>R</span>
+              </div>
+              <div>
+                <div style={{ fontSize: '16px', fontWeight: '600', color: '#22c55e' }}>Reservista</div>
+                <div style={{ fontSize: '12px', color: '#6b7280' }}>PROVIDER DASHBOARD</div>
+              </div>
+            </Link>
           </div>
-        ))}
-      </nav>
-    </div>
+        )}
+
+        {/* Navigation Menu */}
+        <nav style={{ padding: '16px 0' }}>
+          {menuItems.map((section, sectionIndex) => (
+            <div key={sectionIndex} style={{ marginBottom: '24px' }}>
+              {/* Section Title */}
+              <div style={{
+                padding: '0 16px 8px 16px',
+                fontSize: '11px',
+                fontWeight: '600',
+                color: '#6b7280',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em'
+              }}>
+                {section.title}
+              </div>
+
+              {/* Section Items */}
+              {section.items.map((item, itemIndex) => (
+                <Link
+                  key={itemIndex}
+                  href={item.href}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    padding: '8px 16px',
+                    margin: '0 8px',
+                    borderRadius: '6px',
+                    textDecoration: 'none',
+                    fontSize: '14px',
+                    transition: 'all 0.2s',
+                    backgroundColor: isActive(item.href) ? '#dcfce7' : 'transparent',
+                    color: isActive(item.href) ? '#16a34a' : '#374151',
+                    borderLeft: isActive(item.href) ? '3px solid #22c55e' : '3px solid transparent'
+                  }}
+                  onClick={handleLinkClick}
+                  onMouseEnter={(e) => {
+                    if (!isActive(item.href)) {
+                      e.currentTarget.style.backgroundColor = '#f9fafb';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive(item.href)) {
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                    }
+                  }}
+                >
+                  <span style={{ marginRight: '12px', fontSize: '16px' }}>{item.icon}</span>
+                  {item.name}
+                </Link>
+              ))}
+            </div>
+          ))}
+        </nav>
+      </div>
+    </>
   );
 }

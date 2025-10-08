@@ -37,84 +37,76 @@ export default function CategoryPage() {
     <div className="min-h-screen bg-white flex flex-col">
 
       {/* Services Grid Section */}
-      <section style={{ padding: '60px 0 40px 0', background: '#f8fafc', flex: 1 }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '0 24px' }}>
-          <h2 style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 800, fontSize: 32, color: '#222', marginBottom: 10, textAlign: 'center' }}>
+      <section className="py-[60px] pb-[40px] bg-slate-50 flex-1">
+        <div className="max-w-[1280px] mx-auto w-[95%]">
+          <h2 className="font-extrabold text-[32px] text-[#222] mb-2.5 text-center font-manrope">
             {category?.name || 'Category'} Services
           </h2>
-          <p style={{ color: '#6b7280', fontFamily: 'Manrope, sans-serif', fontWeight: 400, fontSize: 16, textAlign: 'center', marginBottom: 38, letterSpacing: '0.1px', lineHeight: 1.5, maxWidth: 600, marginLeft: 'auto', marginRight: 'auto' }}>
+          <p className="text-gray-500 font-manrope font-normal text-base text-center mb-9 tracking-[0.1px] leading-[1.5] max-w-[600px] mx-auto">
             Browse and book top-rated services in this category. Compare options, read reviews, and find the perfect match for your needs.
           </p>
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '64px 0' }}>
-              <div style={{ fontSize: 48, color: '#d1d5db', marginBottom: 16 }}>Loading...</div>
+            <div className="text-center py-16">
+              <div className="text-[48px] text-gray-300 mb-4">Loading...</div>
             </div>
           ) : services.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '64px 0' }}>
-              <div style={{ fontSize: 48, color: '#d1d5db', marginBottom: 16 }}>🔍</div>
-              <h3 style={{ fontSize: 20, fontWeight: 600, color: '#111827', marginBottom: 8 }}>No services found</h3>
-              <p style={{ color: '#6b7280', marginBottom: 32 }}>
+            <div className="text-center py-16">
+              <div className="text-[48px] text-gray-300 mb-4">🔍</div>
+              <h3 className="text-[20px] font-semibold text-gray-900 mb-2">No services found</h3>
+              <p className="text-gray-500 mb-8">
                 No services available in this category yet
               </p>
             </div>
           ) : (
-            <div style={{ display: 'grid', gap: 32, gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
+            <div className="grid gap-8" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
               {services.map((service) => (
-                <Card key={service.id} className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-md" style={{ borderRadius: 16, overflow: 'hidden', background: '#fff' }}>
+                <Card key={service.id} className="group hover:shadow-xl transition-all duration-300 cursor-pointer border-0 shadow-md rounded-2xl overflow-hidden bg-white">
                   <div
-                    style={{ position: 'relative', overflow: 'hidden' }}
+                    className="relative overflow-hidden"
                     onClick={() => router.push(`/service/${service.id}`)}
                     role="button"
                     tabIndex={0}
                     onKeyDown={e => { if (e.key === 'Enter') router.push(`/service/${service.id}`); }}
                   >
-                    <div style={{ height: 180, background: '#e0e7ef', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div className="h-[180px] bg-slate-200 flex items-center justify-center">
                       {service.images && service.images.length > 0 ? (
-                        <img src={service.images[0]} alt={service.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                        <img src={service.images[0]} alt={service.name} className="w-full h-full object-cover" />
                       ) : (
-                        <div style={{ fontSize: 48, fontWeight: 700, color: '#60a5fa' }}>{service.name.charAt(0)}</div>
+                        <div className="text-[48px] font-bold text-blue-400">{service.name.charAt(0)}</div>
                       )}
                     </div>
-                    <div style={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 8 }}>
-                      <button style={{ background: '#fff', border: 'none', borderRadius: 8, padding: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', cursor: 'pointer' }}><Heart size={18} color="#10b981" /></button>
-                      <button style={{ background: '#fff', border: 'none', borderRadius: 8, padding: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.08)', cursor: 'pointer' }}><Share2 size={18} color="#10b981" /></button>
+                    <div className="absolute top-4 right-4 flex gap-2">
+                      <button className="bg-white border-none rounded-lg p-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.08)] cursor-pointer"><Heart size={18} color="#10b981" /></button>
+                      <button className="bg-white border-none rounded-lg p-1.5 shadow-[0_2px_8px_rgba(0,0,0,0.08)] cursor-pointer"><Share2 size={18} color="#10b981" /></button>
                     </div>
-                    <div style={{ position: 'absolute', top: 16, left: 16, background: '#10b981', color: '#fff', padding: '4px 12px', borderRadius: 8, fontWeight: 600, fontSize: 15 }}>
+                    <div className="absolute top-4 left-4 bg-emerald-500 text-white px-3 py-1 rounded-lg font-semibold text-[15px]">
                       ${service.basePrice}
                     </div>
                   </div>
-                  <CardHeader style={{ paddingBottom: 8 }}>
-                    <CardTitle style={{ fontSize: 20, fontWeight: 700, color: '#222', marginBottom: 4 }}>{service.name}</CardTitle>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-[20px] font-bold text-[#222] mb-1">{service.name}</CardTitle>
                   </CardHeader>
-                  <CardContent style={{ paddingTop: 0 }}>
+                  <CardContent className="pt-0">
                     <div
-                      style={{
-                        color: '#6b7280',
-                        fontSize: 15,
-                        marginBottom: 10,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        maxWidth: '100%'
-                      }}
+                      className="text-gray-500 text-[15px] mb-2.5 whitespace-nowrap overflow-hidden text-ellipsis max-w-full"
                       title={service.description}
                     >
                       {service.description}
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+                    <div className="flex items-center gap-3 mb-2">
                       <Star size={16} color="#fbbf24" fill="#fbbf24" />
-                      <span style={{ fontSize: 15, fontWeight: 600 }}>{service.provider.averageRating}</span>
-                      <span style={{ fontSize: 14, color: '#6b7280' }}>({service.provider.totalReviews} reviews)</span>
+                      <span className="text-[15px] font-semibold">{service.provider.averageRating}</span>
+                      <span className="text-[14px] text-gray-500">({service.provider.totalReviews} reviews)</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <div className="flex items-center gap-2.5 mb-2">
                       <Clock size={15} color="#6b7280" />
-                      <span style={{ fontSize: 14 }}>{service.duration} min</span>
+                      <span className="text-[14px]">{service.duration} min</span>
                     </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                    <div className="flex items-center gap-2.5 mb-2">
                       <MapPin size={15} color="#6b7280" />
-                      <span style={{ fontSize: 14 }}>{service.provider.businessAddress}</span>
+                      <span className="text-[14px]">{service.provider.businessAddress}</span>
                     </div>
-                    <div style={{ color: '#6b7280', fontSize: 14 }}>by <span style={{ fontWeight: 600 }}>{service.provider.businessName}</span></div>
+                    <div className="text-gray-500 text-[14px]">by <span className="font-semibold">{service.provider.businessName}</span></div>
                   </CardContent>
                 </Card>
               ))}

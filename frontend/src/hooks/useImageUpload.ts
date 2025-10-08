@@ -34,7 +34,7 @@ export const useImageUpload = () => {
       if (options.serviceId) formData.append('serviceId', options.serviceId);
       if (options.providerId) formData.append('providerId', options.providerId);
 
-      const response = await fetch(`http://localhost:8000/api/v1/upload/${options.endpoint}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/upload/${options.endpoint}`, {
         method: 'POST',
         body: formData,
         headers: {
@@ -75,7 +75,7 @@ export const useImageUpload = () => {
     setUploadProgress(0);
 
     try {
-      const response = await fetch('http://localhost:8000/api/v1/upload/upload-from-url', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/upload/upload-from-url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -120,7 +120,7 @@ export const useImageUpload = () => {
       // Encode the publicId to handle slashes in the URL
       const encodedPublicId = encodeURIComponent(publicId);
       
-      const response = await fetch(`http://localhost:8000/api/v1/upload/image/${encodedPublicId}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/upload/image/${encodedPublicId}`, {
         method: 'DELETE',
       });
 

@@ -1,4 +1,7 @@
+"use client";
+
 import Link from 'next/link';
+import Footer from '@/components/Footer';
 
 const demoFavorites = [
   {
@@ -53,6 +56,8 @@ export default function FavoritesPage() {
           </Link>
         </div>
       </div>
+       <Footer />
     </div>
+   
   );
 }

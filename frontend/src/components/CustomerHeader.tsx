@@ -18,7 +18,7 @@ export default function CustomerHeader() {
       if (token) {
         try {
           const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/profile`,
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/profile`,
             {
               headers: { Authorization: `Bearer ${token}` },
               withCredentials: true,
@@ -63,7 +63,7 @@ export default function CustomerHeader() {
   const handleLogout = async () => {
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/logout`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/logout`,
         {},
         { withCredentials: true }
       );
@@ -91,7 +91,7 @@ export default function CustomerHeader() {
       width: '100%',
       position: 'sticky',
       top: 0,
-      zIndex: 1000
+      zIndex: 10001
     }}>
       <div style={{
         height: '100%',
@@ -216,7 +216,7 @@ export default function CustomerHeader() {
               </button>
 
               {/* User Profile */}
-              <div className="relative" ref={profileRef}>
+              <div className="relative" ref={profileRef} style={{ zIndex: 10000 }}>
                 <button
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   style={{
@@ -268,16 +268,15 @@ export default function CustomerHeader() {
                 {/* Profile Dropdown */}
                 {isProfileOpen && (
                   <div style={{
-                    position: 'absolute',
-                    right: 0,
-                    top: '100%',
-                    marginTop: '8px',
+                    position: 'fixed',
+                    right: '24px',
+                    top: '80px',
                     width: '200px',
                     backgroundColor: 'white',
                     border: '1px solid #e5e7eb',
                     borderRadius: '8px',
                     boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                    zIndex: 50,
+                    zIndex: 99999,
                     padding: '8px'
                   }}>
                     <Link

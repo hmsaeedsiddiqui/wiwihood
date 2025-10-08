@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { createStripeCheckoutSession } from '@/lib/stripe'
 import { getAuthHeaders } from '@/lib/auth'
+import Footer from '@/components/Footer'
 
 interface Service {
   id: string
@@ -313,7 +314,7 @@ export default function BookServicePage() {
         <div className="mb-8">
           <button 
             onClick={() => router.back()}
-            className="flex items-center gap-2 text-gray-600 hover:text-gray-800 mb-4"
+            className="flex items-center gap-2 cursor-pointer text-gray-600 hover:text-gray-800 mb-4"
           >
             <span>←</span>
             <span>Back</span>
@@ -444,6 +445,7 @@ export default function BookServicePage() {
           </button>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }

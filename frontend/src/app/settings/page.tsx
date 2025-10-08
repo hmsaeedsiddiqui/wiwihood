@@ -78,7 +78,8 @@ export default function SettingsPage() {
         address: user.address || '',
         city: user.city || '',
         country: user.country || '',
-        postalCode: user.postalCode || ''
+        postalCode: user.postalCode || '',
+        profileImage: user.profileImageUrl || ''
       })
     }
   }, [isAuthenticated, user, router])

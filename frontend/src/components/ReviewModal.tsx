@@ -42,7 +42,7 @@ export const ReviewModal: React.FC<ReviewModalProps> = ({
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:8000/api/v1/reviews`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/reviews`,
         {
           method: 'POST',
           headers: getAuthHeaders(),

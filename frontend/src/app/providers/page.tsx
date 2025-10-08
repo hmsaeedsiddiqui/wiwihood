@@ -25,7 +25,7 @@ import Link from 'next/link';
 import type { Provider } from '@/lib/api';
 
 export default function ProvidersPage() {
-  const [providers, setProviders] = useState<Provider[]>([])
+  const [providers, setProviders] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [searchQuery, setSearchQuery] = useState('')
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid')
@@ -40,8 +40,10 @@ export default function ProvidersPage() {
       try {
         const { apiService } = await import('@/lib/api');
         const result = await apiService.getProviders();
-        setProviders(result.data || []);
+        // The API returns { providers: [], total: number, ... }
+        setProviders(result.providers || []);
       } catch (e) {
+        console.error('Error fetching providers:', e);
         setProviders([]);
       } finally {
         setLoading(false);
@@ -50,27 +52,24 @@ export default function ProvidersPage() {
     fetchProviders();
   }, []);
 
-  const filteredProviders = providers.filter(provider => {
-    const matchesSearch = provider.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         provider.businessDescription.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         provider.services.some(service => 
-                           service.name.toLowerCase().includes(searchQuery.toLowerCase())
-                         )
+  const filteredProviders = (providers || []).filter(provider => {
+    const matchesSearch = provider.businessName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         (provider.description || '').toLowerCase().includes(searchQuery.toLowerCase())
     
     const matchesLocation = !selectedLocation || 
-                           provider.businessCity.toLowerCase().includes(selectedLocation.toLowerCase())
+                           (provider.city || '').toLowerCase().includes(selectedLocation.toLowerCase())
     
-    const matchesRating = provider.averageRating >= minRating
+    const matchesRating = (provider.averageRating || 0) >= minRating
     
     return matchesSearch && matchesLocation && matchesRating
   }).sort((a, b) => {
     switch (sortBy) {
       case 'rating':
-        return b.averageRating - a.averageRating
+        return (b.averageRating || 0) - (a.averageRating || 0)
       case 'reviews':
-        return b.totalReviews - a.totalReviews
+        return (b.totalReviews || 0) - (a.totalReviews || 0)
       case 'name':
-        return a.businessName.localeCompare(b.businessName)
+        return (a.businessName || '').localeCompare(b.businessName || '')
       default:
         return 0
     }
@@ -98,12 +97,10 @@ export default function ProvidersPage() {
               <div className="absolute inset-0 bg-black bg-opacity-20 flex items-center justify-center">
                 <div className="text-center">
                   <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-3 shadow-md overflow-hidden">
-                    {provider.logoPublicId ? (
-                      <CloudinaryImage
-                        publicId={provider.logoPublicId}
+                    {provider.logo ? (
+                      <img
+                        src={provider.logo}
                         alt={`${provider.businessName} logo`}
-                        width={80}
-                        height={80}
                         className="w-full h-full object-cover"
                       />
                     ) : (
@@ -140,27 +137,17 @@ export default function ProvidersPage() {
                 </div>
               </div>
               <p className="text-gray-600 text-sm line-clamp-2 mb-3">
-                {provider.businessDescription}
+                {provider.description}
               </p>
               <div className="flex items-center text-gray-500 text-sm mb-3">
                 <MapPin className="w-4 h-4 mr-1" />
-                {provider.businessAddress}, {provider.businessCity}
+                {provider.address}, {provider.city}
               </div>
             </div>
             <div className="space-y-3">
               <div>
-                <h4 className="font-medium text-gray-900 mb-2">Services Offered:</h4>
-                <div className="space-y-1">
-                  {provider.services.slice(0, 3).map((service) => (
-                    <div key={service.id} className="flex items-center justify-between text-sm">
-                      <span className="text-gray-600">{service.name}</span>
-                      <span className="font-medium text-gray-900"></span>
-                    </div>
-                  ))}
-                  {provider.services.length > 3 && (
-                    <p className="text-sm text-blue-600">+{provider.services.length - 3} more services</p>
-                  )}
-                </div>
+                {/* Services section removed - API doesn't include services */}
+                <p className="text-sm text-gray-500">Click to view full profile and services</p>
               </div>
               <div className="flex items-center justify-between pt-3 border-t border-gray-200">
                 <Button variant="outline" size="sm">
@@ -172,11 +159,7 @@ export default function ProvidersPage() {
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    if (provider.services.length > 0) {
-                      window.location.href = `/book-service?serviceId=${provider.services[0].id}&providerId=${provider.id}`;
-                    } else {
-                      window.location.href = `/shop/${provider.id}`;
-                    }
+                    window.location.href = `/providers/${provider.id}`;
                   }}
                 >
                   Book Now
@@ -219,28 +202,23 @@ export default function ProvidersPage() {
                   </div>
                   <div className="flex items-center text-gray-500 text-sm">
                     <MapPin className="w-4 h-4 mr-1" />
-                    {provider.businessCity}
+                    {provider.city}
                   </div>
                 </div>
                 
                 <p className="text-gray-600 text-sm line-clamp-2 mb-4">
-                  {provider.businessDescription}
+                  {provider.description}
                 </p>
                 
                 <div className="flex items-center space-x-4 text-sm text-gray-500">
-                  {provider.businessPhoneNumber && (
+                  {provider.phone && (
                     <div className="flex items-center">
                       <Phone className="w-4 h-4 mr-1" />
-                      {provider.businessPhoneNumber}
+                      {provider.phone}
                     </div>
                   )}
-                  {provider.businessEmail && (
-                    <div className="flex items-center">
-                      <Mail className="w-4 h-4 mr-1" />
-                      {provider.businessEmail}
-                    </div>
-                  )}
-                  {provider.websiteUrl && (
+                  {/* Email not available in API */}
+                  {provider.website && (
                     <div className="flex items-center">
                       <Globe className="w-4 h-4 mr-1" />
                       Website
@@ -261,16 +239,24 @@ export default function ProvidersPage() {
                     View Profile
                   </Button>
                   <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full border-green-600 text-green-600 hover:bg-green-50"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      window.location.href = `/customer/messages?providerId=${provider.id}`;
+                    }}
+                  >
+                    Message
+                  </Button>
+                  <Button 
                     size="sm" 
                     className="w-full bg-blue-600 hover:bg-blue-700"
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      if (provider.services.length > 0) {
-                        window.location.href = `/book-service?serviceId=${provider.services[0].id}&providerId=${provider.id}`;
-                      } else {
-                        window.location.href = `/shop/${provider.id}`;
-                      }
+                      window.location.href = `/shop/${provider.id}`;
                     }}
                   >
                     Book Now

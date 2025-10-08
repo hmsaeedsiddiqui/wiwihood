@@ -61,7 +61,7 @@ export default function ProfilePage() {
     if (authToken) {
       console.log('Testing auth-token...');
       try {
-        const response = await fetch('http://localhost:8000/api/v1/auth/profile', {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/profile`, {
           headers: {
             'Authorization': `Bearer ${authToken}`,
             'Content-Type': 'application/json',
@@ -154,8 +154,8 @@ export default function ProfilePage() {
     try {
       setLoading(true);
       
-      console.log('Making API call to:', 'http://localhost:8000/api/v1/auth/profile');
-      const response = await fetch('http://localhost:8000/api/v1/auth/profile', {
+      console.log('Making API call to:', `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/profile`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/profile`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
@@ -216,7 +216,7 @@ export default function ProfilePage() {
   const fetchUserStatsWithToken = async (authToken: string) => {
     try {
       // Fetch bookings count
-      const bookingsResponse = await fetch('http://localhost:8000/api/v1/bookings/my-bookings', {
+      const bookingsResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/bookings/my-bookings`, {
         headers: {
           'Authorization': `Bearer ${authToken}`,
           'Content-Type': 'application/json',
@@ -255,7 +255,7 @@ export default function ProfilePage() {
       }
 
       // Fetch recent bookings as activity
-      const response = await fetch('http://localhost:8000/api/v1/bookings/my-bookings?limit=5', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/bookings/my-bookings?limit=5`, {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json',

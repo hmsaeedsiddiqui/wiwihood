@@ -15,8 +15,11 @@ import {
   Video,
   MoreVertical
 } from 'lucide-react';
-import { getAuthHeaders } from '@/lib/auth';
+import { getAuthHeaders, isAuthenticated } from '@/lib/auth';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const API_URL = `${API_BASE_URL}/api/v1`;
+import Footer from '@/components/Footer';
 interface Message {
   id: string;
   content: string;
@@ -54,7 +57,23 @@ export default function CustomerMessagesPage() {
   const [sendingMessage, setSendingMessage] = useState(false);
 
   useEffect(() => {
+    // Check if user is authenticated before fetching conversations
+    if (!isAuthenticated()) {
+      console.log('User not authenticated, redirecting to login');
+      router.push('/auth/customer/login');
+      return;
+    }
+    
     fetchConversations();
+    
+    // Check for providerId in URL parameters
+    const urlParams = new URLSearchParams(window.location.search);
+    const providerId = urlParams.get('providerId');
+    
+    if (providerId) {
+      // Start conversation with the specified provider
+      startConversationWithProvider(providerId, 'Hello! I would like to inquire about your services.');
+    }
   }, []);
 
   useEffect(() => {
@@ -67,89 +86,41 @@ export default function CustomerMessagesPage() {
     try {
       setLoading(true);
       
-      // Try to fetch from API, fall back to mock data
-      try {
-        const response = await fetch('http://localhost:8000/api/v1/messages/conversations', {
-          headers: getAuthHeaders(),
-        });
-        
-        if (response.ok) {
-          const apiConversations = await response.json();
-          setConversations(apiConversations);
-          return;
-        }
-      } catch (apiError) {
-        console.log('API not available, using mock data:', apiError);
+      // Check authentication before making request
+      if (!isAuthenticated()) {
+        console.log('No auth token found, redirecting to login');
+        router.push('/auth/customer/login');
+        return;
       }
       
-      // Mock data for demonstration
-      const mockConversations: Conversation[] = [
-        {
-          id: '1',
-          providerId: 'prov-1',
-          providerName: 'Elite Hair Studio',
-          providerLogo: '/provider1.jpg',
-          providerRating: 4.8,
-          unreadCount: 2,
-          lastActive: new Date(Date.now() - 5 * 60000).toISOString(), // 5 minutes ago
-          bookingId: 'book-123',
-          service: {
-            name: 'Hair Cut & Style',
-            date: '2024-01-25'
-          },
-          lastMessage: {
-            id: 'msg-1',
-            content: 'Your appointment is confirmed for tomorrow at 2 PM',
-            senderId: 'prov-1',
-            senderType: 'provider',
-            timestamp: new Date(Date.now() - 5 * 60000).toISOString(),
-            read: false
-          }
-        },
-        {
-          id: '2',
-          providerId: 'prov-2',
-          providerName: 'Beauty Lounge',
-          providerLogo: '/provider2.jpg',
-          providerRating: 4.6,
-          unreadCount: 0,
-          lastActive: new Date(Date.now() - 2 * 3600000).toISOString(), // 2 hours ago
-          bookingId: 'book-124',
-          service: {
-            name: 'Facial Treatment',
-            date: '2024-01-28'
-          },
-          lastMessage: {
-            id: 'msg-2',
-            content: 'Thank you for choosing our service!',
-            senderId: 'customer-1',
-            senderType: 'customer',
-            timestamp: new Date(Date.now() - 2 * 3600000).toISOString(),
-            read: true
-          }
-        },
-        {
-          id: '3',
-          providerId: 'prov-3',
-          providerName: 'Wellness Spa',
-          providerLogo: '/provider3.jpg',
-          providerRating: 4.9,
-          unreadCount: 1,
-          lastActive: new Date(Date.now() - 24 * 3600000).toISOString(), // 1 day ago
-          lastMessage: {
-            id: 'msg-3',
-            content: 'We have a special offer for returning customers!',
-            senderId: 'prov-3',
-            senderType: 'provider',
-            timestamp: new Date(Date.now() - 24 * 3600000).toISOString(),
-            read: false
-          }
-        }
-      ];
-
-      setConversations(mockConversations);
+      const authHeaders = getAuthHeaders();
+      console.log('Making request with headers:', authHeaders);
+      
+      const response = await fetch(`${API_BASE_URL}/messages/conversations`, {
+        headers: authHeaders,
+      });
+      
+      console.log('Response status:', response.status);
+      
+      if (response.status === 401) {
+        console.log('Unauthorized - redirecting to login');
+        router.push('/auth/customer/login');
+        return;
+      }
+      
+      if (response.ok) {
+        const apiConversations = await response.json();
+        console.log('Fetched conversations:', apiConversations);
+        setConversations(apiConversations);
+      } else {
+        console.error('Failed to fetch conversations:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error details:', errorText);
+        setConversations([]);
+      }
     } catch (error) {
       console.error('Error fetching conversations:', error);
+      setConversations([]);
     } finally {
       setLoading(false);
     }
@@ -157,68 +128,21 @@ export default function CustomerMessagesPage() {
 
   const fetchMessages = async (conversationId: string) => {
     try {
-      // Try to fetch from API, fall back to mock data
-      try {
-        const response = await fetch(`http://localhost:8000/api/v1/messages/conversations/${conversationId}/messages`, {
-          headers: getAuthHeaders(),
-        });
-        
-        if (response.ok) {
-          const { messages } = await response.json();
-          setMessages(messages);
-          return;
-        }
-      } catch (apiError) {
-        console.log('API not available, using mock data:', apiError);
-      }
+      const response = await fetch(`${API_BASE_URL}/messages/conversations/${conversationId}/messages`, {
+        headers: getAuthHeaders(),
+      });
       
-      // Mock messages for demonstration
-      const mockMessages: Message[] = [
-        {
-          id: '1',
-          content: 'Hello! I have a question about my upcoming appointment.',
-          senderId: 'customer-1',
-          senderType: 'customer',
-          timestamp: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
-          read: true
-        },
-        {
-          id: '2',
-          content: 'Hi! Of course, I\'m happy to help. What would you like to know?',
-          senderId: 'prov-1',
-          senderType: 'provider',
-          timestamp: new Date(Date.now() - 3000000).toISOString(), // 50 minutes ago
-          read: true
-        },
-        {
-          id: '3',
-          content: 'Can I reschedule to 3 PM instead of 2 PM tomorrow?',
-          senderId: 'customer-1',
-          senderType: 'customer',
-          timestamp: new Date(Date.now() - 2400000).toISOString(), // 40 minutes ago
-          read: true
-        },
-        {
-          id: '4',
-          content: 'Let me check my schedule... Yes, 3 PM is available! I\'ll update your booking.',
-          senderId: 'prov-1',
-          senderType: 'provider',
-          timestamp: new Date(Date.now() - 1800000).toISOString(), // 30 minutes ago
-          read: true
-        },
-        {
-          id: '5',
-          content: 'Your appointment is confirmed for tomorrow at 3 PM. See you then!',
-          senderId: 'prov-1',
-          senderType: 'provider',
-          timestamp: new Date(Date.now() - 300000).toISOString(), // 5 minutes ago
-          read: false
-        }
-      ];
-
-      setMessages(mockMessages);
+      if (response.ok) {
+        const data = await response.json();
+        const messages = data.messages || data || [];
+        setMessages(messages);
+      } else {
+        console.error('Failed to fetch messages:', response.status, response.statusText);
+        setMessages([]);
+      }
     } catch (error) {
       console.error('Error fetching messages:', error);
+      setMessages([]);
     }
   };
 
@@ -228,49 +152,30 @@ export default function CustomerMessagesPage() {
     try {
       setSendingMessage(true);
 
-      const messageData: Message = {
-        id: `msg-${Date.now()}`,
-        content: newMessage.trim(),
-        senderId: 'customer-1',
-        senderType: 'customer',
-        timestamp: new Date().toISOString(),
-        read: true
-      };
+      // Send message via API
+      const response = await fetch(`${API_BASE_URL}/messages/conversations/${selectedConversation.id}/messages`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          ...getAuthHeaders() 
+        },
+        body: JSON.stringify({
+          content: newMessage.trim(),
+          messageType: 'text'
+        })
+      });
 
-      // Add message to current messages
-      setMessages(prev => [...prev, messageData]);
-      
-      // Update conversation's last message
-      setConversations(prev => 
-        prev.map(conv => 
-          conv.id === selectedConversation.id 
-            ? { ...conv, lastMessage: messageData }
-            : conv
-        )
-      );
-
-      setNewMessage('');
-
-      // Try to send via API
-      try {
-        const response = await fetch(`http://localhost:8000/api/v1/messages/conversations/${selectedConversation.id}/messages`, {
-          method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json', 
-            ...getAuthHeaders() 
-          },
-          body: JSON.stringify({
-            content: newMessage.trim(),
-            messageType: 'text'
-          })
-        });
-
-        if (response.ok) {
-          const sentMessage = await response.json();
-          console.log('Message sent successfully:', sentMessage);
-        }
-      } catch (apiError) {
-        console.log('API not available, message sent locally only:', apiError);
+      if (response.ok) {
+        const sentMessage = await response.json();
+        console.log('Message sent successfully:', sentMessage);
+        
+        // Refresh messages and conversations
+        await fetchMessages(selectedConversation.id);
+        await fetchConversations();
+        
+        setNewMessage('');
+      } else {
+        console.error('Failed to send message:', response.status, response.statusText);
       }
 
     } catch (error) {
@@ -297,7 +202,67 @@ export default function CustomerMessagesPage() {
   );
 
   const startNewConversation = () => {
-    router.push('/browse'); // Redirect to browse providers
+    router.push('/providers'); // Redirect to browse providers
+  };
+
+  // Function to start conversation with a specific provider
+  const startConversationWithProvider = async (providerId: string, initialMessage?: string) => {
+    try {
+      // Check authentication before making request
+      if (!isAuthenticated()) {
+        console.log('Not authenticated for starting conversation, redirecting to login');
+        router.push('/auth/customer/login');
+        return;
+      }
+      
+      const response = await fetch(`${API_BASE_URL}/messages/conversations`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          providerId,
+          initialMessage
+        }),
+      });
+      
+      console.log('Start conversation response status:', response.status);
+      
+      if (response.status === 401) {
+        console.log('Unauthorized when starting conversation - redirecting to login');
+        router.push('/auth/customer/login');
+        return;
+      }
+      
+      if (response.ok) {
+        const newConversation = await response.json();
+        console.log('Started conversation:', newConversation);
+        // Refresh conversations list
+        await fetchConversations();
+        
+        // Auto-select the new conversation
+        const updatedConversations = await fetch(`${API_BASE_URL}/messages/conversations`, {
+          headers: getAuthHeaders(),
+        }).then(res => res.json());
+        
+        const targetConversation = updatedConversations.find((conv: Conversation) => 
+          conv.providerId === providerId
+        );
+        
+        if (targetConversation) {
+          setSelectedConversation(targetConversation);
+        }
+        
+        return newConversation;
+      } else {
+        console.error('Failed to start conversation:', response.status, response.statusText);
+        const errorText = await response.text();
+        console.error('Error details:', errorText);
+      }
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+    }
   };
 
   if (loading) {
@@ -310,7 +275,7 @@ export default function CustomerMessagesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-[95%] max-w-[1400px] mx-auto py-8">
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden" style={{ height: '80vh' }}>
           <div className="flex h-full">
             
@@ -432,7 +397,7 @@ export default function CustomerMessagesPage() {
               <div className="flex-1 flex flex-col">
                 {/* Chat Header */}
                 <div className="p-4 border-b border-gray-200 bg-white">
-                  <div className="flex items-center justify-between">
+                  <div className="flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center space-x-3">
                       <button
                         onClick={() => setSelectedConversation(null)}
@@ -539,6 +504,7 @@ export default function CustomerMessagesPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Footer from '@/components/Footer';
 
 const demoTickets = [
   {
@@ -202,7 +203,7 @@ export default function HelpPage() {
                   <h2 className="text-lg font-semibold text-gray-900">Support Tickets</h2>
                   <button
                     onClick={() => setShowNewTicketForm(true)}
-                    className="px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition"
+                    className="px-3 cursor-pointer py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition"
                   >
                     New Ticket
                   </button>
@@ -243,23 +244,23 @@ export default function HelpPage() {
                 <h2 className="text-lg font-semibold text-gray-900 mb-6">Create New Support Ticket</h2>
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Subject</label>
                     <input
                       type="text"
                       value={newTicket.subject}
                       onChange={(e) => setNewTicket({...newTicket, subject: e.target.value})}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 mb-2"
                       placeholder="Brief description of your issue"
                     />
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-4 ">
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
                       <select
                         value={newTicket.category}
                         onChange={(e) => setNewTicket({...newTicket, category: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="general">General</option>
                         <option value="booking">Booking</option>
@@ -270,11 +271,11 @@ export default function HelpPage() {
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Priority</label>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Priority</label>
                       <select
                         value={newTicket.priority}
                         onChange={(e) => setNewTicket({...newTicket, priority: e.target.value})}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        className="w-full  mb-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="low">Low</option>
                         <option value="medium">Medium</option>
@@ -284,27 +285,27 @@ export default function HelpPage() {
                   </div>
                   
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">Message</label>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Message</label>
                     <textarea
                       value={newTicket.message}
                       onChange={(e) => setNewTicket({...newTicket, message: e.target.value})}
                       rows={5}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full mb-2 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                       placeholder="Describe your issue in detail..."
                     />
                   </div>
                   
-                  <div className="flex space-x-4">
+                  <div className="flex space-x-4 gap-2">
                     <button
                       onClick={handleCreateTicket}
                       disabled={!newTicket.subject || !newTicket.message}
-                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 transition"
+                      className="px-6 py-2 cursor-pointer bg-emerald-500 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-300 transition"
                     >
                       Create Ticket
                     </button>
                     <button
                       onClick={() => setShowNewTicketForm(false)}
-                      className="px-6 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
+                      className="px-6 cursor-pointer py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400 transition"
                     >
                       Cancel
                     </button>
@@ -389,6 +390,8 @@ export default function HelpPage() {
           </Link>
         </div>
       </div>
+       <Footer />
     </div>
+   
   );
 }

@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { MessageCircle, Search, Send, ArrowLeft, User } from 'lucide-react';
+import { getAuthHeaders } from '@/lib/auth';
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 interface Message {
   id: string;
@@ -31,57 +34,146 @@ export default function ProviderMessagesPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Mock data
-    const mockConversations: Conversation[] = [
-      {
-        id: '1',
-        customerId: 'customer-1',
-        customerName: 'Sarah Johnson',
-        unreadCount: 2,
-        service: { name: 'Hair Cut & Style', status: 'confirmed' },
-        lastMessage: {
-          id: 'msg-1',
-          content: 'Hi! I have a question about my appointment.',
-          senderId: 'customer-1',
-          senderType: 'customer',
-          timestamp: new Date().toISOString(),
-          read: false
-        }
-      }
-    ];
-    setConversations(mockConversations);
-    setLoading(false);
+    fetchConversations();
   }, []);
 
-  const handleSelectConversation = (conversation: Conversation) => {
-    setSelectedConversation(conversation);
-    const mockMessages: Message[] = [
-      {
-        id: '1',
-        content: 'Hi! I have a question about my appointment.',
-        senderId: 'customer-1',
-        senderType: 'customer',
-        timestamp: new Date().toISOString(),
-        read: true
+  // Handle auto-start conversation from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const customerId = urlParams.get('customerId');
+    const autoStart = urlParams.get('autoStart');
+    const customerName = urlParams.get('customerName');
+    const customerEmail = urlParams.get('customerEmail');
+    
+    if (customerId && autoStart === 'true') {
+      // Start conversation with the specified customer
+      startConversationWithCustomer(customerId, customerName || 'Unknown Customer', customerEmail || '');
+    }
+  }, [conversations]); // Depend on conversations so it runs after they're loaded
+
+  const fetchConversations = async () => {
+    try {
+      setLoading(true);
+      
+      const response = await fetch(`${API_BASE_URL}/messages/conversations`, {
+        headers: getAuthHeaders(),
+      });
+      
+      if (response.ok) {
+        const apiConversations = await response.json();
+        setConversations(apiConversations);
+      } else {
+        console.error('Failed to fetch conversations:', response.status, response.statusText);
+        setConversations([]);
       }
-    ];
-    setMessages(mockMessages);
+    } catch (error) {
+      console.error('Error fetching conversations:', error);
+      setConversations([]);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSendMessage = () => {
+  const handleSelectConversation = async (conversation: Conversation) => {
+    setSelectedConversation(conversation);
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/messages/conversations/${conversation.id}/messages`, {
+        headers: getAuthHeaders(),
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        const messages = data.messages || data || [];
+        setMessages(messages);
+      } else {
+        console.error('Failed to fetch messages:', response.status, response.statusText);
+        setMessages([]);
+      }
+    } catch (error) {
+      console.error('Error fetching messages:', error);
+      setMessages([]);
+    }
+  };
+
+  const handleSendMessage = async () => {
     if (!newMessage.trim() || !selectedConversation) return;
     
-    const messageData: Message = {
-      id: `msg-${Date.now()}`,
-      content: newMessage.trim(),
-      senderId: 'provider-1',
-      senderType: 'provider',
-      timestamp: new Date().toISOString(),
-      read: true
-    };
+    try {
+      const response = await fetch(`${API_BASE_URL}/messages/conversations/${selectedConversation.id}/messages`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          content: newMessage.trim(),
+          messageType: 'text'
+        }),
+      });
+      
+      if (response.ok) {
+        const sentMessage = await response.json();
+        // Refresh messages to get the latest data
+        await handleSelectConversation(selectedConversation);
+        await fetchConversations();
+        setNewMessage('');
+      } else {
+        console.error('Failed to send message:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+    }
+  };
 
-    setMessages(prev => [...prev, messageData]);
-    setNewMessage('');
+  // Function to start conversation with a specific customer
+  const startConversationWithCustomer = async (customerId: string, customerName: string, customerEmail: string) => {
+    try {
+      // Check if conversation already exists
+      const existingConversation = conversations.find(conv => conv.customerId === customerId);
+      
+      if (existingConversation) {
+        // If conversation exists, select it
+        setSelectedConversation(existingConversation);
+        await handleSelectConversation(existingConversation);
+        return;
+      }
+      
+      // If no existing conversation, create a new one
+      const response = await fetch(`${API_BASE_URL}/messages/conversations`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          customerId: customerId,
+          initialMessage: `Hello ${customerName}! How can I help you today?`
+        }),
+      });
+      
+      if (response.ok) {
+        const newConversation = await response.json();
+        console.log('Started conversation with customer:', newConversation);
+        
+        // Refresh conversations list to get the new conversation
+        await fetchConversations();
+        
+        // Find and select the new conversation
+        setTimeout(() => {
+          const updatedConversations = conversations.filter(conv => conv.customerId === customerId);
+          if (updatedConversations.length > 0) {
+            setSelectedConversation(updatedConversations[0]);
+            handleSelectConversation(updatedConversations[0]);
+          }
+        }, 500); // Small delay to ensure conversations are updated
+        
+      } else {
+        console.error('Failed to start conversation:', response.status, response.statusText);
+      }
+    } catch (error) {
+      console.error('Error starting conversation with customer:', error);
+    }
   };
 
   if (loading) {
@@ -94,7 +186,7 @@ export default function ProviderMessagesPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+      <div className="">
         <div className="bg-white rounded-lg shadow overflow-hidden" style={{ height: '70vh' }}>
           <div className="flex h-full">
             <div className={`w-full md:w-1/3 border-r ${selectedConversation ? 'hidden md:block' : ''}`}>

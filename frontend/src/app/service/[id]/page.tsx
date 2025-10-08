@@ -15,6 +15,7 @@ export default function ServiceDetailPage() {
   const serviceId = params.id as string;
   const [service, setService] = useState<Service | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     async function fetchService() {
@@ -32,31 +33,21 @@ export default function ServiceDetailPage() {
   }, [serviceId]);
 
   if (loading) {
-    return <div style={{ padding: 40, textAlign: "center" }}>Loading...</div>;
+    return <div className="p-10 text-center">Loading...</div>;
   }
   if (!service) {
-    return <div style={{ padding: 40, textAlign: "center" }}>Service not found.</div>;
+    return <div className="p-10 text-center">Service not found.</div>;
   }
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      <section style={{ padding: "40px 0 20px 0", background: "#f8fafc", flex: 1 }}>
-        <div style={{ maxWidth: 900, margin: "0 auto", padding: "0 24px" }}>
-          <Card style={{ borderRadius: 16, overflow: "hidden", background: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-            <div style={{ position: "relative", overflow: "hidden" }}>
-              <div style={{ height: 260, background: "#e0e7ef", display: "flex", alignItems: "center", justifyContent: "center" }}>
+      <section className="py-10 pb-5 bg-slate-50 flex-1">
+        <div className="max-w-4xl w-[95%] mx-auto ">
+          <Card className="rounded-2xl overflow-hidden bg-white shadow-lg">
+            <div className="relative overflow-hidden">
+              <div className="h-full bg-slate-200 flex items-center justify-center">
                 {service.images && service.images.length > 0 ? (
-                  <div
-                    style={{
-                      display: 'flex',
-                      flexWrap: 'wrap',
-                      gap: 16,
-                      justifyContent: service.images.length === 1 ? 'center' : 'flex-start',
-                      alignItems: 'center',
-                      height: '100%',
-                      width: '100%'
-                    }}
-                  >
+                  <div className={`flex flex-wrap gap-4 ${service.images.length === 1 ? 'justify-center' : 'justify-start'} items-center h-full w-full`}>
                     {service.images.map((img, idx) => {
                       const isPublicId = !img.startsWith('http');
                       const url = isPublicId
@@ -73,63 +64,66 @@ export default function ServiceDetailPage() {
                           key={idx}
                           src={url}
                           alt={service.name + ' ' + (idx + 1)}
-                          style={{
-                            width,
-                            height: '220px',
-                            objectFit: 'cover',
-                            borderRadius: 12,
-                            boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-                            background: '#fff',
-                            display: 'block'
-                          }}
+                          className="h-80  object-cover rounded-t-xl shadow-md bg-white block"
+                          style={{ width }}
                         />
                       );
                     })}
                   </div>
                 ) : (
-                  <div style={{ fontSize: 64, fontWeight: 700, color: "#60a5fa" }}>{service.name.charAt(0)}</div>
+                  <div className="text-6xl font-bold text-blue-400">{service.name.charAt(0)}</div>
                 )}
               </div>
             </div>
-            <CardHeader style={{ paddingBottom: 8 }}>
-              <CardTitle style={{ fontSize: 28, fontWeight: 700, color: "#222", marginBottom: 4 }}>{service.name}</CardTitle>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-3xl font-bold text-gray-800 mb-1">{service.name}</CardTitle>
             </CardHeader>
-            <CardContent style={{ paddingTop: 0 }}>
-              <div style={{ color: "#6b7280", fontSize: 17, marginBottom: 18 }}>{service.description}</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 12 }}>
+            <CardContent className="pt-0">
+              <div 
+                className={`text-gray-500 text-lg mb-5 cursor-pointer transition-all duration-300 ${
+                  !isDescriptionExpanded 
+                    ? 'overflow-hidden' 
+                    : ''
+                }`}
+                style={{
+                  display: !isDescriptionExpanded ? '-webkit-box' : 'block',
+                  WebkitLineClamp: !isDescriptionExpanded ? 3 : 'none',
+                  WebkitBoxOrient: !isDescriptionExpanded ? 'vertical' : 'initial'
+                }}
+                onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+              >
+                {service.description}
+                {!isDescriptionExpanded && service.description && service.description.length > 150 && (
+                  <span className="text-emerald-600 font-medium ml-2">...Read more</span>
+                )}
+                {isDescriptionExpanded && (
+                  <span className="text-emerald-600 font-medium ml-2 block mt-2">Show less</span>
+                )}
+              </div>
+              <div className="flex items-center gap-4 mb-3">
                 <Star size={18} color="#fbbf24" fill="#fbbf24" />
-                <span style={{ fontSize: 16, fontWeight: 600 }}>{service.provider.averageRating}</span>
-                <span style={{ fontSize: 15, color: "#6b7280" }}>({service.provider.totalReviews} reviews)</span>
+                <span className="text-base font-semibold">{service.provider.averageRating}</span>
+                <span className="text-sm text-gray-500">({service.provider.totalReviews} reviews)</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <div className="flex items-center gap-3 mb-3">
                 <Clock size={16} color="#6b7280" />
-                <span style={{ fontSize: 15 }}>{service.duration} min</span>
+                <span className="text-sm">{service.duration} min</span>
               </div>
-              <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 12 }}>
+              <div className="flex items-center gap-3 mb-3">
                 <MapPin size={16} color="#6b7280" />
-                <span style={{ fontSize: 15 }}>{service.provider.businessAddress}</span>
+                <span className="text-sm">{service.provider.businessAddress}</span>
               </div>
-              <div style={{ color: "#6b7280", fontSize: 15, marginBottom: 10 }}>
-                Provided by <span style={{ fontWeight: 600 }}>{service.provider.businessName}</span>
+              <div className="text-gray-500 text-sm mb-2.5">
+                Provided by <span className="font-semibold">{service.provider.businessName}</span>
               </div>
-              <div style={{ color: "#6b7280", fontSize: 15, marginBottom: 10 }}>
+              <div className="text-gray-500 text-sm mb-2.5">
                 <b>Shop Location:</b> {service.provider.businessAddress}
               </div>
-              <div style={{ color: "#6b7280", fontSize: 15, marginBottom: 10 }}>
+              <div className="text-gray-500 text-sm mb-2.5">
                 {/* City removed: not present on provider type */}
               </div>
               <button
-                style={{
-                  background: "#10b981",
-                  color: "#fff",
-                  border: "none",
-                  borderRadius: 8,
-                  padding: "12px 32px",
-                  fontWeight: 700,
-                  fontSize: 18,
-                  marginTop: 18,
-                  cursor: "pointer"
-                }}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white border-none rounded-lg px-8 py-3 font-bold text-lg mt-5 cursor-pointer transition-colors duration-200"
                 onClick={() => {
                   // Cart functionality hidden - going directly to booking
                   router.push(`/book-service?serviceId=${service.id}&providerId=${service.provider.id}`);

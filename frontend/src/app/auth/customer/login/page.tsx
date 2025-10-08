@@ -20,7 +20,7 @@ export default function CustomerLoginPage() {
     if (token) {
       // Verify token is for customer
       axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL }/auth/profile`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/auth/profile`,
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -43,7 +43,7 @@ export default function CustomerLoginPage() {
 
     try {
       const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/login`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/auth/login`,
         { email, password },
         { withCredentials: true }
       )

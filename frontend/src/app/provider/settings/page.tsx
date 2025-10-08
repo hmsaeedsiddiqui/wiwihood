@@ -1,13 +1,33 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
+
+// Custom Hook to track window width
+const useWindowWidth = () => {
+  const [width, setWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const handleResize = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  return width;
+};
 
 const SettingsPage = () => {
   const [activeSection, setActiveSection] = useState('profile');
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  
+  const windowWidth = useWindowWidth();
+  // Define mobile breakpoint
+  const isMobile = windowWidth < 768; 
 
-  // Mock settings data
+  // Mock settings data (kept for completeness, but state is not used for form inputs)
   const settingsData = {
+    // ... (Your settingsData object remains the same)
     profile: {
       businessName: "John Smith Freelancer",
       ownerName: "John Smith", 
@@ -88,10 +108,6 @@ const SettingsPage = () => {
     }
   };
 
-  const [selectedTab, setSelectedTab] = useState("profile");
-  const [isEditing, setIsEditing] = useState(false);
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-
   const settingSections = [
     { id: 'profile', label: 'Profile Settings', icon: '👤' },
     { id: 'account', label: 'Account & Security', icon: '🔒' },
@@ -103,65 +119,27 @@ const SettingsPage = () => {
     setTimeout(() => setShowSaveSuccess(false), 3000);
   };
 
-  const toggleNotification = (category: string, setting: string) => {
-    console.log(`Toggling ${category}.${setting}`);
-  };
-
+  // --- Render Profile Settings (Optimized for Mobile) ---
   const renderProfileSettings = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <h2 style={{ fontSize: '24px', fontWeight: '600', color: '#1e293b', margin: '0' }}>
+    <div className="flex flex-col gap-6">
+      <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-semibold text-slate-800 m-0`}>
         Profile Settings
       </h2>
 
       {/* Profile Photo */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '12px',
-        padding: '24px',
-        border: '1px solid #e2e8f0'
-      }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', marginBottom: '16px' }}>
+      <div className={`bg-white rounded-xl border border-slate-200 ${isMobile ? 'p-4' : 'p-6'}`}>
+        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-slate-800 mb-4`}>
           Profile Photo
         </h3>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-          <div style={{
-            width: '80px',
-            height: '80px',
-            borderRadius: '50%',
-            backgroundColor: '#f1f5f9',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '32px',
-            fontWeight: '600',
-            color: '#64748b'
-          }}>
+        <div className={`flex ${isMobile ? 'flex-col items-start gap-4' : 'flex-row items-center gap-5'}`}>
+          <div className={`${isMobile ? 'w-15 h-15' : 'w-20 h-20'} rounded-full bg-slate-100 flex items-center justify-center ${isMobile ? 'text-2xl' : 'text-3xl'} font-semibold text-slate-500`}>
             JS
           </div>
-          <div>
-            <button style={{
-              backgroundColor: '#22c55e',
-              color: '#ffffff',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              border: 'none',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer',
-              marginRight: '12px'
-            }}>
+          <div className="flex gap-3">
+            <button className="bg-green-500 text-white px-4 py-2 rounded-md border-none text-sm font-medium cursor-var-pointer">
               Upload New Photo
             </button>
-            <button style={{
-              backgroundColor: 'transparent',
-              color: '#64748b',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              border: '1px solid #e2e8f0',
-              fontSize: '14px',
-              fontWeight: '500',
-              cursor: 'pointer'
-            }}>
+            <button className="bg-transparent text-slate-500 px-4 py-2 rounded-md border border-slate-200 text-sm font-medium cursor-var-pointer">
               Remove
             </button>
           </div>
@@ -169,147 +147,91 @@ const SettingsPage = () => {
       </div>
 
       {/* Personal Information */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '12px',
-        padding: '24px',
-        border: '1px solid #e2e8f0'
-      }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', marginBottom: '20px' }}>
+      <div className={`bg-white rounded-xl border border-slate-200 ${isMobile ? 'p-4' : 'p-6'}`}>
+        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-slate-800 mb-5`}>
           Personal Information
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        {/* Change grid to single column on mobile */}
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-5`}>
+          {/* First Name */}
           <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               First Name
             </label>
             <input
               type="text"
               defaultValue="John"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-                outline: 'none'
-              }}
+              className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm outline-none`}
             />
           </div>
+          {/* Last Name */}
           <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Last Name
             </label>
             <input
               type="text"
               defaultValue="Smith"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-                outline: 'none'
-              }}
+              className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm outline-none`}
             />
           </div>
-          <div style={{ gridColumn: 'span 2' }}>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+          {/* Professional Title - always span full width */}
+          <div className={isMobile ? 'col-span-1' : 'col-span-2'}> 
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Professional Title
             </label>
             <input
               type="text"
               defaultValue="Freelance Designer & Developer"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-                outline: 'none'
-              }}
+              className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm outline-none`}
             />
           </div>
-          <div style={{ gridColumn: 'span 2' }}>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+          {/* Bio - always span full width */}
+          <div className={isMobile ? 'col-span-1' : 'col-span-2'}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Bio
             </label>
             <textarea
               defaultValue="Experienced designer and developer with 5+ years in creating beautiful, functional digital experiences."
               rows={4}
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-                resize: 'vertical',
-                outline: 'none',
-                fontFamily: 'inherit'
-              }}
+              className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm resize-y outline-none font-inherit`}
             />
           </div>
         </div>
       </div>
 
       {/* Contact Information */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '12px',
-        padding: '24px',
-        border: '1px solid #e2e8f0'
-      }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', marginBottom: '20px' }}>
+      <div className={`bg-white rounded-xl border border-slate-200 ${isMobile ? 'p-4' : 'p-6'}`}>
+        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-slate-800 mb-5`}>
           Contact Information
         </h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
+        {/* Change grid to single column on mobile */}
+        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-5`}>
           <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Email Address
             </label>
             <input
               type="email"
               defaultValue="john.smith@example.com"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-                outline: 'none'
-              }}
+              className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm outline-none`}
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Phone Number
             </label>
             <input
               type="tel"
               defaultValue="+1 (555) 123-4567"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-                outline: 'none'
-              }}
+              className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm outline-none`}
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Country
             </label>
-            <select style={{
-              width: '100%',
-              padding: '10px 12px',
-              borderRadius: '6px',
-              border: '1px solid #e2e8f0',
-              fontSize: '14px',
-              backgroundColor: '#ffffff',
-              outline: 'none'
-            }}>
+            <select className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm bg-white outline-none cursor-var-pointer`}>
               <option>United States</option>
               <option>Canada</option>
               <option>United Kingdom</option>
@@ -317,18 +239,10 @@ const SettingsPage = () => {
             </select>
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Time Zone
             </label>
-            <select style={{
-              width: '100%',
-              padding: '10px 12px',
-              borderRadius: '6px',
-              border: '1px solid #e2e8f0',
-              fontSize: '14px',
-              backgroundColor: '#ffffff',
-              outline: 'none'
-            }}>
+            <select className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm bg-white outline-none cursor-var-pointer`}>
               <option>EST (UTC-5)</option>
               <option>PST (UTC-8)</option>
               <option>GMT (UTC+0)</option>
@@ -340,184 +254,102 @@ const SettingsPage = () => {
     </div>
   );
 
+  // --- Render Account Settings (Optimized for Mobile) ---
   const renderAccountSettings = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <h2 style={{ fontSize: '24px', fontWeight: '600', color: '#1e293b', margin: '0' }}>
+    <div className="flex flex-col gap-6">
+      <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-slate-800 m-0`}>
         Account & Security
       </h2>
 
       {/* Password */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '12px',
-        padding: '24px',
-        border: '1px solid #e2e8f0'
-      }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', marginBottom: '16px' }}>
+      <div className={`bg-white rounded-xl border border-slate-200 ${isMobile ? 'p-4' : 'p-6'}`}>
+        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-slate-800 mb-4`}>
           Password
         </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="flex flex-col gap-4">
           <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Current Password
             </label>
             <input
               type="password"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-                outline: 'none'
-              }}
+              className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm outline-none`}
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               New Password
             </label>
             <input
               type="password"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-                outline: 'none'
-              }}
+              className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm outline-none`}
             />
           </div>
           <div>
-            <label style={{ display: 'block', fontSize: '14px', fontWeight: '500', color: '#374151', marginBottom: '8px' }}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
               Confirm New Password
             </label>
             <input
               type="password"
-              style={{
-                width: '100%',
-                padding: '10px 12px',
-                borderRadius: '6px',
-                border: '1px solid #e2e8f0',
-                fontSize: '14px',
-                outline: 'none'
-              }}
+              className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm outline-none`}
             />
           </div>
-          <button style={{
-            backgroundColor: '#22c55e',
-            color: '#ffffff',
-            padding: '10px 20px',
-            borderRadius: '6px',
-            border: 'none',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            alignSelf: 'flex-start'
-          }}>
+          <button className="bg-green-500 text-white px-5 py-2.5 rounded-md border-0 text-sm font-semibold cursor-var-pointer self-start">
             Update Password
           </button>
         </div>
       </div>
 
       {/* Two-Factor Authentication */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '12px',
-        padding: '24px',
-        border: '1px solid #e2e8f0'
-      }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', marginBottom: '16px' }}>
+      <div className={`bg-white rounded-xl border border-slate-200 ${isMobile ? 'p-4' : 'p-6'}`}>
+        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-slate-800 mb-4`}>
           Two-Factor Authentication
         </h3>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Adjust layout for mobile */}
+        <div className={`flex ${isMobile ? 'flex-col items-start gap-4' : 'flex-row justify-between items-center'}`}>
           <div>
-            <p style={{ fontSize: '14px', color: '#374151', margin: '0 0 4px 0' }}>
+            <p className="text-sm text-gray-700 m-0 mb-1">
               Add an extra layer of security to your account
             </p>
-            <p style={{ fontSize: '12px', color: '#64748b', margin: '0' }}>
-              Status: <span style={{ color: '#ef4444', fontWeight: '500' }}>Disabled</span>
+            <p className="text-xs text-slate-500 m-0">
+              Status: <span className="text-red-500 font-medium">Disabled</span>
             </p>
           </div>
-          <button style={{
-            backgroundColor: '#22c55e',
-            color: '#ffffff',
-            padding: '10px 20px',
-            borderRadius: '6px',
-            border: 'none',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer'
-          }}>
+          <button className={`bg-green-500 text-white px-5 py-2.5 rounded-md border-0 text-sm font-semibold cursor-var-pointer ${isMobile ? 'w-full' : 'w-auto'}`}>
             Enable 2FA
           </button>
         </div>
       </div>
 
       {/* Active Sessions */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '12px',
-        padding: '24px',
-        border: '1px solid #e2e8f0'
-      }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', marginBottom: '16px' }}>
+      <div className={`bg-white rounded-xl border border-slate-200 ${isMobile ? 'p-4' : 'p-6'}`}>
+        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-slate-800 mb-4`}>
           Active Sessions
         </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            padding: '12px',
-            backgroundColor: '#f8fafc',
-            borderRadius: '6px'
-          }}>
+        <div className="flex flex-col gap-3">
+          <div className={`flex ${isMobile ? 'flex-col items-start gap-2' : 'flex-row justify-between items-center'} p-3 bg-slate-50 rounded-md`}>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>
+              <div className="text-sm font-medium text-slate-800">
                 💻 Desktop - Chrome (Current)
               </div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>
+              <div className="text-xs text-slate-500">
                 New York, USA • 2 minutes ago
               </div>
             </div>
-            <span style={{
-              backgroundColor: '#dcfce7',
-              color: '#16a34a',
-              padding: '2px 8px',
-              borderRadius: '12px',
-              fontSize: '12px',
-              fontWeight: '500'
-            }}>
+            <span className="bg-green-100 text-green-600 px-2 py-0.5 rounded-xl text-xs font-medium">
               Current
             </span>
           </div>
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
-            padding: '12px',
-            backgroundColor: '#f8fafc',
-            borderRadius: '6px'
-          }}>
+          <div className={`flex ${isMobile ? 'flex-col items-start gap-2' : 'flex-row justify-between items-center'} p-3 bg-slate-50 rounded-md`}>
             <div>
-              <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>
+              <div className="text-sm font-medium text-slate-800">
                 📱 Mobile - Safari
               </div>
-              <div style={{ fontSize: '12px', color: '#64748b' }}>
+              <div className="text-xs text-slate-500">
                 New York, USA • 2 hours ago
               </div>
             </div>
-            <button style={{
-              backgroundColor: '#fee2e2',
-              color: '#dc2626',
-              padding: '4px 8px',
-              borderRadius: '4px',
-              border: 'none',
-              fontSize: '12px',
-              cursor: 'pointer'
-            }}>
+            <button className="bg-red-100 text-red-600 px-2 py-1 rounded border-0 text-xs cursor-var-pointer">
               End Session
             </button>
           </div>
@@ -526,23 +358,19 @@ const SettingsPage = () => {
     </div>
   );
 
+  // --- Render Notification Settings (Optimized for Mobile) ---
   const renderNotificationSettings = () => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-      <h2 style={{ fontSize: '24px', fontWeight: '600', color: '#1e293b', margin: '0' }}>
+    <div className="flex flex-col gap-6">
+      <h2 className={`${isMobile ? 'text-lg' : 'text-xl'} font-semibold text-slate-800 m-0`}>
         Notification Preferences
       </h2>
 
       {/* Email Notifications */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '12px',
-        padding: '24px',
-        border: '1px solid #e2e8f0'
-      }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', marginBottom: '20px' }}>
+      <div className={`bg-white rounded-xl border border-slate-200 ${isMobile ? 'p-4' : 'p-6'}`}>
+        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-slate-800 mb-5`}>
           Email Notifications
         </h3>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div className="flex flex-col gap-4">
           {[
             { id: 'orders', label: 'New Orders', description: 'Get notified when you receive new orders' },
             { id: 'messages', label: 'Messages', description: 'Get notified when clients send you messages' },
@@ -550,33 +378,20 @@ const SettingsPage = () => {
             { id: 'payments', label: 'Payments', description: 'Get notified about payment confirmations' },
             { id: 'marketing', label: 'Marketing Updates', description: 'Receive tips and platform updates' }
           ].map(item => (
-            <div key={item.id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <div key={item.id} className={`flex ${isMobile ? 'flex-col items-start gap-2' : 'flex-row justify-between items-center'}`}>
               <div>
-                <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>
+                <div className="text-sm font-medium text-slate-800">
                   {item.label}
                 </div>
-                <div style={{ fontSize: '12px', color: '#64748b' }}>
+                <div className="text-xs text-slate-500">
                   {item.description}
                 </div>
               </div>
-              <label style={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }}>
-                <input type="checkbox" defaultChecked style={{ marginRight: '8px' }} />
-                <div style={{
-                  width: '40px',
-                  height: '20px',
-                  borderRadius: '10px',
-                  backgroundColor: '#22c55e',
-                  position: 'relative'
-                }}>
-                  <div style={{
-                    width: '16px',
-                    height: '16px',
-                    borderRadius: '50%',
-                    backgroundColor: '#ffffff',
-                    position: 'absolute',
-                    top: '2px',
-                    right: '2px'
-                  }}></div>
+              <label className="flex items-center cursor-var-pointer">
+                <input type="checkbox" defaultChecked className="mr-2 hidden" />
+                {/* Custom Toggle Switch for better mobile experience */}
+                <div className="w-10 h-5 rounded-full bg-green-500 relative">
+                  <div className="w-4 h-4 rounded-full bg-white absolute top-0.5 right-0.5 transition-all duration-200"></div>
                 </div>
               </label>
             </div>
@@ -585,34 +400,21 @@ const SettingsPage = () => {
       </div>
 
       {/* Push Notifications */}
-      <div style={{
-        backgroundColor: '#ffffff',
-        borderRadius: '12px',
-        padding: '24px',
-        border: '1px solid #e2e8f0'
-      }}>
-        <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', marginBottom: '20px' }}>
+      <div className={`bg-white rounded-xl border border-slate-200 ${isMobile ? 'p-4' : 'p-6'}`}>
+        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-slate-800 mb-5`}>
           Push Notifications
         </h3>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        {/* Adjust layout for mobile */}
+        <div className={`flex ${isMobile ? 'flex-col items-start gap-4' : 'flex-row justify-between items-center'}`}>
           <div>
-            <div style={{ fontSize: '14px', fontWeight: '500', color: '#1e293b' }}>
+            <div className="text-sm font-medium text-slate-800">
               Browser Push Notifications
             </div>
-            <div style={{ fontSize: '12px', color: '#64748b' }}>
+            <div className="text-xs text-slate-500">
               Receive real-time notifications in your browser
             </div>
           </div>
-          <button style={{
-            backgroundColor: '#22c55e',
-            color: '#ffffff',
-            padding: '8px 16px',
-            borderRadius: '6px',
-            border: 'none',
-            fontSize: '14px',
-            fontWeight: '500',
-            cursor: 'pointer'
-          }}>
+          <button className={`bg-green-500 text-white px-4 py-2 rounded-md border-0 text-sm font-medium cursor-var-pointer ${isMobile ? 'w-full' : 'w-auto'}`}>
             Enable
           </button>
         </div>
@@ -620,6 +422,7 @@ const SettingsPage = () => {
     </div>
   );
 
+  // --- Main Render Section logic ---
   const renderSection = () => {
     switch(activeSection) {
       case 'profile': return renderProfileSettings();
@@ -627,18 +430,12 @@ const SettingsPage = () => {
       case 'notifications': return renderNotificationSettings();
       default: 
         return (
-          <div style={{ 
-            textAlign: 'center', 
-            padding: '60px 20px',
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            border: '1px solid #e2e8f0'
-          }}>
-            <div style={{ fontSize: '48px', marginBottom: '16px' }}>🚧</div>
-            <h3 style={{ fontSize: '18px', fontWeight: '600', color: '#1e293b', marginBottom: '8px' }}>
+          <div className="text-center p-15 bg-white rounded-xl border border-slate-200">
+            <div className="text-5xl mb-4">🚧</div>
+            <h3 className="text-lg font-semibold text-slate-800 mb-2">
               Coming Soon
             </h3>
-            <p style={{ color: '#64748b' }}>
+            <p className="text-slate-500">
               This section is under development and will be available soon.
             </p>
           </div>
@@ -647,75 +444,38 @@ const SettingsPage = () => {
   };
 
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: '#f8fafc',
-      padding: '20px'
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className={`min-h-screen bg-slate-50 `}>
+      <div className="">
         {/* Header */}
-        <div style={{ marginBottom: '30px' }}>
-          <h1 style={{ 
-            fontSize: '28px', 
-            fontWeight: '700', 
-            color: '#1e293b',
-            marginBottom: '8px'
-          }}>
+        <div className={`${isMobile ? 'mb-5' : 'mb-8'}`}>
+          <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-slate-800 mb-2`}>
             Settings
           </h1>
-          <p style={{ 
-            color: '#64748b', 
-            fontSize: '16px'
-          }}>
+          <p className={`text-slate-500 ${isMobile ? 'text-sm' : 'text-base'}`}>
             Manage your account settings and preferences
           </p>
         </div>
 
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: '280px 1fr', 
-          gap: '30px'
-        }}>
-          {/* Settings Navigation */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            borderRadius: '12px',
-            padding: '20px',
-            boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-            border: '1px solid #e2e8f0',
-            height: 'fit-content'
-          }}>
-            <h3 style={{ 
-              fontSize: '16px', 
-              fontWeight: '600', 
-              color: '#1e293b',
-              marginBottom: '16px'
-            }}>
+        {/* Main Content Grid (Changed to stack on mobile) */}
+        <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-[280px_1fr] gap-8'}`}>
+          
+          {/* Settings Navigation (Full width on mobile) */}
+          <div className={`bg-white rounded-xl shadow-sm border border-slate-200 h-fit ${isMobile ? 'p-2.5' : 'p-5'}`}>
+            <h3 className={`${isMobile ? 'text-sm' : 'text-base'} font-semibold text-slate-800 ${isMobile ? 'mb-2' : 'mb-4'}`}>
               Settings
             </h3>
-            <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            <nav className={`flex ${isMobile ? 'flex-row gap-1 overflow-x-auto pb-1' : 'flex-col gap-1'}`}>
               {settingSections.map(section => (
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    width: '100%',
-                    padding: '12px 16px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    fontSize: '14px',
-                    fontWeight: '500',
-                    cursor: 'pointer',
-                    textAlign: 'left',
-                    backgroundColor: activeSection === section.id ? '#f0f9ff' : 'transparent',
-                    color: activeSection === section.id ? '#0369a1' : '#64748b',
-                    transition: 'all 0.2s ease'
-                  }}
+                  className={`flex items-center gap-3 ${isMobile ? 'flex-shrink-0 px-3 py-2.5' : 'w-full px-4 py-3'} rounded-lg border-0 text-sm font-medium cursor-var-pointer text-left transition-all duration-200 ${
+                    activeSection === section.id 
+                      ? 'bg-sky-50 text-sky-700' 
+                      : 'bg-transparent text-slate-500 hover:bg-slate-50'
+                  }`}
                 >
-                  <span style={{ fontSize: '16px' }}>{section.icon}</span>
+                  <span className="text-base">{section.icon}</span>
                   {section.label}
                 </button>
               ))}
@@ -723,41 +483,18 @@ const SettingsPage = () => {
           </div>
 
           {/* Settings Content */}
-          <div style={{ position: 'relative' }}>
+          <div className="relative">
             {renderSection()}
             
-            {/* Save Button */}
+            {/* Save Button Bar */}
             {(activeSection === 'profile' || activeSection === 'account' || activeSection === 'notifications') && (
-              <div style={{ 
-                marginTop: '30px',
-                display: 'flex',
-                justifyContent: 'flex-end',
-                gap: '12px'
-              }}>
-                <button style={{
-                  backgroundColor: '#f1f5f9',
-                  color: '#64748b',
-                  padding: '12px 24px',
-                  borderRadius: '8px',
-                  border: '1px solid #e2e8f0',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  cursor: 'pointer'
-                }}>
+              <div className={`${isMobile ? 'mt-5 sticky bottom-0 left-0 right-0 p-2.5 bg-slate-50 border-t border-slate-200 z-10' : 'mt-8 static p-0 bg-transparent border-t-0 z-auto'} flex justify-end gap-3`}>
+                <button className={`bg-slate-100 text-slate-500 px-6 py-3 rounded-lg border border-slate-200 text-sm font-medium cursor-var-pointer ${isMobile ? 'w-1/2' : 'w-auto'}`}>
                   Cancel
                 </button>
                 <button
                   onClick={handleSave}
-                  style={{
-                    backgroundColor: '#22c55e',
-                    color: '#ffffff',
-                    padding: '12px 24px',
-                    borderRadius: '8px',
-                    border: 'none',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    cursor: 'pointer'
-                  }}
+                  className={`bg-green-500 text-white px-6 py-3 rounded-lg border-0 text-sm font-semibold cursor-var-pointer ${isMobile ? 'w-1/2' : 'w-auto'}`}
                 >
                   Save Changes
                 </button>
@@ -766,20 +503,7 @@ const SettingsPage = () => {
 
             {/* Success Message */}
             {showSaveSuccess && (
-              <div style={{
-                position: 'fixed',
-                top: '20px',
-                right: '20px',
-                backgroundColor: '#dcfce7',
-                color: '#16a34a',
-                padding: '12px 20px',
-                borderRadius: '8px',
-                border: '1px solid #bbf7d0',
-                fontSize: '14px',
-                fontWeight: '500',
-                zIndex: 1000,
-                boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
-              }}>
+              <div className={`fixed ${isMobile ? 'top-20 right-1/2 transform -translate-x-1/2 w-[90%]' : 'top-5 right-5 w-auto'} bg-green-100 text-green-600 px-5 py-3 rounded-lg border border-green-200 text-sm font-medium z-[1000] shadow-lg`}>
                 ✅ Settings saved successfully!
               </div>
             )}
@@ -787,7 +511,7 @@ const SettingsPage = () => {
         </div>
       </div>
     </div>
-    );
+  );
 };
 
 export default SettingsPage;

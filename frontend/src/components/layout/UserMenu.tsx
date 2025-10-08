@@ -11,7 +11,7 @@ export default function UserMenu() {
   useEffect(() => {
     const token = typeof window !== "undefined" ? localStorage.getItem("accessToken") : null;
     if (!token) return;
-    axios.get(`${process.env.NEXT_PUBLIC_API_URL}/auth/profile`, {
+    axios.get(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/profile`, {
       headers: { Authorization: `Bearer ${token}` },
       withCredentials: true,
     })

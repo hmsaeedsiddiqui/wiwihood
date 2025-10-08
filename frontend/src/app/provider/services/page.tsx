@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { ImageUpload } from "@/components/cloudinary/ImageUpload";
 import { CloudinaryImage } from "@/components/cloudinary/CloudinaryImage";
+import QRTIntegration from "@/utils/qrtIntegration";
 
 interface Category {
   id: string;
@@ -53,14 +54,15 @@ export default function ServicesPage() {
   useEffect(() => {
     fetchProviderInfo();
     fetchCategories();
-    fetchServices();
+    // fetchServices will run after providerId is set in the next useEffect
   }, []);
 
   const fetchProviderInfo = async () => {
     try {
+      // In a real application, you'd likely use an authentication context or server-side logic
       const token = localStorage.getItem('providerToken');
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/profile`,
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/providers/profile`,
         {
           headers: { Authorization: `Bearer ${token}` },
           withCredentials: true,
@@ -69,41 +71,47 @@ export default function ServicesPage() {
       
       if (response.data) {
         // Use provider.id if available, else fallback to id
-        if (response.data.provider && response.data.provider.id) {
-          setProviderId(response.data.provider.id);
-        } else {
-          setProviderId(response.data.id);
-        }
+        const idToSet = response.data.provider?.id || response.data.id;
+        setProviderId(idToSet);
       }
     } catch (error) {
       console.error('Error fetching provider info:', error);
+      // Fallback to mock provider ID if API fails
+      console.log('Using fallback provider ID');
+      setProviderId('mock-provider-123');
     }
   };
 
   const fetchCategories = async () => {
     try {
       const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/categories`
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/categories`
       );
       setCategories(response.data || []);
     } catch (error) {
       console.error('Error fetching categories:', error);
+      // Set fallback categories if API fails
+      setCategories([
+        { id: 'hair-services', name: 'Hair Services', slug: 'hair-services' },
+        { id: 'beauty-services', name: 'Beauty Services', slug: 'beauty-services' },
+        { id: 'wellness', name: 'Wellness', slug: 'wellness' }
+      ]);
     }
   };
 
   const fetchServices = async () => {
+    if (!providerId) return;
+    
+    setLoading(true);
+    setError(''); // Clear any previous errors
     try {
-      if (!providerId) return;
+      console.log('🚀 QRT: Loading services...');
       
-      const token = localStorage.getItem('providerToken');
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL}/services/provider/${providerId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        }
-      );
-      setServices(response.data || []);
+      // Use QRT Integration for better error handling
+      const servicesData = await QRTIntegration.getServices();
+      setServices(servicesData || []);
+      
+      console.log('✅ QRT: Services loaded successfully', servicesData.length);
     } catch (error) {
       console.error('Error fetching services:', error);
       setError('Failed to load services');
@@ -116,7 +124,7 @@ export default function ServicesPage() {
     if (providerId) {
       fetchServices();
     }
-  }, [providerId]);
+  }, [providerId]); // Re-run fetchServices when providerId is available/changes
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,10 +140,9 @@ export default function ServicesPage() {
       const submitData = {
         ...formData,
         basePrice: parseFloat(formData.basePrice),
+        // Ensure duration is a safe integer (1 to 1440 minutes, e.g.)
         durationMinutes: Math.max(1, Math.min(1440, parseInt(formData.durationMinutes)))
       };
-      // Remove any 'duration' property if present
-  // No need to delete 'duration' as it no longer exists
       
       if (editingService) {
         // Update existing service
@@ -178,11 +185,13 @@ export default function ServicesPage() {
       serviceType: service.serviceType,
       pricingType: service.pricingType,
       basePrice: service.basePrice.toString(),
-  durationMinutes: service.durationMinutes?.toString() || "",
+      durationMinutes: service.durationMinutes?.toString() || "",
       isActive: service.isActive,
       images: service.images || []
     });
     setShowCreateForm(true);
+    // Scroll to the form
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleDelete = async (serviceId: string) => {
@@ -231,7 +240,7 @@ export default function ServicesPage() {
       serviceType: "appointment",
       pricingType: "fixed",
       basePrice: "",
-  durationMinutes: "",
+      durationMinutes: "",
       isActive: true,
       images: []
     });
@@ -240,119 +249,116 @@ export default function ServicesPage() {
     setError("");
   };
 
+  // Enhanced helper for input styles with wiwihood theme
+  const inputClasses = "w-full p-4 border-2 border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-all duration-300 hover:border-gray-300 bg-white/70 backdrop-blur-sm";
+  const labelClasses = "block text-sm font-bold text-gray-800 mb-2 flex items-center gap-2";
+  const buttonBaseClasses = "px-6 py-3 text-sm font-semibold rounded-xl transition-all duration-300 transform hover:scale-105";
+
   if (loading) {
     return (
-      <div style={{ padding: '20px', textAlign: 'center' }}>
-        <div style={{ fontSize: '16px', color: '#6b7280' }}>Loading services...</div>
+      <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-pink-50 p-8">
+        <div className="max-w-6xl mx-auto">
+          <div className="text-center py-20">
+            <div className="animate-spin rounded-full h-16 w-16 border-4 border-orange-500 border-t-transparent mx-auto mb-4"></div>
+            <div className="text-lg text-gray-600 font-medium">Loading your services...</div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div style={{ padding: '20px' }}>
-      {/* Header */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        alignItems: 'center', 
-        marginBottom: '30px' 
-      }}>
-        <div>
-          <h1 style={{ fontSize: '28px', fontWeight: 'bold', color: '#111827', margin: 0 }}>
-            Service Management
-          </h1>
-          <p style={{ color: '#6b7280', margin: '5px 0 0 0' }}>
-            Create and manage your services
-          </p>
-        </div>
-        
-        <button
-          onClick={() => setShowCreateForm(true)}
-          style={{
-            backgroundColor: '#22c55e',
-            color: 'white',
-            border: 'none',
-            borderRadius: '8px',
-            padding: '12px 24px',
-            fontSize: '14px',
-            fontWeight: '600',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px'
-          }}
-        >
-          <span style={{ fontSize: '16px' }}>+</span>
-          Create Service
-        </button>
-      </div>
-
-      {error && (
-        <div style={{
-          backgroundColor: '#fef2f2',
-          border: '1px solid #fecaca',
-          color: '#dc2626',
-          padding: '12px',
-          borderRadius: '8px',
-          marginBottom: '20px'
-        }}>
-          {error}
-        </div>
-      )}
-
-      {/* Create/Edit Form */}
-      {showCreateForm && (
-        <div style={{
-          backgroundColor: 'white',
-          padding: '24px',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-          marginBottom: '30px'
-        }}>
-          <h2 style={{ fontSize: '20px', fontWeight: '600', marginBottom: '20px' }}>
-            {editingService ? 'Edit Service' : 'Create New Service'}
-          </h2>
+    <div className="min-h-screen bg-gradient-to-br from-orange-50 via-white to-pink-50">
+      <div className="max-w-6xl mx-auto p-6 md:p-8">
+        {/* Enhanced Header */}
+        <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-6">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-gradient-to-r from-orange-500 to-pink-600 rounded-xl flex items-center justify-center shadow-lg">
+              <span className="text-white text-xl font-bold">🛠️</span>
+            </div>
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                Service Management
+              </h1>
+              <p className="text-gray-600 mt-2 text-lg">
+                Create and manage your professional services
+              </p>
+            </div>
+          </div>
           
-          <form onSubmit={handleSubmit}>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '16px' }}>
+          <button
+            onClick={() => {
+              resetForm();
+              setShowCreateForm(true);
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="group relative px-8 py-4 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center gap-3"
+          >
+            <span className="text-xl group-hover:rotate-90 transition-transform duration-300">+</span>
+            <span>Create New Service</span>
+            <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-pink-700 rounded-xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+          </button>
+        </div>
+
+        {/* Enhanced Error Alert */}
+        {error && (
+          <div className="bg-gradient-to-r from-red-50 to-pink-50 border-l-4 border-red-500 p-6 rounded-xl mb-8 shadow-lg" role="alert">
+            <div className="flex items-center">
+              <span className="text-red-500 text-xl mr-3">⚠️</span>
+              <div>
+                <h4 className="text-red-800 font-semibold">Error</h4>
+                <p className="text-red-700 mt-1">{error}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Enhanced Create/Edit Form */}
+        {showCreateForm && (
+          <div className="bg-white/80 backdrop-blur-sm p-8 md:p-10 rounded-2xl shadow-2xl mb-10 border border-white/20 relative overflow-hidden">
+            {/* Decorative background elements */}
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-orange-200/30 to-pink-200/30 rounded-full -translate-y-16 translate-x-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-gradient-to-tr from-pink-200/30 to-orange-200/30 rounded-full translate-y-12 -translate-x-12"></div>
+            
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-10 h-10 bg-gradient-to-r from-orange-500 to-pink-600 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-lg">{editingService ? '✏️' : '➕'}</span>
+                </div>
+                <h2 className="text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                  {editingService ? 'Edit Service' : 'Create New Service'}
+                </h2>
+              </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               {/* Service Name */}
-              <div style={{ gridColumn: 'span 2' }}>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>
-                  Service Name *
+              <div className="lg:col-span-2">
+                <label className={labelClasses}>
+                  <span className="text-lg">🏷️</span>
+                  Service Name <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   required
                   value={formData.name}
                   onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px'
-                  }}
-                  placeholder="Enter service name"
+                  className={inputClasses}
+                  placeholder="Enter a compelling service name"
                 />
               </div>
 
               {/* Category */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>
-                  Category *
+                <label className={labelClasses}>
+                  <span className="text-lg">📂</span>
+                  Category <span className="text-red-500">*</span>
                 </label>
                 <select
                   required
                   value={formData.categoryId}
                   onChange={(e) => setFormData({...formData, categoryId: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    backgroundColor: 'white'
-                  }}
+                  className={`${inputClasses} bg-white/70`}
                 >
                   <option value="">Select a category</option>
                   {categories.map((category) => (
@@ -365,56 +371,45 @@ export default function ServicesPage() {
 
               {/* Service Type */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>
-                  Service Type *
+                <label className={labelClasses}>
+                  <span className="text-lg">⚙️</span>
+                  Service Type <span className="text-red-500">*</span>
                 </label>
                 <select
                   required
                   value={formData.serviceType}
                   onChange={(e) => setFormData({...formData, serviceType: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    backgroundColor: 'white'
-                  }}
+                  className={`${inputClasses} bg-white/70`}
                 >
-                  <option value="appointment">Appointment</option>
-                  <option value="package">Package</option>
-                  <option value="consultation">Consultation</option>
+                  <option value="appointment">📅 Appointment</option>
+                  <option value="package">📦 Package</option>
+                  <option value="consultation">💬 Consultation</option>
                 </select>
               </div>
 
               {/* Pricing Type */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>
-                  Pricing Type *
+                <label className={labelClasses}>
+                  <span className="text-lg">💰</span>
+                  Pricing Type <span className="text-red-500">*</span>
                 </label>
                 <select
                   required
                   value={formData.pricingType}
                   onChange={(e) => setFormData({...formData, pricingType: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px',
-                    backgroundColor: 'white'
-                  }}
+                  className={`${inputClasses} bg-white/70`}
                 >
-                  <option value="fixed">Fixed Price</option>
-                  <option value="hourly">Hourly Rate</option>
-                  <option value="package">Package Deal</option>
+                  <option value="fixed">💵 Fixed Price</option>
+                  <option value="hourly">⏰ Hourly Rate</option>
+                  <option value="package">📋 Package Deal</option>
                 </select>
               </div>
 
               {/* Base Price */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>
-                  Base Price ($) *
+                <label className={labelClasses}>
+                  <span className="text-lg">💲</span>
+                  Base Price ($) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -423,21 +418,16 @@ export default function ServicesPage() {
                   step="0.01"
                   value={formData.basePrice}
                   onChange={(e) => setFormData({...formData, basePrice: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px'
-                  }}
+                  className={inputClasses}
                   placeholder="0.00"
                 />
               </div>
 
               {/* Duration */}
               <div>
-                <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>
-                  Duration (minutes) *
+                <label className={labelClasses}>
+                  <span className="text-lg">⏱️</span>
+                  Duration (minutes) <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="number"
@@ -447,134 +437,107 @@ export default function ServicesPage() {
                   step="1"
                   value={formData.durationMinutes}
                   onChange={(e) => setFormData({...formData, durationMinutes: e.target.value})}
-                  style={{
-                    width: '100%',
-                    padding: '12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: '8px',
-                    fontSize: '14px'
-                  }}
+                  className={inputClasses}
                   placeholder="60"
                 />
               </div>
 
               {/* Active Status */}
-              <div>
-                <label style={{ display: 'flex', alignItems: 'center', fontSize: '14px', fontWeight: '600', gap: '8px' }}>
-                  <input
-                    type="checkbox"
-                    checked={formData.isActive}
-                    onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
-                    style={{ width: '16px', height: '16px' }}
-                  />
-                  Active Service
+              <div className="flex items-center pt-4">
+                <label className="flex items-center text-sm font-bold text-gray-800 gap-3 cursor-pointer">
+                  <div className="relative">
+                    <input
+                      type="checkbox"
+                      checked={formData.isActive}
+                      onChange={(e) => setFormData({...formData, isActive: e.target.checked})}
+                      className="sr-only"
+                    />
+                    <div className={`w-12 h-6 rounded-full transition-colors duration-300 ${formData.isActive ? 'bg-orange-500' : 'bg-gray-300'}`}>
+                      <div className={`w-5 h-5 bg-white rounded-full shadow-md transform transition-transform duration-300 mt-0.5 ${formData.isActive ? 'translate-x-6 ml-1' : 'translate-x-0 ml-0.5'}`}></div>
+                    </div>
+                  </div>
+                  <span className="flex items-center gap-2">
+                    <span className="text-lg">{formData.isActive ? '✅' : '❌'}</span>
+                    Active Service
+                  </span>
                 </label>
               </div>
             </div>
 
             {/* Short Description */}
-            <div style={{ marginTop: '16px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>
-                Short Description *
+            <div>
+              <label className={labelClasses}>
+                <span className="text-lg">📝</span>
+                Short Description <span className="text-red-500">*</span>
               </label>
               <input
                 type="text"
                 required
                 value={formData.shortDescription}
                 onChange={(e) => setFormData({...formData, shortDescription: e.target.value})}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px'
-                }}
-                placeholder="Brief description for listings"
+                className={inputClasses}
+                placeholder="Brief description for listings (max 100 chars)"
                 maxLength={100}
               />
+              <div className="text-xs text-gray-500 mt-1">{formData.shortDescription.length}/100 characters</div>
             </div>
 
             {/* Full Description */}
-            <div style={{ marginTop: '16px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>
-                Full Description *
+            <div>
+              <label className={labelClasses}>
+                <span className="text-lg">📄</span>
+                Full Description <span className="text-red-500">*</span>
               </label>
               <textarea
                 required
                 value={formData.description}
                 onChange={(e) => setFormData({...formData, description: e.target.value})}
-                rows={4}
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  resize: 'vertical'
-                }}
+                rows={5}
+                className={`${inputClasses} resize-y`}
                 placeholder="Detailed description of your service..."
               />
             </div>
 
             {/* Service Images */}
-            <div style={{ marginTop: '16px' }}>
-              <label style={{ display: 'block', fontSize: '14px', fontWeight: '600', marginBottom: '6px' }}>
-                Service Images
+            <div>
+              <label className={labelClasses}>
+                <span className="text-lg">🖼️</span>
+                Service Images (Max 5)
               </label>
-              <div style={{ marginBottom: '12px' }}>
+              <div className="mb-4">
                 <ImageUpload
                   uploadType="service"
                   onImageUploaded={(publicId: string) => {
-                    setFormData({
-                      ...formData,
-                      images: [...formData.images, publicId]
-                    });
+                    setFormData(prev => ({
+                      ...prev,
+                      images: [...prev.images, publicId]
+                    }));
                   }}
-                  maxFiles={5}
+                  maxFiles={5 - formData.images.length}
                 />
               </div>
               
               {/* Display current images */}
               {formData.images.length > 0 && (
-                <div style={{ 
-                  display: 'grid', 
-                  gridTemplateColumns: 'repeat(auto-fill, minmax(120px, 1fr))', 
-                  gap: '12px',
-                  marginTop: '12px'
-                }}>
+                <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 mt-4">
                   {formData.images.map((publicId, index) => (
-                    <div key={index} style={{ position: 'relative' }}>
+                    <div key={index} className="relative w-full aspect-square group">
                       <CloudinaryImage
                         src={publicId}
                         alt={`Service image ${index + 1}`}
                         width={120}
                         height={120}
-                        style={{ borderRadius: '8px', objectFit: 'cover' }}
+                        className="rounded-xl object-cover w-full h-full shadow-lg group-hover:shadow-xl transition-all duration-300"
                       />
                       <button
                         type="button"
                         onClick={() => {
-                          setFormData({
-                            ...formData,
-                            images: formData.images.filter((_, i) => i !== index)
-                          });
+                          setFormData(prev => ({
+                            ...prev,
+                            images: prev.images.filter((_, i) => i !== index)
+                          }));
                         }}
-                        style={{
-                          position: 'absolute',
-                          top: '4px',
-                          right: '4px',
-                          background: 'rgba(239, 68, 68, 0.9)',
-                          color: 'white',
-                          border: 'none',
-                          borderRadius: '50%',
-                          width: '24px',
-                          height: '24px',
-                          cursor: 'pointer',
-                          fontSize: '12px',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center'
-                        }}
+                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold hover:bg-red-600 transform hover:scale-110 transition-all duration-300 shadow-lg"
                         title="Remove image"
                       >
                         ×
@@ -585,229 +548,191 @@ export default function ServicesPage() {
               )}
             </div>
 
-            {/* Action Buttons */}
-            <div style={{ display: 'flex', gap: '12px', marginTop: '24px' }}>
+            {/* Enhanced Action Buttons */}
+            <div className="flex gap-4 pt-6 border-t border-gray-200">
               <button
                 type="submit"
-                style={{
-                  backgroundColor: '#22c55e',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  padding: '12px 24px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className="flex-1 bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300 flex items-center justify-center gap-3"
               >
+                <span className="text-lg">{editingService ? '💾' : '✨'}</span>
                 {editingService ? 'Update Service' : 'Create Service'}
               </button>
               
               <button
                 type="button"
                 onClick={resetForm}
-                style={{
-                  backgroundColor: 'transparent',
-                  color: '#6b7280',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  padding: '12px 24px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                className="px-8 py-4 text-gray-700 border-2 border-gray-300 hover:border-gray-400 rounded-xl font-semibold hover:bg-gray-50 transform hover:scale-105 transition-all duration-300 flex items-center gap-3"
               >
+                <span className="text-lg">❌</span>
                 Cancel
               </button>
             </div>
           </form>
+          </div>
         </div>
-      )}
+        )}
 
-      {/* Services List */}
-      {services.length > 0 ? (
-        <div style={{ display: 'grid', gap: '20px' }}>
-          {services.map((service) => (
-            <div
-              key={service.id}
-              style={{
-                backgroundColor: 'white',
-                padding: '24px',
-                borderRadius: '12px',
-                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                border: '1px solid #e5e7eb'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '8px' }}>
-                    <h3 style={{ fontSize: '20px', fontWeight: '600', margin: 0 }}>
-                      {service.name}
-                    </h3>
-                    <span style={{
-                      display: 'inline-block',
-                      padding: '4px 12px',
-                      backgroundColor: service.isActive ? '#dcfce7' : '#fee2e2',
-                      color: service.isActive ? '#16a34a' : '#dc2626',
-                      borderRadius: '20px',
-                      fontSize: '12px',
-                      fontWeight: '600'
-                    }}>
-                      {service.isActive ? 'Active' : 'Inactive'}
-                    </span>
-                  </div>
-                  
-                  <p style={{ color: '#6b7280', margin: '0 0 16px 0', lineHeight: '1.5' }}>
-                    {service.shortDescription}
-                  </p>
-                  
-                  {service.description && (
-                    <p style={{ color: '#374151', margin: '0 0 16px 0', lineHeight: '1.5' }}>
-                      {service.description}
-                    </p>
-                  )}
-                  
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '12px' }}>
-                    <div>
-                      <strong style={{ fontSize: '14px', color: '#374151' }}>Category:</strong>
-                      <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '14px' }}>
-                        {service.category?.name || 'N/A'}
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <strong style={{ fontSize: '14px', color: '#374151' }}>Price:</strong>
-                      <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '14px' }}>
-                        ${service.basePrice} ({service.pricingType})
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <strong style={{ fontSize: '14px', color: '#374151' }}>Duration:</strong>
-                      <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '14px' }}>
-                        {service.durationMinutes} minutes
-                      </p>
-                    </div>
-                    
-                    <div>
-                      <strong style={{ fontSize: '14px', color: '#374151' }}>Type:</strong>
-                      <p style={{ margin: '4px 0 0 0', color: '#6b7280', fontSize: '14px', textTransform: 'capitalize' }}>
-                        {service.serviceType}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  {/* Service Images */}
-                  {service.images && service.images.length > 0 && (
-                    <div style={{ marginTop: '16px' }}>
-                      <strong style={{ fontSize: '14px', color: '#374151', display: 'block', marginBottom: '8px' }}>
-                        Images:
-                      </strong>
-                      <div style={{ 
-                        display: 'grid', 
-                        gridTemplateColumns: 'repeat(auto-fill, minmax(100px, 1fr))', 
-                        gap: '8px',
-                        maxHeight: '200px',
-                        overflowY: 'auto'
-                      }}>
-                        {service.images.map((publicId, index) => (
-                          <CloudinaryImage
-                            key={index}
-                            src={publicId}
-                            alt={`${service.name} image ${index + 1}`}
-                            width={100}
-                            height={100}
-                            style={{ borderRadius: '6px', objectFit: 'cover' }}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
+        {/* Enhanced Services List */}
+        <div className="space-y-12">
+          {services.length > 0 ? (
+            services.map((service) => (
+              <div
+                key={service.id}
+                className="group bg-white/80 backdrop-blur-sm p-8 rounded-2xl shadow-xl border border-white/20 hover:shadow-2xl transform transition-all duration-500 relative overflow-hidden mt-2 hover:-translate-y-1"
+              >
+                {/* Decorative elements */}
+                <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-green-200/20 to-blue-200/20 rounded-full -translate-y-10 translate-x-10 group-hover:scale-150 transition-transform duration-500"></div>
                 
-                <div style={{ display: 'flex', gap: '8px', marginLeft: '16px' }}>
-                  <button
-                    onClick={() => toggleServiceStatus(service.id)}
-                    style={{
-                      backgroundColor: service.isActive ? '#fee2e2' : '#dcfce7',
-                      color: service.isActive ? '#dc2626' : '#16a34a',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '8px 12px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {service.isActive ? 'Deactivate' : 'Activate'}
-                  </button>
-                  
-                  <button
-                    onClick={() => handleEdit(service)}
-                    style={{
-                      backgroundColor: 'transparent',
-                      color: '#6b7280',
-                      border: '1px solid #d1d5db',
-                      borderRadius: '6px',
-                      padding: '8px 12px',
-                      fontSize: '12px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Edit
-                  </button>
-                  
-                  <button
-                    onClick={() => handleDelete(service.id)}
-                    style={{
-                      backgroundColor: '#fee2e2',
-                      color: '#dc2626',
-                      border: 'none',
-                      borderRadius: '6px',
-                      padding: '8px 12px',
-                      fontSize: '12px',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    Delete
-                  </button>
+                <div className="relative z-10">
+                  <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-4 mb-4 flex-wrap">
+                        <h3 className="text-2xl font-bold text-gray-900 break-words">
+                          {service.name}
+                        </h3>
+                        <span className={`inline-flex items-center gap-2 px-4 py-2 text-sm font-bold rounded-full shadow-lg ${
+                          service.isActive 
+                            ? 'bg-gradient-to-r from-green-100 to-green-200 text-green-800' 
+                            : 'bg-gradient-to-r from-red-100 to-red-200 text-red-800'
+                        }`}>
+                          <span className="text-base">{service.isActive ? '✅' : '❌'}</span>
+                          {service.isActive ? 'Active' : 'Inactive'}
+                        </span>
+                      </div>
+                      
+                      <p className="text-gray-600 mb-4 text-base leading-relaxed bg-gray-50 p-4 rounded-xl">
+                        {service.shortDescription}
+                      </p>
+                      
+                      {service.description && (
+                        <p className="text-gray-700 mb-6 text-sm leading-relaxed">
+                          {service.description}
+                        </p>
+                      )}
+                      
+                      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 text-sm">
+                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-lg">📂</span>
+                            <strong className="text-gray-800">Category</strong>
+                          </div>
+                          <p className="text-gray-600 font-medium">{service.category?.name || 'N/A'}</p>
+                        </div>
+                        
+                        <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-4 rounded-xl">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-lg">💰</span>
+                            <strong className="text-gray-800">Price</strong>
+                          </div>
+                          <p className="text-gray-600 font-medium">${service.basePrice}</p>
+                          <p className="text-xs text-gray-500 capitalize">({service.pricingType})</p>
+                        </div>
+                        
+                        <div className="bg-gradient-to-br from-orange-50 to-orange-100 p-4 rounded-xl">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-lg">⏱️</span>
+                            <strong className="text-gray-800">Duration</strong>
+                          </div>
+                          <p className="text-gray-600 font-medium">{service.durationMinutes} min</p>
+                        </div>
+                        
+                        <div className="bg-gradient-to-br from-pink-50 to-pink-100 p-4 rounded-xl">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="text-lg">⚙️</span>
+                            <strong className="text-gray-800">Type</strong>
+                          </div>
+                          <p className="text-gray-600 font-medium capitalize">{service.serviceType}</p>
+                        </div>
+                      </div>
+                      
+                      {/* Enhanced Service Images Display */}
+                      {service.images && service.images.length > 0 && (
+                        <div className="mt-6">
+                          <div className="flex items-center gap-2 mb-4">
+                            <span className="text-lg">🖼️</span>
+                            <strong className="text-gray-800 font-bold">Service Images</strong>
+                          </div>
+                          <div className="flex flex-wrap gap-3">
+                            {service.images.map((publicId, index) => (
+                              <div key={index} className="w-24 h-24 flex-shrink-0 group/image">
+                                <CloudinaryImage
+                                  src={publicId}
+                                  alt={`${service.name} image ${index + 1}`}
+                                  width={96}
+                                  height={96}
+                                  className="rounded-xl object-cover w-full h-full shadow-lg group-hover/image:shadow-xl transform group-hover/image:scale-110 transition-all duration-300"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Compact Action Buttons - Horizontal Layout */}
+                    <div className="flex flex-row gap-2 w-full xl:w-auto xl:ml-6 flex-shrink-0">
+                      <button
+                        onClick={() => toggleServiceStatus(service.id)}
+                        className={`px-3 py-2 text-xs font-bold rounded-lg transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-1 ${
+                          service.isActive 
+                            ? 'bg-gradient-to-r from-red-400 to-red-500 text-white hover:from-red-500 hover:to-red-600' 
+                            : 'bg-gradient-to-r from-orange-400 to-pink-500 text-white hover:from-orange-500 hover:to-pink-600'
+                        }`}
+                      >
+                        <span className="text-sm">{service.isActive ? '🔴' : '🟢'}</span>
+                        <span className="hidden sm:inline">{service.isActive ? 'Deactivate' : 'Activate'}</span>
+                        <span className="sm:hidden">{service.isActive ? 'Off' : 'On'}</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleEdit(service)}
+                        className="px-3 py-2 text-xs font-bold rounded-lg text-gray-700 border-2 border-gray-300 hover:border-orange-400 hover:text-orange-600 hover:bg-orange-50 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-1"
+                      >
+                        <span className="text-sm">✏️</span>
+                        <span className="hidden sm:inline">Edit</span>
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDelete(service.id)}
+                        className="px-3 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-1"
+                      >
+                        <span className="text-sm">🗑️</span>
+                        <span className="hidden sm:inline">Delete</span>
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
+            ))
+          ) : !showCreateForm && (
+            /* Enhanced Empty State */
+            <div className="text-center p-16 bg-gradient-to-br from-white/80 to-orange-50/50 backdrop-blur-sm rounded-2xl shadow-2xl border border-white/20 relative overflow-hidden">
+              {/* Decorative background */}
+              <div className="absolute top-0 left-1/2 transform -translate-x-1/2 w-40 h-40 bg-gradient-to-br from-orange-200/30 to-pink-200/30 rounded-full -translate-y-20"></div>
+              
+              <div className="relative z-10">
+                <div className="text-8xl mb-6 animate-bounce">🛠️</div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  No Services Found
+                </h3>
+                <p className="text-gray-600 mb-8 text-lg max-w-md mx-auto">
+                  Create your first service to start accepting bookings and grow your business.
+                </p>
+                <button
+                  onClick={() => {
+                    setShowCreateForm(true);
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                  }}
+                  className="bg-gradient-to-r from-orange-500 to-pink-600 text-white font-bold py-4 px-8 rounded-xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition-all duration-300 flex items-center gap-3 mx-auto"
+                >
+                  <span className="text-xl">✨</span>
+                  Create Your First Service
+                </button>
+              </div>
             </div>
-          ))}
-        </div>
-      ) : !showCreateForm && (
-        <div style={{
-          textAlign: 'center',
-          padding: '60px 20px',
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)'
-        }}>
-          <div style={{ fontSize: '48px', marginBottom: '16px' }}>🛠️</div>
-          <h3 style={{ fontSize: '18px', fontWeight: '600', marginBottom: '8px' }}>
-            No Services Found
-          </h3>
-          <p style={{ color: '#6b7280', marginBottom: '24px' }}>
-            Create your first service to start accepting bookings
-          </p>
-          <button
-            onClick={() => setShowCreateForm(true)}
-            style={{
-              backgroundColor: '#22c55e',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '12px 24px',
-              fontSize: '14px',
-              fontWeight: '600',
-              cursor: 'pointer'
-            }}
-          >
-            Create Your First Service
-          </button>
-        </div>
-      )}
+          )}
+      </div>
+      </div>
     </div>
   );
 }

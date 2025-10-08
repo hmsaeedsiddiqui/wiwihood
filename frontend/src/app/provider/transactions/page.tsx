@@ -26,6 +26,7 @@ export default function TransactionsPage() {
   const [dateFilter, setDateFilter] = useState('all-time');
   const [searchTerm, setSearchTerm] = useState('');
 
+  // --- Data Fetching Logic (Kept as is) ---
   useEffect(() => {
     fetchTransactionData();
   }, []);
@@ -65,8 +66,8 @@ export default function TransactionsPage() {
         const bookings = bookingsData.bookings || [];
 
         bookings.forEach((booking: any) => {
-          const amount = booking.totalPrice || 0; // Fixed: use totalPrice from booking entity
-          const fee = Math.round(amount * 0.1); // Assume 10% platform fee
+          const amount = booking.totalPrice || 0;
+          const fee = Math.round(amount * 0.1);
           const netAmount = amount - fee;
           const date = booking.scheduledAt || booking.createdAt || new Date().toISOString();
 
@@ -126,7 +127,7 @@ export default function TransactionsPage() {
 
         payoutsList.forEach((payout: any) => {
           const amount = payout.amount || 0;
-          const fee = payout.fee || Math.round(amount * 0.02); // Assume 2% withdrawal fee
+          const fee = payout.fee || Math.round(amount * 0.02);
           const netAmount = amount - fee;
 
           allTransactions.push({
@@ -162,7 +163,6 @@ export default function TransactionsPage() {
       setError(null);
     } catch (error: any) {
       console.error('Error fetching transaction data:', error);
-      // For demo purposes, show empty state instead of error
       setTransactions([]);
       setError(null);
     } finally {
@@ -170,13 +170,14 @@ export default function TransactionsPage() {
     }
   };
 
+  // --- Filtering Logic (Kept as is) ---
   const filteredTransactions = transactions.filter(transaction => {
     const matchesTab = activeTab === 'all' || transaction.type === activeTab;
     const matchesSearch = transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         (transaction.client && transaction.client.toLowerCase().includes(searchTerm.toLowerCase())) ||
-                         transaction.id.toLowerCase().includes(searchTerm.toLowerCase());
+                          (transaction.client && transaction.client.toLowerCase().includes(searchTerm.toLowerCase())) ||
+                          transaction.id.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Date filter logic
+    // Date filter logic (Kept as is)
     let matchesDate = true;
     if (dateFilter !== 'all-time') {
       const transactionDate = new Date(transaction.date);
@@ -192,7 +193,7 @@ export default function TransactionsPage() {
           break;
         case 'this-month':
           matchesDate = transactionDate.getMonth() === now.getMonth() && 
-                       transactionDate.getFullYear() === now.getFullYear();
+                        transactionDate.getFullYear() === now.getFullYear();
           break;
         case 'this-year':
           matchesDate = transactionDate.getFullYear() === now.getFullYear();
@@ -203,6 +204,7 @@ export default function TransactionsPage() {
     return matchesTab && matchesSearch && matchesDate;
   });
 
+  // --- Utility Functions (Kept as is) ---
   const getTransactionIcon = (type: string) => {
     switch(type) {
       case 'earning': return '💰';
@@ -216,11 +218,11 @@ export default function TransactionsPage() {
 
   const getStatusColor = (status: string) => {
     switch(status) {
-      case 'completed': return { bg: '#dcfce7', text: '#16a34a' };
-      case 'processing': return { bg: '#fef3c7', text: '#d97706' };
-      case 'pending': return { bg: '#dbeafe', text: '#2563eb' };
-      case 'failed': return { bg: '#fee2e2', text: '#dc2626' };
-      default: return { bg: '#f1f5f9', text: '#64748b' };
+      case 'completed': return { bg: 'bg-green-100', text: 'text-green-600' }; // #dcfce7, #16a34a
+      case 'processing': return { bg: 'bg-amber-100', text: 'text-amber-600' }; // #fef3c7, #d97706
+      case 'pending': return { bg: 'bg-blue-100', text: 'text-blue-600' }; // #dbeafe, #2563eb
+      case 'failed': return { bg: 'bg-red-100', text: 'text-red-600' }; // #fee2e2, #dc2626
+      default: return { bg: 'bg-slate-100', text: 'text-slate-600' }; // #f1f5f9, #64748b
     }
   };
 
@@ -228,17 +230,17 @@ export default function TransactionsPage() {
     switch(type) {
       case 'earning':
       case 'bonus':
-        return '#16a34a';
+        return 'text-green-600'; // #16a34a
       case 'withdrawal':
       case 'refund':
       case 'penalty':
-        return '#dc2626';
+        return 'text-red-600'; // #dc2626
       default:
-        return '#64748b';
+        return 'text-slate-600'; // #64748b
     }
   };
 
-  // Calculate stats
+  // --- Stats Calculation (Kept as is) ---
   const stats = {
     totalEarnings: transactions
       .filter(t => t.type === 'earning')
@@ -247,7 +249,7 @@ export default function TransactionsPage() {
       .filter(t => t.type === 'withdrawal')
       .reduce((sum, t) => sum + t.amount, 0),
     totalFees: transactions
-      .reduce((sum, t) => sum + t.fee, 0),
+      .reduce((sum, t) => t.type !== 'refund' ? sum + t.fee : sum, 0),
     netTotal: transactions
       .reduce((sum, t) => {
         if (t.type === 'earning' || t.type === 'bonus') return sum + t.netAmount;
@@ -256,65 +258,33 @@ export default function TransactionsPage() {
       }, 0)
   };
 
+  // --- Loading Screen ---
   if (loading) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#f8fafc',
-        padding: '20px'
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{ 
-            display: 'flex', 
-            alignItems: 'center', 
-            justifyContent: 'center', 
-            height: '400px' 
-          }}>
-            <div style={{
-              width: '48px',
-              height: '48px',
-              border: '4px solid #e2e8f0',
-              borderTop: '4px solid #3b82f6',
-              borderRadius: '50%',
-              animation: 'spin 1s linear infinite'
-            }}></div>
-            <span style={{ marginLeft: '16px', color: '#64748b' }}>Loading transactions...</span>
+      <div className="min-h-screen bg-slate-50 ">
+        <div className="">
+          <div className="flex items-center justify-center h-96">
+            <div className="animate-spin w-12 h-12 border-4 border-slate-200 border-t-blue-500 rounded-full"></div>
+            <span className="ml-4 text-slate-500">Loading transactions...</span>
           </div>
         </div>
       </div>
     );
   }
 
+  // --- Error Screen ---
   if (error) {
     return (
-      <div style={{ 
-        minHeight: '100vh', 
-        backgroundColor: '#f8fafc',
-        padding: '20px'
-      }}>
-        <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
-          <div style={{
-            backgroundColor: '#fef2f2',
-            border: '1px solid #fecaca',
-            borderRadius: '8px',
-            padding: '16px',
-            marginTop: '20px'
-          }}>
-            <h3 style={{ color: '#991b1b', fontSize: '16px', fontWeight: '600' }}>
+      <div className="min-h-screen bg-slate-50 ">
+        <div className="">
+          <div className="bg-red-50 border border-red-300 rounded-lg p-4 mt-5">
+            <h3 className="text-red-800 text-base font-semibold">
               Error loading transactions
             </h3>
-            <p style={{ color: '#dc2626', marginTop: '8px' }}>{error}</p>
+            <p className="text-red-600 mt-2">{error}</p>
             <button
               onClick={fetchTransactionData}
-              style={{
-                backgroundColor: '#dc2626',
-                color: 'white',
-                padding: '8px 16px',
-                borderRadius: '6px',
-                border: 'none',
-                marginTop: '12px',
-                cursor: 'pointer'
-              }}
+              className="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded-md border-none mt-3 cursor-pointer text-sm transition-colors"
             >
               Retry
             </button>
@@ -324,130 +294,61 @@ export default function TransactionsPage() {
     );
   }
 
+  // --- Main Content with Tailwind CSS Classes ---
   return (
-    <div style={{ 
-      minHeight: '100vh', 
-      backgroundColor: '#f8fafc',
-      padding: '20px'
-    }}>
-      <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+    <div className="min-h-screen bg-slate-50 ">
+      <div className="">
         {/* Header */}
-        <div style={{ marginBottom: '30px' }}>
-          <h1 style={{ 
-            fontSize: '28px', 
-            fontWeight: '700', 
-            color: '#1e293b',
-            marginBottom: '8px'
-          }}>
+        <div className="mb-6 lg:mb-8">
+          <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-800 mb-1">
             Transactions
           </h1>
-          <p style={{ 
-            color: '#64748b', 
-            fontSize: '16px'
-          }}>
+          <p className="text-sm sm:text-base text-slate-500">
             View and manage all your financial transactions
           </p>
         </div>
 
         {/* Stats Cards */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
-          gap: '20px',
-          marginBottom: '30px'
-        }}>
-          <div style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <div style={{ 
-              fontSize: '32px', 
-              fontWeight: '700', 
-              color: '#16a34a',
-              marginBottom: '8px'
-            }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-5 mb-6 lg:mb-8">
+          {/* Total Earnings */}
+          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div className="text-3xl font-bold text-green-600 mb-2">
               ${(Number(stats.totalEarnings) || 0).toFixed(2)}
             </div>
-            <div style={{ color: '#64748b', fontSize: '14px' }}>Total Earnings</div>
+            <div className="text-sm text-slate-500">Total Earnings</div>
           </div>
 
-          <div style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <div style={{ 
-              fontSize: '32px', 
-              fontWeight: '700', 
-              color: '#2563eb',
-              marginBottom: '8px'
-            }}>
+          {/* Total Withdrawals */}
+          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div className="text-3xl font-bold text-blue-600 mb-2">
               ${(Number(stats.totalWithdrawals) || 0).toFixed(2)}
             </div>
-            <div style={{ color: '#64748b', fontSize: '14px' }}>Total Withdrawals</div>
+            <div className="text-sm text-slate-500">Total Withdrawals</div>
           </div>
 
-          <div style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <div style={{ 
-              fontSize: '32px', 
-              fontWeight: '700', 
-              color: '#d97706',
-              marginBottom: '8px'
-            }}>
+          {/* Total Fees */}
+          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div className="text-3xl font-bold text-amber-600 mb-2">
               ${(Number(stats.totalFees) || 0).toFixed(2)}
             </div>
-            <div style={{ color: '#64748b', fontSize: '14px' }}>Total Fees</div>
+            <div className="text-sm text-slate-500">Total Fees</div>
           </div>
 
-          <div style={{
-            backgroundColor: 'white',
-            padding: '24px',
-            borderRadius: '12px',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-            border: '1px solid #e2e8f0'
-          }}>
-            <div style={{ 
-              fontSize: '32px', 
-              fontWeight: '700', 
-              color: '#16a34a',
-              marginBottom: '8px'
-            }}>
+          {/* Net Total */}
+          <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200">
+            <div className="text-3xl font-bold text-green-600 mb-2">
               ${(Number(stats.netTotal) || 0).toFixed(2)}
             </div>
-            <div style={{ color: '#64748b', fontSize: '14px' }}>Net Total</div>
+            <div className="text-sm text-slate-500">Net Total</div>
           </div>
         </div>
 
         {/* Filters and Search */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0',
-          marginBottom: '24px'
-        }}>
-          <div style={{ padding: '24px' }}>
-            <div style={{ 
-              display: 'flex', 
-              justifyContent: 'space-between', 
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: '16px',
-              marginBottom: '20px'
-            }}>
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 mb-6">
+          <div className="p-4 sm:p-6">
+            <div className="flex flex-col md:flex-row md:justify-between md:items-center flex-wrap gap-4 mb-4">
               {/* Transaction Type Tabs */}
-              <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+              <div className="flex flex-wrap gap-2">
                 {[
                   { key: 'all', label: 'All' },
                   { key: 'earning', label: 'Earnings' },
@@ -458,17 +359,11 @@ export default function TransactionsPage() {
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    style={{
-                      padding: '8px 16px',
-                      borderRadius: '8px',
-                      border: 'none',
-                      fontSize: '14px',
-                      fontWeight: '500',
-                      cursor: 'pointer',
-                      backgroundColor: activeTab === tab.key ? '#3b82f6' : '#f1f5f9',
-                      color: activeTab === tab.key ? 'white' : '#64748b',
-                      transition: 'all 0.2s'
-                    }}
+                    className={`py-2 px-4 rounded-lg text-sm cursor-pointer font-medium transition-all duration-200 flex-shrink-0 
+                      ${activeTab === tab.key 
+                        ? 'bg-blue-600 text-white shadow-md' 
+                        : 'bg-slate-100 text-slate-500 hover:bg-blue-50 hover:text-blue-600'
+                      }`}
                   >
                     {tab.label}
                   </button>
@@ -479,14 +374,7 @@ export default function TransactionsPage() {
               <select
                 value={dateFilter}
                 onChange={(e) => setDateFilter(e.target.value)}
-                style={{
-                  padding: '8px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  backgroundColor: 'white',
-                  cursor: 'pointer'
-                }}
+                className="py-2 px-3 border border-slate-300 rounded-lg text-sm bg-white cursor-pointer min-w-[120px] focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all-time">All Time</option>
                 <option value="today">Today</option>
@@ -497,69 +385,32 @@ export default function TransactionsPage() {
             </div>
 
             {/* Search */}
-            <div style={{ position: 'relative' }}>
+            <div className="relative">
               <input
                 type="text"
                 placeholder="Search transactions..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                style={{
-                  padding: '10px 40px 10px 12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '8px',
-                  fontSize: '14px',
-                  width: '100%',
-                  outline: 'none'
-                }}
+                className="w-full py-2 pl-3 pr-10 border border-slate-300 rounded-lg text-sm focus:ring-blue-500 focus:border-blue-500"
               />
-              <div style={{
-                position: 'absolute',
-                right: '12px',
-                top: '50%',
-                transform: 'translateY(-50%)',
-                color: '#9ca3af'
-              }}>
+              <div className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400">
                 🔍
               </div>
             </div>
           </div>
         </div>
 
-        {/* Transactions Table */}
-        <div style={{
-          backgroundColor: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1)',
-          border: '1px solid #e2e8f0',
-          overflow: 'hidden'
-        }}>
+        {/* Transactions Table/List */}
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-x-auto">
           {filteredTransactions.length === 0 ? (
-            <div style={{ 
-              textAlign: 'center', 
-              padding: '60px 20px' 
-            }}>
-              <div style={{
-                width: '96px',
-                height: '96px',
-                backgroundColor: '#f1f5f9',
-                borderRadius: '50%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 16px',
-                fontSize: '40px'
-              }}>
+            <div className="text-center py-16 px-5">
+              <div className="w-24 h-24 bg-slate-100 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl">
                 💳
               </div>
-              <h3 style={{ 
-                fontSize: '18px', 
-                fontWeight: '600', 
-                color: '#1e293b',
-                marginBottom: '8px'
-              }}>
+              <h3 className="text-lg font-semibold text-slate-800 mb-2">
                 No transactions found
               </h3>
-              <p style={{ color: '#64748b' }}>
+              <p className="text-slate-500">
                 {searchTerm 
                   ? `No transactions match "${searchTerm}"` 
                   : activeTab === 'all'
@@ -569,19 +420,9 @@ export default function TransactionsPage() {
               </p>
             </div>
           ) : (
-            <>
-              {/* Table Header */}
-              <div style={{
-                display: 'grid',
-                gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 1fr',
-                gap: '16px',
-                padding: '16px 24px',
-                backgroundColor: '#f8fafc',
-                borderBottom: '1px solid #e2e8f0',
-                fontSize: '14px',
-                fontWeight: '600',
-                color: '#374151'
-              }}>
+            <div>
+              {/* Table Header (Desktop/Tablet) */}
+              <div className="hidden lg:grid lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr] gap-4 p-4 lg:px-6 bg-slate-50 border-b border-slate-200 text-sm font-semibold text-slate-700">
                 <div>TRANSACTION</div>
                 <div>AMOUNT</div>
                 <div>FEE</div>
@@ -592,7 +433,7 @@ export default function TransactionsPage() {
               </div>
 
               {/* Table Body */}
-              <div>
+              <div className="divide-y divide-slate-100">
                 {filteredTransactions.map((transaction, index) => {
                   const statusColor = getStatusColor(transaction.status);
                   const amountColor = getAmountColor(transaction.type);
@@ -600,113 +441,76 @@ export default function TransactionsPage() {
                   return (
                     <div 
                       key={transaction.id}
-                      style={{
-                        display: 'grid',
-                        gridTemplateColumns: '2fr 1fr 1fr 1fr 1fr 1fr 1fr',
-                        gap: '16px',
-                        padding: '20px 24px',
-                        borderBottom: index < filteredTransactions.length - 1 ? '1px solid #f1f5f9' : 'none',
-                        alignItems: 'center',
-                        transition: 'background-color 0.2s'
-                      }}
-                      onMouseEnter={(e) => {
-                        e.currentTarget.style.backgroundColor = '#f9fafb';
-                      }}
-                      onMouseLeave={(e) => {
-                        e.currentTarget.style.backgroundColor = 'transparent';
-                      }}
+                      className="p-4 lg:px-6 lg:grid lg:grid-cols-[2fr_1fr_1fr_1fr_1fr_1fr_1fr] lg:gap-4 items-center transition-colors hover:bg-slate-50"
                     >
-                      {/* Transaction Info */}
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{
-                          width: '40px',
-                          height: '40px',
-                          borderRadius: '8px',
-                          backgroundColor: '#f1f5f9',
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontSize: '18px'
-                        }}>
+                      {/* 1. Transaction Info (Mobile: Full Row / Desktop: 1st Column) */}
+                      <div className="flex items-start gap-3 mb-3 lg:mb-0">
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center text-lg flex-shrink-0">
                           {getTransactionIcon(transaction.type)}
                         </div>
-                        <div>
-                          <div style={{ 
-                            fontSize: '14px', 
-                            fontWeight: '600', 
-                            color: '#1e293b',
-                            marginBottom: '2px'
-                          }}>
+                        <div className="flex-grow">
+                          <div className="text-sm font-semibold text-slate-800 mb-0.5">
                             {transaction.description}
                           </div>
-                          <div style={{ 
-                            fontSize: '12px', 
-                            color: '#64748b'
-                          }}>
+                          <div className="text-xs text-slate-500">
                             {transaction.id}
                             {transaction.client && ` • ${transaction.client}`}
                           </div>
+                          {/* Status and Date on Mobile */}
+                          <div className="flex items-center mt-2 lg:hidden">
+                              <span className={`py-1 px-2.5 rounded-full text-xs font-medium ${statusColor.bg} ${statusColor.text}`}>
+                                {transaction.status}
+                              </span>
+                              <div className="text-xs text-slate-500 ml-3">
+                                {transaction.date} {transaction.time}
+                              </div>
+                          </div>
                         </div>
                       </div>
 
-                      {/* Amount */}
-                      <div style={{ 
-                        fontSize: '14px', 
-                        fontWeight: '600', 
-                        color: amountColor
-                      }}>
-                        {(transaction.type === 'withdrawal' || transaction.type === 'refund' || transaction.type === 'penalty') 
-                          ? '-' : '+'}${(Number(transaction.amount) || 0).toFixed(2)}
+                      {/* 2. Amount */}
+                      <div className="flex justify-between items-center text-sm lg:block lg:text-left py-1 lg:py-0">
+                          <span className="text-xs text-slate-400 font-medium mr-2 lg:hidden">Amount:</span>
+                          <span className={`text-sm font-semibold ${amountColor}`}>
+                            {(transaction.type === 'withdrawal' || transaction.type === 'refund' || transaction.type === 'penalty') 
+                              ? '-' : '+'}${(Number(transaction.amount) || 0).toFixed(2)}
+                          </span>
                       </div>
 
-                      {/* Fee */}
-                      <div style={{ 
-                        fontSize: '14px', 
-                        color: '#64748b'
-                      }}>
-                        ${(Number(transaction.fee) || 0).toFixed(2)}
+                      {/* 3. Fee */}
+                      <div className="flex justify-between items-center text-sm lg:block lg:text-left py-1 lg:py-0">
+                        <span className="text-xs text-slate-400 font-medium mr-2 lg:hidden">Fee:</span>
+                        <span className="text-sm text-slate-500">
+                          ${(Number(transaction.fee) || 0).toFixed(2)}
+                        </span>
                       </div>
 
-                      {/* Net Amount */}
-                      <div style={{ 
-                        fontSize: '14px', 
-                        fontWeight: '600', 
-                        color: (Number(transaction.netAmount) || 0) >= 0 ? '#16a34a' : '#dc2626'
-                      }}>
-                        {(Number(transaction.netAmount) || 0) >= 0 ? '+' : ''}${(Number(transaction.netAmount) || 0).toFixed(2)}
+                      {/* 4. Net Amount */}
+                      <div className="flex justify-between items-center text-sm lg:block lg:text-left py-1 lg:py-0">
+                        <span className="text-xs text-slate-400 font-medium mr-2 lg:hidden">Net:</span>
+                        <span className={`text-sm font-semibold ${
+                          (Number(transaction.netAmount) || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {(Number(transaction.netAmount) || 0) >= 0 ? '+' : ''}${(Number(transaction.netAmount) || 0).toFixed(2)}
+                        </span>
                       </div>
 
-                      {/* Date & Time */}
-                      <div style={{ fontSize: '14px', color: '#64748b' }}>
+                      {/* 5. Date & Time (Desktop Only) */}
+                      <div className="hidden lg:block text-sm text-slate-500">
                         <div>{transaction.date}</div>
-                        <div style={{ fontSize: '12px' }}>{transaction.time}</div>
+                        <div className="text-xs">{transaction.time}</div>
                       </div>
 
-                      {/* Status */}
-                      <div>
-                        <span style={{
-                          padding: '4px 8px',
-                          borderRadius: '12px',
-                          fontSize: '12px',
-                          fontWeight: '500',
-                          backgroundColor: statusColor.bg,
-                          color: statusColor.text
-                        }}>
+                      {/* 6. Status (Desktop Only) */}
+                      <div className="hidden lg:block">
+                        <span className={`py-1 px-2.5 rounded-full text-xs font-medium ${statusColor.bg} ${statusColor.text}`}>
                           {transaction.status}
                         </span>
                       </div>
 
-                      {/* Actions */}
-                      <div>
-                        <button style={{
-                          backgroundColor: 'transparent',
-                          color: '#64748b',
-                          padding: '4px 8px',
-                          borderRadius: '6px',
-                          border: '1px solid #d1d5db',
-                          fontSize: '12px',
-                          cursor: 'pointer'
-                        }}>
+                      {/* 7. Actions (Mobile: Below other details / Desktop: Last Column) */}
+                      <div className="w-full lg:w-auto mt-3 lg:mt-0 flex lg:justify-start">
+                        <button className="bg-white text-slate-500 hover:bg-slate-100 py-1.5 px-3 rounded-md border border-slate-300 text-xs cursor-pointer transition-colors">
                           View
                         </button>
                       </div>
@@ -714,56 +518,22 @@ export default function TransactionsPage() {
                   );
                 })}
               </div>
-            </>
+            </div>
           )}
         </div>
 
         {/* Export Options */}
         {filteredTransactions.length > 0 && (
-          <div style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '12px',
-            marginTop: '16px'
-          }}>
-            <button style={{
-              backgroundColor: 'white',
-              color: '#64748b',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              border: '1px solid #d1d5db',
-              fontSize: '14px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
+          <div className="flex flex-wrap justify-end gap-3 mt-4">
+            <button className="bg-white text-slate-500 hover:bg-slate-100 py-2 px-4 rounded-md border border-slate-300 text-sm cursor-pointer transition-colors flex items-center gap-2">
               📄 Export PDF
             </button>
-            <button style={{
-              backgroundColor: 'white',
-              color: '#64748b',
-              padding: '8px 16px',
-              borderRadius: '6px',
-              border: '1px solid #d1d5db',
-              fontSize: '14px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '8px'
-            }}>
+            <button className="bg-white text-slate-500 hover:bg-slate-100 py-2 px-4 rounded-md border border-slate-300 text-sm cursor-pointer transition-colors flex items-center gap-2">
               📊 Export CSV
             </button>
           </div>
         )}
       </div>
-
-      <style jsx>{`
-        @keyframes spin {
-          0% { transform: rotate(0deg); }
-          100% { transform: rotate(360deg); }
-        }
-      `}</style>
     </div>
   );
 }

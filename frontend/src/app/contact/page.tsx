@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Footer from "@/components/Footer";
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', message: '' });
@@ -42,7 +43,7 @@ export default function ContactPage() {
   };
 
   return (
-    <div className="bg-slate-50 min-h-screen py-16">
+    <div className="bg-slate-50 min-h-screen pt-16">
       <div className="max-w-2xl mx-auto px-6">
         <h1 className="text-4xl font-extrabold text-center mb-10 tracking-tight text-gray-900">Contact Us</h1>
         {submitted ? (
@@ -121,6 +122,8 @@ export default function ContactPage() {
           </form>
         )}
       </div>
+      < Footer />
     </div>
+    
   );
 }

@@ -29,7 +29,10 @@ import {
 
 // Swiper imports
 import { Swiper, SwiperSlide } from 'swiper/react';
-import { Navigation, } from 'swiper/modules';
+
+import { Navigation, Pagination } from 'swiper/modules';
+
+
 
 // Swiper CSS imports
 import 'swiper/css';
@@ -267,7 +270,7 @@ const HomePage = () => {
             
             {/* RIGHT: VIDEO/IMAGE CARD */}
             <div className="flex justify-center lg:justify-center items-start pt-12">
-              <div className="w-100 h-[450px]  bg-white rounded-3xl shadow-2xl overflow-hidden relative border-8 border-white transform hover:scale-105 transition-transform duration-300">
+              <div className="w-100 h-[450px]  bg-white rounded-3xl shadow-2xl overflow-hidden relative border-8 border-white transform hover:scale-105 transition-transform duration-300 block sm:hidden lg:block">
                 <img
                   src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=facearea&w=640&h=800&q=80"
                   alt="Provider Video"
@@ -374,7 +377,7 @@ const HomePage = () => {
 
       {/* Become a Provider Section - 100% Design Match */}
   <section className="py-[90px] bg-white">
-  <div className="max-w-[1400px] mx-auto px-6">
+  <div className="max-w-[1400px] mx-auto w-[95%]">
     <div className="flex flex-col lg:flex-row items-stretch rounded-[24px] shadow-[0_20px_50px_rgba(0,0,0,0.10)] bg-[#e7f7ef] min-h-[440px] h-auto lg:h-[500px] relative overflow-visible">
       
       {/* Left Side - Images Container */}
@@ -569,64 +572,19 @@ const HomePage = () => {
       </section>
 
       {/* Exclusive Prices Section - 100% Design Match */}
-      <section style={{
-        width: '100%',
-        background: '#f8fafc',
-        padding: '80px 0 60px 0',
-        margin: 0,
-        boxSizing: 'border-box',
-      }}>
-        <div style={{
-          maxWidth: '1280px',
-          margin: '0 auto',
-          padding: '0 20px',
-        }}>
-          <h2 style={{
-            color: '#1f2937',
-            fontFamily: 'Manrope, sans-serif',
-            fontWeight: 800,
-            fontSize: '38px',
-            textAlign: 'center',
-            marginBottom: '10px',
-            letterSpacing: '-1px',
-          }}>
+      <section className="w-full bg-slate-50 py-20 pb-15 m-0 box-border">
+        <div className="w-[95%] max-w-[1400px] mx-auto ">
+          <h2 className="text-gray-800 font-[Manrope] font-extrabold text-[38px] text-center mb-2 tracking-tight">
             Exclusive Prices
           </h2>
-          <p style={{
-            color: '#6b7280',
-            fontFamily: 'Manrope, sans-serif',
-            fontWeight: 400,
-            fontSize: '16px',
-            textAlign: 'center',
-            marginBottom: '38px',
-            letterSpacing: '0.1px',
-            lineHeight: 1.5,
-            maxWidth: '600px',
-            marginLeft: 'auto',
-            marginRight: 'auto',
-          }}>
+            <p className="text-gray-500 font-[Manrope,sans-serif] font-normal text-base text-center mb-9 leading-relaxed max-w-[600px] mx-auto tracking-[0.1px]">
             Browse popular services and enjoy exclusive discounts. Don’t miss out on these limited-time offers!
-          </p>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, 1fr)',
-            gap: '28px',
-            marginBottom: '38px',
-          }}>
+            </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-7 mb-10">
             {serviceCards.map((card) => (
               <div
                 key={card.id}
-                style={{
-                  background: '#fff',
-                  borderRadius: '16px',
-                  boxShadow: '0 8px 32px rgba(0,0,0,0.10)',
-                  overflow: 'hidden',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  minHeight: '410px',
-                  position: 'relative',
-                  cursor: 'pointer',
-                }}
+                className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col min-h-[410px] relative cursor-pointer"
                 onClick={() => {
                   if (typeof window !== 'undefined') {
                     // Navigate to the correct service detail page with the service ID
@@ -634,44 +592,59 @@ const HomePage = () => {
                   }
                 }}
               >
-                <div style={{ position: 'relative', width: '100%', height: '180px', overflow: 'hidden' }}>
-                  <img src={card.imageUrl} alt={card.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                  <span style={{ position: 'absolute', top: '14px', left: '14px', background: '#f97316', color: '#fff', fontWeight: 700, fontSize: '15px', borderRadius: '8px', padding: '4px 14px', letterSpacing: '0.5px' }}>{card.discount ? `${card.discount}% OFF` : ''}</span>
-                  <button style={{ position: 'absolute', top: '14px', right: '14px', background: 'rgba(255,255,255,0.85)', border: 'none', borderRadius: '50%', width: '32px', height: '32px', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}><i className="fa-regular fa-heart" style={{ color: '#10b981', fontSize: '16px' }}></i></button>
-                  {/* Slider dots */}
-                  <div style={{ position: 'absolute', left: '50%', bottom: '10px', transform: 'translateX(-50%)', display: 'flex', gap: '6px' }}>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#fbbf24', display: 'inline-block', border: '2px solid #fff' }}></span>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e5e7eb', display: 'inline-block', border: '2px solid #fff' }}></span>
-                    <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: '#e5e7eb', display: 'inline-block', border: '2px solid #fff' }}></span>
-                  </div>
+                <div className="relative w-full h-45 overflow-hidden">
+                  <Swiper
+                    modules={[Pagination]}
+                    spaceBetween={0}
+                    slidesPerView={1}
+                    pagination={{
+                      clickable: true,
+                      dynamicBullets: false,
+                    }}
+                    loop={true}
+                    className="card-image-swiper h-full"
+                  >
+                    {/* Multiple images for demo - you can replace with actual service images */}
+                    <SwiperSlide>
+                      <img src={card.imageUrl} alt={`${card.name} - Image 1`} className="w-full h-full object-cover" />
+                    </SwiperSlide>
+                    <SwiperSlide>
+                      <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=640&h=480&q=80" alt={`${card.name} - Image 2`} className="w-full h-full object-cover" />
+                    </SwiperSlide>
+                    <SwiperSlide>
+                      <img src="https://images.unsplash.com/photo-1517841905240-472988babdf9?auto=format&fit=crop&w=640&h=480&q=80" alt={`${card.name} - Image 3`} className="w-full h-full object-cover" />
+                    </SwiperSlide>
+                  </Swiper>
+                  
+                  {/* Overlay content */}
+                  <span className="absolute top-3.5 left-3.5 bg-orange-500 text-white font-bold text-sm rounded-lg px-3.5 py-1 tracking-wide z-10"> {card.discount ? `${card.discount}% OFF` : ''}</span>
+                  <button className="absolute top-3.5 right-3.5 bg-white/85 border-none rounded-full w-8 h-8 flex items-center justify-center cursor-pointer shadow-sm z-10"><i className="fa-regular fa-heart text-emerald-600 text-base"></i></button>
                 </div>
-                <div style={{ padding: '22px 22px 18px 22px', background: '#f3fdf6', flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '10px' }}>
-                    <span style={{ color: '#6b7280', fontWeight: 500, fontSize: '15px', marginRight: '8px', display: 'flex', alignItems: 'center' }}>
-                      <i className="fa-regular fa-user" style={{ marginRight: '6px', fontSize: '16px' }}></i> {card.providerName}
+                <div className="px-5 pt-5 pb-4 bg-green-50 flex-1 flex flex-col justify-between">
+                  <div className="flex items-center mb-2.5">
+                    <span className="text-gray-500 font-medium text-sm mr-2 flex items-center">
+                      <i className="fa-regular fa-user mr-1.5 text-base"></i> {card.providerName}
                     </span>
                     {card.isTopRated && (
-                      <span style={{ marginLeft: 'auto', background: '#e0f7ec', color: '#10b981', fontWeight: 700, fontSize: '13px', borderRadius: '6px', padding: '3px 14px' }}>Top Rated</span>
+                      <span className="ml-auto bg-emerald-50 text-emerald-600 font-bold text-xs rounded-md px-3.5 py-0.5">Top Rated</span>
                     )}
                   </div>
-                  <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: '19px', color: '#1f2937', marginBottom: '2px' }}>{card.name}</div>
-                  <div style={{ display: 'flex', alignItems: 'center', marginBottom: '8px' }}>
-                    <i className="fa-solid fa-star" style={{ color: '#fbbf24', fontSize: '15px', marginRight: '3px' }}></i>
-                    <span style={{ color: '#1f2937', fontWeight: 700, fontSize: '15px', marginRight: '4px' }}>{card.rating}</span>
-                    <span style={{ color: '#6b7280', fontSize: '14px' }}>({card.reviews})</span>
+                  <div className="font-[Manrope] font-bold text-lg text-gray-800 mb-0.5">{card.name}</div>
+                  <div className="flex items-center mb-2">
+                    <i className="fa-solid fa-star text-amber-400 text-sm mr-0.5"></i>
+                    <span className="text-gray-800 font-bold text-sm mr-1">{card.rating}</span>
+                    <span className="text-gray-500 text-sm">({card.reviews})</span>
                   </div>
-                  <div style={{
-                    color: '#6b7280',
-                    fontSize: '15px',
-                    fontFamily: 'Manrope, sans-serif',
-                    marginBottom: '12px',
-                    maxHeight: '54px', // about 3 lines
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    display: '-webkit-box',
-                    WebkitLineClamp: 3,
-                    WebkitBoxOrient: 'vertical',
-                  }}>{card.description}</div>
+                    <div
+                    className="text-gray-500 text-[15px] font-[Manrope,sans-serif] mb-3  overflow-hidden text-ellipsis"
+                    style={{
+                      display: '-webkit-box',
+                      WebkitLineClamp: 3,
+                      WebkitBoxOrient: 'vertical',
+                    }}
+                    >
+                    {card.description}
+                    </div>
                   <div style={{ display: 'flex', alignItems: 'flex-end', marginBottom: '0', marginTop: '10px' }}>
                     <span style={{ color: '#ef4444', fontWeight: 800, fontSize: '24px', marginRight: '8px' }}>${card.price}</span>
                     <span style={{ color: '#9ca3af', fontWeight: 600, fontSize: '17px', textDecoration: 'line-through', marginTop: '2px' }}>${card.oldPrice}</span>

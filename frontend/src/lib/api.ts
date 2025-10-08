@@ -1,33 +1,40 @@
 ﻿export interface Provider {
   id: string;
   businessName: string;
-  businessDescription: string;
-  businessAddress: string;
-  businessCity: string;
-  businessPhoneNumber?: string;
-  businessEmail?: string;
-  websiteUrl?: string;
-  logoUrl?: string;
-  logoPublicId?: string;
-  coverImagePublicId?: string;
+  providerType: string;
+  description?: string;
+  address: string;
+  city: string;
+  state?: string;
+  country: string;
+  postalCode: string;
+  latitude?: number;
+  longitude?: number;
+  phone: string;
+  website?: string;
+  licenseNumber?: string;
+  taxId?: string;
+  logo?: string;
+  coverImage?: string;
+  status: string;
   isVerified: boolean;
-  averageRating: number;
+  acceptsOnlinePayments: boolean;
+  acceptsCashPayments: boolean;
+  requiresDeposit: boolean;
+  depositPercentage?: number;
+  cancellationPolicyHours: number;
+  commissionRate: string;
+  averageRating?: number;
   totalReviews: number;
-  user: {
-    firstName: string;
-    lastName: string;
-    profileImageUrl?: string;
-    profileImagePublicId?: string;
-  };
-  services: Array<{
-    id: string;
-    name: string;
-    basePrice: number;
-    duration: number;
-    category: { name: string };
-    images?: string[];
-  }>;
+  totalBookings: number;
+  verificationNotes?: string;
+  verifiedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  userId: string;
+  fullAddress: string;
 }
+
 import axios from 'axios'
 import { useAuthStore } from '@/store/authStore'
 
@@ -146,7 +153,7 @@ export const apiService = {
     limit?: number;
     sortBy?: string;
     sortOrder?: 'ASC' | 'DESC';
-  }): Promise<{ data: Provider[]; pagination?: any }> {
+  }): Promise<{ providers: Provider[]; total: number; page: number; limit: number; totalPages: number; hasNext: boolean; hasPrev: boolean }> {
     try {
       const response = await apiClient.get('/providers', { params });
       return response.data;

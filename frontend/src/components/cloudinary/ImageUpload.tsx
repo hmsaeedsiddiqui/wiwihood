@@ -41,7 +41,7 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       const formData = new FormData();
       formData.append('file', file);
 
-  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/upload/${uploadType}`, {
+  const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/upload/${uploadType}`, {
         method: 'POST',
         body: formData,
         credentials: 'include',

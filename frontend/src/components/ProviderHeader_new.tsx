@@ -18,7 +18,7 @@ export default function ProviderHeader() {
       if (token) {
         try {
           const response = await axios.get(
-            `${process.env.NEXT_PUBLIC_API_URL}/auth/profile`,
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/profile`,
             {
               headers: { Authorization: `Bearer ${token}` },
               withCredentials: true,
@@ -63,7 +63,7 @@ export default function ProviderHeader() {
   const handleLogout = async () => {
     try {
       await axios.post(
-  `${process.env.NEXT_PUBLIC_API_URL}/auth/logout`,
+  `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/logout`,
         {},
         { withCredentials: true }
       );

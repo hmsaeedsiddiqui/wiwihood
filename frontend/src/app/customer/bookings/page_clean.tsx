@@ -67,285 +67,125 @@ export default function CustomerBookingsPage() {
   }
 
   return (
-    <div style={{ 
-      maxWidth: 950, 
-      margin: "40px auto", 
-      background: "#fff", 
-      borderRadius: 18, 
-      boxShadow: "0 8px 32px rgba(0,0,0,0.08)", 
-      padding: 32 
-    }}>
-      <h2 style={{ 
-        fontSize: 28, 
-        fontWeight: 800, 
-        marginBottom: 8, 
-        color: "#111" 
-      }}>
+    <div className=" min-h-screen flex items-center justify-center bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+      <h2 className="text-3xl font-extrabold mb-2 text-gray-900">
         My Bookings
       </h2>
-      <div style={{ 
-        color: '#6b7280', 
-        fontSize: 16, 
-        marginBottom: 24 
-      }}>
+      <div className="text-gray-500 text-base mb-6">
         Manage your appointments and view booking history
       </div>
       
       {/* Summary Cards */}
-      <div style={{ 
-        display: 'flex', 
-        gap: 18, 
-        marginBottom: 30 
-      }}>
-        <div style={{ 
-          flex: 1, 
-          background: '#f8fafc', 
-          borderRadius: 12, 
-          padding: 18, 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 12 
-        }}>
-          <span style={{ fontSize: 26 }}>📋</span>
+      <div className="flex flex-col  flex-wrap gap-4 mb-8">
+        <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-3 min-w-[200px]">
+          <span className="text-2xl">📋</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 18 }}>{summary.total}</div>
-            <div style={{ color: '#6b7280', fontSize: 14 }}>Total Bookings</div>
+        <div className="font-bold text-lg">{summary.total}</div>
+        <div className="text-gray-500 text-sm">Total Bookings</div>
           </div>
         </div>
-        <div style={{ 
-          flex: 1, 
-          background: '#f8fafc', 
-          borderRadius: 12, 
-          padding: 18, 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 12 
-        }}>
-          <span style={{ fontSize: 26 }}>⏰</span>
+        <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-3 min-w-[200px]">
+          <span className="text-2xl">⏰</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 18 }}>{summary.upcoming}</div>
-            <div style={{ color: '#6b7280', fontSize: 14 }}>Upcoming</div>
+        <div className="font-bold text-lg">{summary.upcoming}</div>
+        <div className="text-gray-500 text-sm">Upcoming</div>
           </div>
         </div>
-        <div style={{ 
-          flex: 1, 
-          background: '#f8fafc', 
-          borderRadius: 12, 
-          padding: 18, 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 12 
-        }}>
-          <span style={{ fontSize: 26 }}>✅</span>
+        <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-3 min-w-[200px]">
+          <span className="text-2xl">✅</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 18 }}>{summary.completed}</div>
-            <div style={{ color: '#6b7280', fontSize: 14 }}>Completed</div>
+        <div className="font-bold text-lg">{summary.completed}</div>
+        <div className="text-gray-500 text-sm">Completed</div>
           </div>
         </div>
-        <div style={{ 
-          flex: 1, 
-          background: '#f8fafc', 
-          borderRadius: 12, 
-          padding: 18, 
-          display: 'flex', 
-          alignItems: 'center', 
-          gap: 12 
-        }}>
-          <span style={{ fontSize: 26 }}>💰</span>
+        <div className="bg-slate-50 rounded-xl p-4 flex items-center gap-3 min-w-[200px]">
+          <span className="text-2xl">💰</span>
           <div>
-            <div style={{ fontWeight: 700, fontSize: 18 }}>
-              ${summary.spent.toFixed(2)}
-            </div>
-            <div style={{ color: '#6b7280', fontSize: 14 }}>Total Spent</div>
+        <div className="font-bold text-lg">
+          ${summary.spent.toFixed(2)}
+        </div>
+        <div className="text-gray-500 text-sm">Total Spent</div>
           </div>
         </div>
       </div>
 
       {/* Booking Cards */}
       {loading ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: 40, 
-          color: '#6b7280' 
-        }}>
+        <div className="text-center py-10 text-gray-500">
           Loading bookings...
         </div>
       ) : error ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: 40, 
-          color: '#ef4444' 
-        }}>
+        <div className="text-center py-10 text-red-500">
           {error}
         </div>
       ) : bookings.length === 0 ? (
-        <div style={{ 
-          textAlign: 'center', 
-          padding: 40, 
-          color: '#6b7280' 
-        }}>
+        <div className="text-center py-10 text-gray-500">
           No bookings found.
         </div>
       ) : (
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column', 
-          gap: 22 
-        }}>
+        <div className="flex flex-col gap-6">
           {bookings.map((booking) => (
             <div 
               key={booking.id} 
-              style={{ 
-                display: 'flex', 
-                background: '#f9fafb', 
-                borderRadius: 14, 
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)', 
-                overflow: 'hidden', 
-                border: '1px solid #e5e7eb' 
-              }}
+              className="flex bg-gray-50 rounded-2xl shadow-sm overflow-hidden border border-gray-200 hover:shadow-md transition-shadow"
             >
-              <div style={{ 
-                minWidth: 110, 
-                maxWidth: 110, 
-                height: 110, 
-                background: '#e5e7eb', 
-                display: 'flex', 
-                alignItems: 'center', 
-                justifyContent: 'center' 
-              }}>
+              <div className="min-w-[110px] max-w-[110px] h-[110px] bg-gray-200 flex items-center justify-center">
                 <img 
                   src={booking.imageUrl || "https://via.placeholder.com/90x90?text=Service"} 
                   alt="Service" 
-                  style={{ 
-                    width: 90, 
-                    height: 90, 
-                    borderRadius: 10, 
-                    objectFit: 'cover' 
-                  }} 
+                  className="w-[90px] h-[90px] rounded-lg object-cover" 
                 />
               </div>
-              <div style={{ 
-                flex: 1, 
-                padding: 18, 
-                display: 'flex', 
-                flexDirection: 'column', 
-                gap: 6 
-              }}>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 10 
-                }}>
-                  <span style={{ 
-                    fontWeight: 700, 
-                    fontSize: 18 
-                  }}>
+              <div className="flex-1 p-4 flex flex-col gap-1">
+                <div className="flex items-center gap-3 flex-wrap">
+                  <span className="font-bold text-lg">
                     {booking.serviceName}
                   </span>
-                  <span style={{ 
-                    fontSize: 13, 
-                    fontWeight: 600, 
-                    color: booking.status === 'confirmed' 
-                      ? '#10b981' 
+                  <span className={`text-xs font-semibold rounded-md px-2 py-1 ${
+                    booking.status === 'confirmed' 
+                      ? 'text-emerald-600 bg-emerald-100' 
                       : booking.status === 'pending' 
-                      ? '#f59e42' 
-                      : '#ef4444',
-                    background: booking.status === 'confirmed' 
-                      ? '#d1fae5' 
-                      : booking.status === 'pending' 
-                      ? '#fef3c7' 
-                      : '#fee2e2',
-                    borderRadius: 6, 
-                    padding: '2px 10px'
-                  }}>
+                      ? 'text-amber-600 bg-amber-100' 
+                      : 'text-red-600 bg-red-100'
+                  }`}>
                     {booking.status}
                   </span>
-                  <span style={{ 
-                    fontSize: 13, 
-                    fontWeight: 600, 
-                    color: booking.paymentStatus === 'paid' ? '#10b981' : '#f59e42',
-                    background: booking.paymentStatus === 'paid' ? '#d1fae5' : '#fef3c7',
-                    borderRadius: 6, 
-                    padding: '2px 10px'
-                  }}>
+                  <span className={`text-xs font-semibold rounded-md px-2 py-1 ${
+                    booking.paymentStatus === 'paid' 
+                      ? 'text-emerald-600 bg-emerald-100' 
+                      : 'text-amber-600 bg-amber-100'  
+                  }`}>
                     {booking.paymentStatus}
                   </span>
                 </div>
-                <div style={{ 
-                  fontWeight: 500, 
-                  color: '#374151', 
-                  fontSize: 15 
-                }}>
+                <div className="font-medium text-gray-700 text-sm">
                   {booking.providerName}
                 </div>
-                <div style={{ 
-                  color: '#6b7280', 
-                  fontSize: 14 
-                }}>
+                <div className="text-gray-500 text-sm">
                   {booking.address}
                 </div>
-                <div style={{ 
-                  display: 'flex', 
-                  alignItems: 'center', 
-                  gap: 16, 
-                  margin: '6px 0' 
-                }}>
-                  <span style={{ fontSize: 15 }}>
+                <div className="flex items-center gap-4 my-2 flex-wrap text-sm">
+                  <span>
                     📅 {booking.date} 🕐 {booking.time}
                   </span>
-                  <span style={{ fontSize: 15 }}>
+                  <span>
                     ⏱️ {booking.duration}
                   </span>
-                  <span style={{ fontSize: 15 }}>
+                  <span>
                     💵 {booking.price}
                   </span>
                 </div>
-                <div style={{ 
-                  color: '#6b7280', 
-                  fontSize: 14, 
-                  marginBottom: 4 
-                }}>
+                <div className="text-gray-500 text-sm mb-1">
                   <strong>Notes:</strong> {booking.notes || "No notes"}
                 </div>
-                <div style={{ 
-                  display: 'flex', 
-                  gap: 10, 
-                  marginTop: 4 
-                }}>
-                  <button style={{ 
-                    background: '#6366f1', 
-                    color: '#fff', 
-                    border: 'none', 
-                    borderRadius: 6, 
-                    padding: '7px 18px', 
-                    fontWeight: 600, 
-                    fontSize: 15, 
-                    cursor: 'pointer' 
-                  }}>
+                <div className="flex gap-2 mt-1 flex-wrap">
+                  <button className="bg-indigo-500 hover:bg-indigo-600 text-white border-none rounded-md px-4 py-2 font-semibold text-sm cursor-pointer transition-colors">
                     View Details
                   </button>
-                  <button style={{ 
-                    background: '#10b981', 
-                    color: '#fff', 
-                    border: 'none', 
-                    borderRadius: 6, 
-                    padding: '7px 18px', 
-                    fontWeight: 600, 
-                    fontSize: 15, 
-                    cursor: 'pointer' 
-                  }}>
+                  <button className="bg-emerald-500 hover:bg-emerald-600 text-white border-none rounded-md px-4 py-2 font-semibold text-sm cursor-pointer transition-colors">
                     Reschedule
                   </button>
-                  <button style={{ 
-                    background: '#ef4444', 
-                    color: '#fff', 
-                    border: 'none', 
-                    borderRadius: 6, 
-                    padding: '7px 18px', 
-                    fontWeight: 600, 
-                    fontSize: 15, 
-                    cursor: 'pointer' 
-                  }}>
+                  <button className="bg-red-500 hover:bg-red-600 text-white border-none rounded-md px-4 py-2 font-semibold text-sm cursor-pointer transition-colors">
                     Cancel
                   </button>
                 </div>
@@ -354,6 +194,8 @@ export default function CustomerBookingsPage() {
           ))}
         </div>
       )}
+      
+    
     </div>
   );
 }

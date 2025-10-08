@@ -29,7 +29,7 @@ const ProviderNav = () => {
   const handleLogout = async () => {
     try {
       await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/api/v1/auth/logout`,
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/logout`,
         {},
         { withCredentials: true }
       );
@@ -43,7 +43,7 @@ const ProviderNav = () => {
 
   return (
     <nav className="bg-white shadow-sm border-b">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className=" mx-auto w-[95%]">
         <div className="flex justify-between h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
@@ -59,7 +59,7 @@ const ProviderNav = () => {
           </div>
 
           {/* Desktop Navigation */}
-          <div className="hidden md:flex items-center space-x-8">
+          <div className="hidden xl:flex items-center space-x-8">
             <div className="flex items-center space-x-4">
               {navigationItems.slice(0, 6).map((item) => (
                 <Link
@@ -105,7 +105,7 @@ const ProviderNav = () => {
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <div className="xl:hidden flex items-center">
             <button
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
@@ -124,7 +124,7 @@ const ProviderNav = () => {
 
       {/* Mobile menu */}
       {isMobileMenuOpen && (
-        <div className="md:hidden bg-white border-t border-gray-200">
+        <div className="xl:hidden bg-white border-t border-gray-200">
           <div className="px-2 pt-2 pb-3 space-y-1">
             {navigationItems.map((item) => (
               <Link

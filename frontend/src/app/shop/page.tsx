@@ -222,41 +222,34 @@ export default function ShopPage() {
     setFilteredShops(filtered);
   }, [shops, searchTerm, searchLocation, selectedCategory, selectedLocation, selectedReviewFilter, sortBy]);
 
-  // Trending Categories section (matches provided image)
+  // Trending Categories section with Tailwind CSS
   const trendingCategoriesSection = (
-    <div style={{ background: '#fff', maxWidth: 1200, margin: '0 auto', marginTop: -32, borderRadius: 18, padding: '40px 32px 32px 32px', position: 'relative', zIndex: 2 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 }}>
-        <h2 style={{ fontSize: 24, fontWeight: 800, color: '#111', letterSpacing: '-0.5px', margin: 0 }}>Trending Categories</h2>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #e5e7eb', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(16,185,129,0.08)', cursor: 'pointer', outline: 'none' }}>
-            <span style={{ color: '#10b981', fontSize: 20, fontWeight: 700, display: 'inline-block', transform: 'rotate(180deg)' }}>&#8594;</span>
+    <div className="bg-white max-w-[1400px] mx-auto w-[95%] -mt-8 rounded-2xl py-10 relative z-[2]">
+      <div className="flex justify-between items-center flex-wrap mb-6">
+        <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight m-0">Trending Categories</h2>
+        <div className="flex gap-2 ">
+          <button className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center shadow-sm hover:shadow-md cursor-pointer outline-none transition-shadow duration-200">
+            <span className="text-emerald-600 text-xl font-bold inline-block rotate-180">&#8594;</span>
           </button>
-          <button style={{ width: 36, height: 36, borderRadius: '50%', border: '1px solid #e5e7eb', background: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 2px 8px rgba(16,185,129,0.08)', cursor: 'pointer', outline: 'none' }}>
-            <span style={{ color: '#10b981', fontSize: 20, fontWeight: 700 }}>&#8594;</span>
+          <button className="w-9 h-9 rounded-full border border-gray-200 bg-white flex items-center justify-center shadow-sm hover:shadow-md cursor-pointer outline-none transition-shadow duration-200">
+            <span className="text-emerald-600 text-xl font-bold">&#8594;</span>
           </button>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 24, marginBottom: 24 }}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {categories.map((cat) => (
-          <div key={cat.id} style={{ flex: 1, background: '#fff', border: '1.5px solid #e5e7eb', borderRadius: 12, padding: '22px 24px', display: 'flex', flexDirection: 'column', justifyContent: 'center', boxShadow: '0 2px 8px rgba(30,41,59,0.02)', position: 'relative', minWidth: 180 }}>
-            <div style={{ fontWeight: 700, fontSize: 18, color: '#111', marginBottom: 4 }}>{cat.name}</div>
-            <div style={{ color: '#6b7280', fontSize: 15, fontWeight: 500 }}>({cat.count} Shops)</div>
-            <div style={{ position: 'absolute', top: 18, right: 18, width: 16, height: 16, background: '#111827', borderRadius: 4 }} />
+          <div key={cat.id} className="bg-white border-[1.5px] border-gray-200 rounded-xl px-6 py-5 flex flex-col justify-center shadow-sm hover:shadow-md relative min-w-[180px] transition-shadow duration-200">
+        <div className="font-bold text-lg text-gray-900 mb-1">{cat.name}</div>
+        <div className="text-gray-500 text-sm font-medium">({cat.count} Shops)</div>
+        <div className="absolute top-6 right-4 w-4 h-4 bg-gray-800 rounded" />
           </div>
         ))}
       </div>
-      <div style={{ display: 'flex', gap: 12, marginBottom: 18 }}>
-        <div style={{ flex: 1, display: 'flex', gap: 8 }}>
+      <div className="flex gap-3 mb-5 justify-center flex-wrap">
+        <div className="flex-1 flex gap-2 flex-wrap">
           {/* Active Filters Count */}
           {(selectedCategory || selectedLocation !== 'All Locations' || selectedReviewFilter !== 'All Reviews' || searchTerm || (searchLocation && searchLocation !== 'Select...')) && (
-            <div style={{ 
-              background: '#10b981', 
-              color: '#fff', 
-              borderRadius: 8, 
-              padding: '8px 12px', 
-              fontSize: 14, 
-              fontWeight: 600 
-            }}>
+            <div className="bg-emerald-600 text-white rounded-lg px-3 py-2 text-sm font-semibold">
               {[
                 selectedCategory ? 1 : 0,
                 selectedLocation !== 'All Locations' ? 1 : 0,
@@ -268,44 +261,30 @@ export default function ShopPage() {
           )}
 
           {/* Categories Filter */}
-          <div className="category-dropdown" style={{ position: 'relative' }}>
+          <div className="category-dropdown relative">
             <button 
               onClick={() => setShowCategoryFilter(!showCategoryFilter)}
-              style={{ 
-                background: selectedCategory ? '#10b981' : (showCategoryFilter ? '#e5e7eb' : '#f3f4f6'), 
-                border: '1.5px solid #e5e7eb', 
-                borderRadius: 8, 
-                padding: '8px 18px', 
-                fontWeight: 600, 
-                color: selectedCategory ? '#fff' : '#222', 
-                fontSize: 15, 
-                display: 'flex', 
-                alignItems: 'center', 
-                gap: 8, 
-                cursor: 'pointer',
-                outline: 'none'
-              }}
+              className={`border-[1.5px] border-gray-200 rounded-lg px-4 py-2 font-semibold text-sm flex items-center gap-2 cursor-pointer outline-none transition-colors duration-200 ${
+                selectedCategory 
+                  ? 'bg-emerald-600 text-white' 
+                  : showCategoryFilter 
+                    ? 'bg-gray-200 text-gray-800' 
+                    : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+              }`}
             >
-              <span style={{ width: 16, height: 16, background: selectedCategory ? '#fff' : '#111827', borderRadius: 4, display: 'inline-block' }}></span>
+              <span className={`w-4 h-4 rounded inline-block ${
+                selectedCategory ? 'bg-white' : 'bg-gray-800'
+              }`}></span>
               {selectedCategory ? categories.find(c => c.id === selectedCategory)?.name || 'Categories' : 'Categories'}
-              <span style={{ fontSize: 12 }}>▼</span>
+              <span className="text-xs">▼</span>
             </button>
             {showCategoryFilter && (
-              <div style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                background: '#fff',
-                border: '1px solid #e5e7eb',
-                borderRadius: 8,
-                boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
-                zIndex: 10,
-                minWidth: 200,
-                marginTop: 4
-              }}>
+              <div className="absolute top-full left-0 bg-white border border-gray-200 rounded-lg shadow-lg z-10 min-w-[200px] mt-1">
                 <button 
                   onClick={() => { setSelectedCategory(''); setShowCategoryFilter(false); }}
-                  style={{ width: '100%', padding: '12px 16px', textAlign: 'left', border: 'none', background: selectedCategory === '' ? '#f3f4f6' : 'transparent', cursor: 'pointer' }}
+                  className={`w-full px-4 py-3 text-left border-none cursor-pointer hover:bg-gray-50 ${
+                    selectedCategory === '' ? 'bg-gray-100' : 'bg-transparent'
+                  }`}
                 >
                   All Categories
                 </button>
@@ -313,7 +292,9 @@ export default function ShopPage() {
                   <button
                     key={cat.id}
                     onClick={() => { setSelectedCategory(cat.id); setShowCategoryFilter(false); }}
-                    style={{ width: '100%', padding: '12px 16px', textAlign: 'left', border: 'none', background: selectedCategory === cat.id ? '#f3f4f6' : 'transparent', cursor: 'pointer' }}
+                    className={`w-full px-4 py-3 text-left border-none cursor-pointer hover:bg-gray-50 ${
+                      selectedCategory === cat.id ? 'bg-gray-100' : 'bg-transparent'
+                    }`}
                   >
                     {cat.name} ({cat.count})
                   </button>
@@ -326,21 +307,14 @@ export default function ShopPage() {
           <select 
             value={selectedLocation}
             onChange={(e) => setSelectedLocation(e.target.value)}
-            style={{ 
-              background: selectedLocation !== 'All Locations' ? '#10b981' : '#f3f4f6', 
-              border: '1.5px solid #e5e7eb', 
-              borderRadius: 8, 
-              padding: '8px 18px', 
-              fontWeight: 600, 
-              color: selectedLocation !== 'All Locations' ? '#fff' : '#222', 
-              fontSize: 15, 
-              outline: 'none', 
-              minWidth: 120,
-              cursor: 'pointer'
-            }}
+            className={`border-[1.5px] border-gray-200 rounded-lg px-4 py-2 font-semibold text-sm outline-none min-w-[120px] cursor-pointer transition-colors duration-200 ${
+              selectedLocation !== 'All Locations' 
+                ? 'bg-emerald-600 text-white' 
+                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+            }`}
           >
             {locationOptions.map((location) => (
-              <option key={location} value={location} style={{ background: '#fff', color: '#222' }}>{location}</option>
+              <option key={location} value={location} className="bg-white text-gray-800">{location}</option>
             ))}
           </select>
 
@@ -348,63 +322,35 @@ export default function ShopPage() {
           <select 
             value={selectedReviewFilter}
             onChange={(e) => setSelectedReviewFilter(e.target.value)}
-            style={{ 
-              background: selectedReviewFilter !== 'All Reviews' ? '#10b981' : '#f3f4f6', 
-              border: '1.5px solid #e5e7eb', 
-              borderRadius: 8, 
-              padding: '8px 18px', 
-              fontWeight: 600, 
-              color: selectedReviewFilter !== 'All Reviews' ? '#fff' : '#222', 
-              fontSize: 15, 
-              outline: 'none', 
-              minWidth: 120,
-              cursor: 'pointer'
-            }}
+            className={`border-[1.5px] border-gray-200 rounded-lg px-4 py-2 font-semibold text-sm outline-none min-w-[120px] cursor-pointer transition-colors duration-200 ${
+              selectedReviewFilter !== 'All Reviews' 
+                ? 'bg-emerald-600 text-white' 
+                : 'bg-gray-100 text-gray-800 hover:bg-gray-200'
+            }`}
           >
             {reviewOptions.map((review) => (
-              <option key={review} value={review} style={{ background: '#fff', color: '#222' }}>{review}</option>
+              <option key={review} value={review} className="bg-white text-gray-800">{review}</option>
             ))}
           </select>
 
           {/* Clear All Filters Button */}
           <button 
             onClick={clearAllFilters}
-            style={{ 
-              background: '#ef4444', 
-              border: 'none', 
-              borderRadius: 8, 
-              padding: '8px 18px', 
-              fontWeight: 600, 
-              color: '#fff', 
-              fontSize: 15, 
-              cursor: 'pointer',
-              outline: 'none'
-            }}
+            className="bg-red-500 hover:bg-red-600 border-none rounded-lg px-4 py-2 font-semibold text-white text-sm cursor-pointer outline-none transition-colors duration-200"
           >
             Clear All
           </button>
         </div>
 
         {/* Sort By Dropdown */}
-        <div style={{ minWidth: 220, display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div className="min-w-[220px] flex items-center gap-2">
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
-            style={{ 
-              background: '#111827', 
-              border: 'none', 
-              borderRadius: 6, 
-              padding: '8px 18px', 
-              fontWeight: 600, 
-              color: '#fff', 
-              fontSize: 15, 
-              outline: 'none',
-              cursor: 'pointer',
-              minWidth: '100%'
-            }}
+            className="bg-gray-800 hover:bg-gray-900 border-none rounded-md px-4 py-2 font-semibold text-white text-sm outline-none cursor-pointer w-full transition-colors duration-200"
           >
             {sortOptions.map((option) => (
-              <option key={option} value={option} style={{ background: '#111827', color: '#fff' }}>
+              <option key={option} value={option} className="bg-gray-800 text-white">
                 Sort by: {option}
               </option>
             ))}
@@ -413,136 +359,119 @@ export default function ShopPage() {
       </div>
     </div>
   );
-  // Hero section matching the design image
+  // Hero section with Tailwind CSS matching homepage design
   const heroSection = (
-    <div className="shop-hero-section">
-      {/* Background Image with dark overlay */}
-      <div className="hero-background">
-        <img 
-          src="https://images.unsplash.com/photo-1560472355-536de3962603?w=1500&h=600&fit=crop&crop=center" 
-          alt="Shop Background" 
-          className="hero-bg-image"
-        />
-        <div className="hero-dark-overlay"></div>
-      </div>
-      
-      {/* Content Container */}
-      <div className="hero-content">
-        <div className="hero-layout">
-          {/* Left Side - Text and Search */}
-          <div className="hero-left">
-            <h1 className="hero-main-title">
-              Find <span className="highlight-green">Trusted Providers</span> &<br />
-              <span className="highlight-green">Book Services</span> at the<br />
+    <section 
+      className="w-full min-h-[650px] relative flex items-start justify-center overflow-hidden"
+      style={{
+        backgroundImage: `linear-gradient(rgba(34, 40, 49, 0.45), rgba(34, 40, 49, 0.45)), url('https://images.unsplash.com/photo-1560472355-536de3962603?w=1500&h=600&fit=crop&crop=center')`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat'
+      }}
+    >
+      {/* Diagonal White Cut - Fixed with inline style */}
+      <div 
+        className="absolute left-0 bottom-0 w-full h-32 bg-white z-20"
+        style={{
+          transform: 'skewY(-4deg)',
+          transformOrigin: 'bottom right'
+        }}
+      />
+
+      <div className="relative z-30 max-w-[1400px] mx-auto w-[95%] py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center min-h-[500px]">
+          
+          {/* LEFT: HERO TEXT & SEARCH */}
+            <div className="space-y-8 flex flex-col  items-start h-full ">
+            <h1 className="text-white text-4xl sm:text-3xl md:text-5xl font-extrabold leading-none mb-4">
+              Discover{' '}
+              <br />
+              <span className="inline-block italic rounded-xl font-bold  text-4xl sm:text-3xl md:text-5xl bg-emerald-500 text-white px-4 py-1 mx-1 border-2 border-white">
+              Top-Rated Shops
+              </span>{' '}
+              & <br />
+              <span className="inline-block rounded-xl italic font-bold  text-4xl sm:text-3xl md:text-5xl bg-emerald-500 text-white px-4 py-1 mx-1 border-2 border-white">
+                Book Services
+              </span>{' '}
+              at the<br />
               Best Prices
             </h1>
-            <p className="hero-subtitle-new">
-              Search for top-rated beauty, wellness, and healthcare providers near you.
+            
+            <p className="text-white text-md font-medium pb-5">
+              Browse trusted providers in your area and book appointments with confidence.
             </p>
             
-            {/* Search Bar */}
-            <div className="hero-search-container">
-              <input 
-                type="text" 
-                placeholder="Search shops, services, or locations..."
-                className="hero-search-input"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                onKeyPress={handleKeyPress}
-              />
-              <select 
-                className="hero-location-select"
-                value={searchLocation}
-                onChange={(e) => setSearchLocation(e.target.value)}
-              >
-                <option value="Select...">Select...</option>
-                <option value="All Locations">All Locations</option>
-                <option value="New York">New York</option>
-                <option value="Los Angeles">Los Angeles</option>
-                <option value="Chicago">Chicago</option>
-                <option value="Miami">Miami</option>
-                <option value="San Francisco">San Francisco</option>
-              </select>
-              <button 
-                className="hero-search-button"
-                onClick={handleSearch}
-              >
-                Find Providers
-              </button>
+            {/* SEARCH BAR - Responsive Tailwind classes */}
+            <div className="w-full max-w-2xl mb-4">
+              <div className="flex flex-col sm:flex-row gap-2 rounded-xl bg-white shadow-2xl p-2">
+                <input 
+                  type="text" 
+                  placeholder="Search shops, services, or locations..."
+                  className="flex-1 px-4 py-3 text-gray-700 bg-transparent border-none outline-none text-base placeholder-gray-500 min-w-0"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                />
+                <select 
+                  className="px-4 py-3 text-gray-700 bg-white border-l-0 sm:border-l border-gray-200 outline-none text-base cursor-pointer min-w-0 sm:min-w-[160px]"
+                  value={searchLocation}
+                  onChange={(e) => setSearchLocation(e.target.value)}
+                >
+                  <option value="Select...">Select Location...</option>
+                  <option value="All Locations">All Locations</option>
+                  {locationOptions.slice(1).map((location) => (
+                    <option key={location} value={location}>{location}</option>
+                  ))}
+                </select>
+                <button 
+                  className="px-6 py-3 bg-emerald-600 text-white font-semibold rounded-lg hover:bg-emerald-700 transition-colors duration-200 w-full sm:w-auto whitespace-nowrap"
+                  onClick={handleSearch}
+                >
+                  Find Shops
+                </button>
+              </div>
             </div>
             
-            {/* Popular Searches */}
-            <div className="hero-popular-searches">
-              <span className="popular-label">Popular Searches:</span>
-              <span className="popular-items">
-                <button 
-                  onClick={() => setSearchTerm('Haircuts')}
-                  style={{ 
-                    background: 'none', 
-                    border: 'none', 
-                    color: 'inherit', 
-                    textDecoration: 'underline', 
-                    cursor: 'pointer',
-                    padding: 0,
-                    margin: 0,
-                    font: 'inherit'
-                  }}
-                >
-                  Haircuts
-                </button>
-                , {' '}
-                <button 
-                  onClick={() => setSearchTerm('Massage')}
-                  style={{ 
-                    background: 'none', 
-                    border: 'none', 
-                    color: 'inherit', 
-                    textDecoration: 'underline', 
-                    cursor: 'pointer',
-                    padding: 0,
-                    margin: 0,
-                    font: 'inherit'
-                  }}
-                >
-                  Massage
-                </button>
-                , {' '}
-                <button 
-                  onClick={() => setSearchTerm('Facials')}
-                  style={{ 
-                    background: 'none', 
-                    border: 'none', 
-                    color: 'inherit', 
-                    textDecoration: 'underline', 
-                    cursor: 'pointer',
-                    padding: 0,
-                    margin: 0,
-                    font: 'inherit'
-                  }}
-                >
-                  Facials
-                </button>
-                .
-              </span>
+            <div className="text-white text-base font-medium drop-shadow-lg">
+              Popular Searches: {' '}
+              <button 
+                onClick={() => setSearchTerm('Haircuts')}
+                className="text-white underline hover:text-emerald-200 transition-colors duration-200 bg-transparent border-none cursor-pointer font-inherit"
+              >
+                Haircuts
+              </button>
+              , {' '}
+              <button 
+                onClick={() => setSearchTerm('Massage')}
+                className="text-white underline hover:text-emerald-200 transition-colors duration-200 bg-transparent border-none cursor-pointer font-inherit"
+              >
+                Massage
+              </button>
+              , {' '}
+              <button 
+                onClick={() => setSearchTerm('Facials')}
+                className="text-white underline hover:text-emerald-200 transition-colors duration-200 bg-transparent border-none cursor-pointer font-inherit"
+              >
+                Facials
+              </button>
+              .
             </div>
           </div>
           
-          {/* Right Side - Image */}
-          <div className="hero-right">
-            <div className="hero-image-frame">
-              <img 
-                src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=400&fit=crop&crop=center" 
-                alt="Professional Service" 
-                className="hero-feature-image"
+          {/* RIGHT: IMAGE CARD */}
+          <div className="flex justify-center lg:justify-center items-start pt-12">
+            <div className="w-100 h-[450px] bg-white rounded-3xl shadow-2xl overflow-hidden relative border-8 border-white transform hover:scale-105 transition-transform duration-300 block sm:hidden lg:block">
+              <img
+              src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?w=400&h=400&fit=crop&crop=center"
+              alt="Professional Service"
+              className="w-full h-full object-cover"
               />
             </div>
           </div>
         </div>
       </div>
-      
-      {/* Diagonal cut */}
-      <div className="hero-diagonal-cut"></div>
-    </div>
+    </section>
   );
 
   return (
@@ -550,29 +479,20 @@ export default function ShopPage() {
   {heroSection}
   <div style={{ height: 32 }} />
   {trendingCategoriesSection}
-      <div style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: 'Manrope, sans-serif', padding: '60px 0' }} data-results-section>
-        <div style={{ maxWidth: 1100, margin: '0 auto', padding: '0 24px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 40 }}>
-            <h1 style={{ fontSize: 36, fontWeight: 800, letterSpacing: '-1px', color: '#222' }}>Shops</h1>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+      <div className="bg-slate-50 min-h-screen font-[Manrope,sans-serif] py-15" data-results-section>
+        <div className="max-w-[1400px] w-[95%] mx-auto ">
+          <div className="flex justify-between items-center mb-10">
+            <h1 className="text-4xl font-extrabold tracking-tight text-gray-800">Shops</h1>
+            <div className="flex items-center gap-4">
               {(searchTerm || searchLocation !== 'Select...' || selectedCategory || selectedLocation !== 'All Locations' || selectedReviewFilter !== 'All Reviews') && (
                 <button
                   onClick={clearAllFilters}
-                  style={{
-                    background: '#f3f4f6',
-                    border: '1px solid #e5e7eb',
-                    borderRadius: 6,
-                    padding: '6px 12px',
-                    fontSize: 14,
-                    color: '#6b7280',
-                    cursor: 'pointer',
-                    fontWeight: 500
-                  }}
+                  className="bg-gray-100 hover:bg-gray-200 border border-gray-200 rounded-md px-3 py-1.5 text-sm text-gray-500 cursor-pointer font-medium transition-colors duration-200"
                 >
                   Clear Filters
                 </button>
               )}
-              <span style={{ color: '#6b7280', fontSize: 16 }}>
+              <span className="text-gray-500 text-base">
                 {loading ? 'Loading...' : `${filteredShops.length} of ${shops.length} shops`}
               </span>
             </div>
@@ -580,29 +500,29 @@ export default function ShopPage() {
           
           {/* Active Search/Filter Indicators */}
           {(searchTerm || searchLocation !== 'Select...' || selectedCategory || selectedLocation !== 'All Locations' || selectedReviewFilter !== 'All Reviews') && (
-            <div style={{ marginBottom: 24, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <div className="mb-6 flex gap-2 flex-wrap">
               {searchTerm && (
-                <span style={{ background: '#e5f9f6', color: '#10b981', padding: '4px 12px', borderRadius: 20, fontSize: 14, fontWeight: 500 }}>
+                <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-sm font-medium">
                   Search: "{searchTerm}"
                 </span>
               )}
               {searchLocation !== 'Select...' && (
-                <span style={{ background: '#e5f9f6', color: '#10b981', padding: '4px 12px', borderRadius: 20, fontSize: 14, fontWeight: 500 }}>
+                <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-sm font-medium">
                   Location: {searchLocation}
                 </span>
               )}
               {selectedCategory && (
-                <span style={{ background: '#e5f9f6', color: '#10b981', padding: '4px 12px', borderRadius: 20, fontSize: 14, fontWeight: 500 }}>
+                <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-sm font-medium">
                   Category: {categories.find(c => c.id === selectedCategory)?.name}
                 </span>
               )}
               {selectedLocation !== 'All Locations' && (
-                <span style={{ background: '#e5f9f6', color: '#10b981', padding: '4px 12px', borderRadius: 20, fontSize: 14, fontWeight: 500 }}>
+                <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-sm font-medium">
                   Filter Location: {selectedLocation}
                 </span>
               )}
               {selectedReviewFilter !== 'All Reviews' && (
-                <span style={{ background: '#e5f9f6', color: '#10b981', padding: '4px 12px', borderRadius: 20, fontSize: 14, fontWeight: 500 }}>
+                <span className="bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-sm font-medium">
                   Reviews: {selectedReviewFilter}
                 </span>
               )}
@@ -610,29 +530,47 @@ export default function ShopPage() {
           )}
           
           {loading ? (
-            <div style={{ textAlign: 'center', color: '#6b7280', fontSize: 18 }}>Loading shops...</div>
+            <div className="text-center text-gray-500 text-lg">Loading shops...</div>
           ) : filteredShops.length === 0 ? (
-            <div style={{ background: '#fff', borderRadius: 12, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: 32, textAlign: 'center', color: '#6b7280', fontSize: 18 }}>
+            <div className="bg-white rounded-xl shadow-lg px-8 py-8 text-center text-gray-500 text-lg">
               {shops.length === 0 ? 'No shops found.' : 'No shops match your current filters. Try adjusting your search criteria.'}
             </div>
           ) : (
-            <div style={{ display: 'flex', gap: 32, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 justify-center">
               {filteredShops.map((shop) => (
-                <Link key={shop.id} href={`/shop/${shop.id}`} style={{ textDecoration: 'none' }}>
-                  <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(16,185,129,0.10)', width: 320, minHeight: 360, maxHeight: 360, overflow: 'hidden', display: 'flex', flexDirection: 'column', marginBottom: 24, transition: 'transform 0.2s', cursor: 'pointer' }}>
-                    <div style={{ height: 180, width: '100%', background: shop.logo ? `url(${shop.logo}) center/cover no-repeat` : '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center', borderBottom: '2px solid #e5e7eb' }}>
-                      {!shop.logo && (
-                        <span style={{ color: '#9ca3af', fontSize: 48, fontWeight: 700 }}>🛍️</span>
-                      )}
-                    </div>
-                    <div style={{ padding: 24, flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
-                      <div style={{ fontFamily: 'Manrope, sans-serif', fontWeight: 700, fontSize: 20, color: '#222', marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{shop.businessName}</div>
-                      <div style={{ color: '#6b7280', fontSize: 15, marginBottom: 8, display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', minHeight: 44, maxHeight: 44 }}>{typeof shop.description === 'string' ? shop.description : shop.description || 'No description available'}</div>
-                      <div style={{ color: '#6b7280', fontSize: 14, marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>City: {shop.city || shop.address || ''}</div>
-                      <div style={{ color: '#f59e42', fontWeight: 700, fontSize: 15, marginBottom: 8 }}>Rating: {shop.averageRating?.toFixed ? shop.averageRating.toFixed(1) : (shop.averageRating ?? 'N/A')} ({shop.totalReviews ?? 0} reviews)</div>
-                    </div>
+              <Link key={shop.id} href={`/shop/${shop.id}`} className="no-underline">
+                <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl  overflow-hidden flex flex-col mb-6 transition-all duration-200 cursor-pointer hover:-translate-y-1">
+                <div 
+                  className="h-45 w-full bg-gray-100 flex items-center justify-center border-b-2 border-gray-200"
+                  style={{ 
+                  height: '180px',
+                  backgroundImage: shop.logo ? `url(${shop.logo})` : 'none',
+                  backgroundSize: 'cover',
+                  backgroundPosition: 'center',
+                  backgroundRepeat: 'no-repeat'
+                  }}
+                >
+                  {!shop.logo && (
+                  <span className="text-gray-400 text-5xl font-bold">🛍️</span>
+                  )}
+                </div>
+                <div className="px-6 py-6 flex-1 flex flex-col justify-between">
+                  <div className="font-[Manrope,sans-serif] font-bold text-xl text-gray-800 mb-2 whitespace-nowrap overflow-hidden text-ellipsis">{shop.businessName}</div>
+                  <div 
+                  className="text-gray-500 text-sm mb-2 min-h-[44px] max-h-[44px] overflow-hidden"
+                  style={{
+                    display: '-webkit-box',
+                    WebkitLineClamp: 2,
+                    WebkitBoxOrient: 'vertical'
+                  }}
+                  >
+                  {typeof shop.description === 'string' ? shop.description : shop.description || 'No description available'}
                   </div>
-                </Link>
+                  <div className="text-gray-500 text-sm mb-2 whitespace-nowrap overflow-hidden text-ellipsis">City: {shop.city || shop.address || ''}</div>
+                  <div className="text-amber-500 font-bold text-sm mb-2">Rating: {shop.averageRating?.toFixed ? shop.averageRating.toFixed(1) : (shop.averageRating ?? 'N/A')} ({shop.totalReviews ?? 0} reviews)</div>
+                </div>
+                </div>
+              </Link>
               ))}
             </div>
           )}

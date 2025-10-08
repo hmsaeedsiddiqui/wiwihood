@@ -83,23 +83,23 @@ export default function ProfilePage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50 flex justify-center items-center">
-        <div className="text-center bg-white p-8 rounded-lg shadow-md">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
+        <div className="bg-white p-6 sm:p-8 md:p-10 rounded-xl shadow-lg w-full max-w-md">
           <h2 className="text-2xl font-bold text-red-600 mb-4">Authentication Error</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
-          <div className="space-x-4">
-            <button 
-              onClick={fetchProfile}
-              className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-            >
-              Retry
-            </button>
-            <button 
-              onClick={() => window.location.href = '/auth/login'}
-              className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700"
-            >
-              Login Again
-            </button>
+          <p className="text-gray-600 mb-6 text-base sm:text-lg break-words">{error}</p>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+        <button 
+          onClick={fetchProfile}
+          className="px-6 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 w-full sm:w-auto"
+        >
+          Retry
+        </button>
+        <button 
+          onClick={() => window.location.href = '/auth/login'}
+          className="px-6 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 w-full sm:w-auto"
+        >
+          Login Again
+        </button>
           </div>
         </div>
       </div>

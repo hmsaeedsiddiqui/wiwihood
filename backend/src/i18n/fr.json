@@ -1,0 +1,71 @@
+{
+  "common": {
+    "welcome": "Bienvenue",
+    "loading": "Chargement...",
+    "error": "Une erreur s'est produite",
+    "success": "Succès",
+    "cancel": "Annuler",
+    "confirm": "Confirmer",
+    "save": "Enregistrer",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "search": "Rechercher",
+    "filter": "Filtrer",
+    "sort": "Trier",
+    "next": "Suivant",
+    "previous": "Précédent",
+    "close": "Fermer"
+  },
+  "auth": {
+    "login": "Se connecter",
+    "logout": "Se déconnecter",
+    "register": "S'inscrire",
+    "email": "E-mail",
+    "password": "Mot de passe",
+    "confirmPassword": "Confirmer le mot de passe",
+    "forgotPassword": "Mot de passe oublié ?",
+    "resetPassword": "Réinitialiser le mot de passe",
+    "rememberMe": "Se souvenir de moi"
+  },
+  "booking": {
+    "title": "Réservation",
+    "newBooking": "Nouvelle réservation",
+    "myBookings": "Mes réservations",
+    "bookingDetails": "Détails de la réservation",
+    "confirmBooking": "Confirmer la réservation",
+    "cancelBooking": "Annuler la réservation",
+    "rescheduleBooking": "Reprogrammer la réservation",
+    "bookingStatus": "Statut de la réservation",
+    "pending": "En attente",
+    "confirmed": "Confirmé",
+    "completed": "Terminé",
+    "cancelled": "Annulé"
+  },
+  "service": {
+    "title": "Services",
+    "services": "Services",
+    "serviceDetails": "Détails du service",
+    "selectService": "Sélectionner un service",
+    "duration": "Durée",
+    "price": "Prix",
+    "description": "Description",
+    "category": "Catégorie",
+    "provider": "Fournisseur"
+  },
+  "user": {
+    "profile": "Profil",
+    "settings": "Paramètres",
+    "preferences": "Préférences",
+    "notifications": "Notifications",
+    "language": "Langue",
+    "theme": "Thème",
+    "account": "Compte"
+  },
+  "messages": {
+    "bookingConfirmed": "Votre réservation a été confirmée",
+    "bookingCancelled": "Votre réservation a été annulée",
+    "paymentSuccess": "Paiement réussi",
+    "paymentFailed": "Échec du paiement",
+    "profileUpdated": "Profil mis à jour"
+  }
+}

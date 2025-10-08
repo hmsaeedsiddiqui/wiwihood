@@ -1,11 +1,13 @@
 'use client';
 
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { useWishlist } from '@/components/WishlistContext';
 import { useCart } from '@/components/cartContext';
+import { getAuthHeaders, isAuthenticated } from '@/lib/auth';
 import Image from 'next/image';
 import { CloudinaryImage } from '@/components/CloudinaryImage';
+import Footer from '@/components/Footer';
 import { 
   Heart as HeartIconOutline, 
   Star as StarIcon, 
@@ -180,7 +182,9 @@ const getServiceImage = (service: Service): string => {
 
 export default function ShopDetailPage() {
   const params = useParams();
+  const router = useRouter();
   const id = params?.id as string;
+  const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
   const { wishlist, addToWishlist, removeFromWishlist } = useWishlist();
   const { addToCart } = useCart();
   const [shop, setShop] = useState<Provider | null>(null);
@@ -206,7 +210,7 @@ export default function ShopDetailPage() {
       const fetchReviews = async () => {
         setReviewsLoading(true);
         try {
-          const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/reviews/provider/${id}`);
+          const response = await fetch(`${API_BASE_URL}/reviews/provider/${id}`);
           if (response.ok) {
             const data = await response.json();
             setReviews(data.data || data || []);
@@ -232,8 +236,8 @@ export default function ShopDetailPage() {
     
     // Fetch real data and fallback to dummy
     Promise.all([
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/providers/${id}`).then(res => res.json()).catch(() => null),
-      fetch(`${process.env.NEXT_PUBLIC_API_URL}/services/provider/${id}`).then(res => res.json()).catch(() => null)
+      fetch(`${API_BASE_URL}/providers/${id}`).then(res => res.json()).catch(() => null),
+      fetch(`${API_BASE_URL}/services/provider/${id}`).then(res => res.json()).catch(() => null)
     ])
       .then(([shopData, servicesData]) => {
         // Set shop data from API response
@@ -298,7 +302,7 @@ export default function ShopDetailPage() {
     
     setReviewsLoading(true);
     try {
-      const response = await fetch(`http://localhost:3001/reviews/provider/${id}`);
+      const response = await fetch(`${API_BASE_URL}/reviews/provider/${id}`);
       if (response.ok) {
         const reviewsData = await response.json();
         setReviews(reviewsData);
@@ -400,6 +404,54 @@ export default function ShopDetailPage() {
     }
   };
 
+  // Function to handle sending message
+  const handleSendMessage = async () => {
+    if (!isAuthenticated()) {
+      // Redirect to login if not authenticated
+      router.push('/auth/customer/login');
+      return;
+    }
+
+    try {
+      // Start a conversation with the provider
+      const response = await fetch(`${API_BASE_URL}/messages/conversations`, {
+        method: 'POST',
+        headers: {
+          ...getAuthHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          providerId: shop?.id,
+          initialMessage: `Hi! I'm interested in your services.`
+        }),
+      });
+
+      if (response.ok) {
+        // Redirect to messages page
+        router.push('/customer/messages');
+      } else {
+        // Fallback: redirect to messages page anyway
+        router.push('/customer/messages');
+      }
+    } catch (error) {
+      console.error('Error starting conversation:', error);
+      // Fallback: redirect to messages page
+      router.push('/customer/messages');
+    }
+  };
+
+  // Function to handle scheduling consultation
+  const handleScheduleConsultation = () => {
+    if (!isAuthenticated()) {
+      // Redirect to login if not authenticated
+      router.push('/auth/customer/login');
+      return;
+    }
+
+    // Redirect to booking page with provider ID
+    router.push(`/book-service?providerId=${shop?.id}`);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Hero Section with Cover Image */}
@@ -425,29 +477,29 @@ export default function ShopDetailPage() {
             />
           )}
         </div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+        <div className="absolute  inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
         
         {/* Action Buttons */}
-        <div className="absolute top-6 right-6 flex space-x-3">
+        <div className="absolute top-6 right-6 flex space-x-3 ">
           <button 
             onClick={handleWishlistToggle}
-            className="p-3 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white transition-all duration-200 group"
+            className="p-3 rounded-full bg-white/90 backdrop-blur-sm shadow-lg cursor-pointer hover:bg-white transition-all duration-200 group"
             disabled={!mounted}
           >
             {mounted && isWishlisted ? (
-              <HeartIconSolid className="h-6 w-6 text-red-500" />
+              <HeartIconSolid className="h-6 w-6 text-red-500 " />
             ) : (
               <HeartIconOutline className="h-6 w-6 text-gray-700 group-hover:text-red-500 transition-colors" />
             )}
           </button>
-          <button className="p-3 rounded-full bg-white/90 backdrop-blur-sm shadow-lg hover:bg-white transition-all duration-200">
+          <button className="p-3 rounded-full bg-white/90 backdrop-blur-sm cursor-pointer shadow-lg hover:bg-white transition-all duration-200">
             <ShareIcon className="h-6 w-6 text-gray-700" />
           </button>
         </div>
 
         {/* Provider Info Overlay */}
         <div className="absolute bottom-6 left-6 right-6">
-          <div className="flex items-end space-x-4">
+          <div className="flex items-end space-x-4 flex-wrap ">
             <div className="relative">
               <div className="w-24 h-24 rounded-2xl border-4 border-white shadow-lg overflow-hidden bg-white">
                 {shop.logoPublicId ? (
@@ -494,14 +546,14 @@ export default function ShopDetailPage() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      <div className="max-w-[1400px] mx-auto w-[95%] py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
           {/* Main Content */}
           <div className="lg:col-span-2 space-y-8">
             {/* Navigation Tabs */}
             <div className="bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden">
               <div className="border-b border-gray-200">
-                <nav className="flex space-x-8 px-8">
+                <nav className="flex flex-wrap space-x-8 px-8">
                   {[
                     { id: 'services', name: 'Services', icon: TagIcon },
                     { id: 'reviews', name: 'Reviews', icon: StarIcon },
@@ -634,6 +686,12 @@ export default function ShopDetailPage() {
                               <div className="flex flex-col space-y-2">
                                 <button
                                   onClick={() => {
+                                    // Check authentication first
+                                    if (!isAuthenticated()) {
+                                      router.push('/auth/customer/login');
+                                      return;
+                                    }
+
                                     try {
                                       // Store service in localStorage for booking flow
                                       const serviceWithProvider = {
@@ -656,7 +714,7 @@ export default function ShopDetailPage() {
                                       };
                                       console.log('Storing service for booking:', serviceWithProvider);
                                       localStorage.setItem('selectedServiceForBooking', JSON.stringify(serviceWithProvider));
-                                      window.location.href = `/book-service?serviceId=${service.id}&providerId=${shop.id}`;
+                                      router.push(`/book-service?serviceId=${service.id}&providerId=${shop.id}`);
                                     } catch (error) {
                                       console.error('Error storing service for booking:', error);
                                       alert('Error preparing booking. Please try again.');
@@ -866,14 +924,14 @@ export default function ShopDetailPage() {
           {/* Sidebar */}
           <div className="space-y-8">
             {/* Contact Card */}
-            <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-8">
+            <div className="bg-white rounded-3xl shadow-lg border border-gray-100 p-8 mb-4">
               <div className="text-center mb-6">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">Get in Touch</h3>
                 <p className="text-gray-600 text-sm">Ready to book your appointment?</p>
               </div>
               
               <div className="space-y-5 mb-6">
-                <div className="flex items-center p-3 bg-gray-50 rounded-xl">
+                <div className="flex items-center p-3 bg-gray-50 rounded-xl mb-4">
                   <div className="bg-blue-100 p-2 rounded-lg mr-3">
                     <PhoneIcon className="h-5 w-5 text-blue-600" />
                   </div>
@@ -883,7 +941,7 @@ export default function ShopDetailPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center p-3 bg-gray-50 rounded-xl">
+                <div className="flex items-center p-3 bg-gray-50 rounded-xl mb-4">
                   <div className="bg-green-100 p-2 rounded-lg mr-3">
                     <MapPinIcon className="h-5 w-5 text-green-600" />
                   </div>
@@ -893,7 +951,7 @@ export default function ShopDetailPage() {
                   </div>
                 </div>
                 
-                <div className="flex items-center p-3 bg-gray-50 rounded-xl">
+                <div className="flex items-center p-3 bg-gray-50 rounded-xl mb-4">
                   <div className="bg-purple-100 p-2 rounded-lg mr-3">
                     <ClockIcon className="h-5 w-5 text-purple-600" />
                   </div>
@@ -907,11 +965,17 @@ export default function ShopDetailPage() {
               </div>
               
               <div className="space-y-3">
-                <button className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-2xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg">
+                <button 
+                  onClick={handleScheduleConsultation}
+                  className="w-full bg-gradient-to-r from-blue-600 to-purple-600 text-white py-4 rounded-2xl font-semibold hover:from-blue-700 hover:to-purple-700 transition-all duration-300 transform hover:scale-105 shadow-lg"
+                >
                   <CalendarDaysIcon className="h-5 w-5 inline mr-2" />
                   Schedule Consultation
                 </button>
-                <button className="w-full border border-gray-200 text-gray-700 py-4 rounded-2xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all duration-300">
+                <button 
+                  onClick={handleSendMessage}
+                  className="w-full border border-gray-200 text-gray-700 py-4 rounded-2xl font-semibold hover:bg-gray-50 hover:border-gray-300 transition-all duration-300"
+                >
                   <ChatBubbleLeftRightIcon className="h-5 w-5 inline mr-2" />
                   Send Message
                 </button>
@@ -919,10 +983,10 @@ export default function ShopDetailPage() {
             </div>
 
             {/* Stats Card */}
-            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl shadow-lg border border-gray-100 p-8">
+            <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-3xl shadow-lg border border-gray-100 p-8 mb-4">
               <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">Professional Stats</h3>
               <div className="space-y-5">
-                <div className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm">
+                <div className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm mb-4">
                   <div className="flex items-center">
                     <div className="bg-blue-100 p-2 rounded-lg mr-3">
                       <TrophyIcon className="h-5 w-5 text-blue-600" />
@@ -932,7 +996,7 @@ export default function ShopDetailPage() {
                   <span className="font-bold text-gray-900 text-lg">{shop.experience}</span>
                 </div>
                 
-                <div className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm">
+                <div className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm mb-4">
                   <div className="flex items-center">
                     <div className="bg-green-100 p-2 rounded-lg mr-3">
                       <UserGroupIcon className="h-5 w-5 text-green-600" />
@@ -941,8 +1005,8 @@ export default function ShopDetailPage() {
                   </div>
                   <span className="font-bold text-gray-900 text-lg">{shop.socialProof?.completedBookings}+</span>
                 </div>
-                
-                <div className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm">
+
+                <div className="flex justify-between items-center p-4 bg-white rounded-xl shadow-sm mb-4">
                   <div className="flex items-center">
                     <div className="bg-purple-100 p-2 rounded-lg mr-3">
                       <ShieldCheckIcon className="h-5 w-5 text-purple-600" />
@@ -987,8 +1051,9 @@ export default function ShopDetailPage() {
             </div>
           </div>
         </div>
+  
       </div>
-
+      <Footer />
       {/* Toast Notification */}
       <Toast.Provider swipeDirection="right">
         <Toast.Root 

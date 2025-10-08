@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { getAuthHeaders } from '@/lib/auth'
+import Footer from '@/components/Footer'
 
 interface Booking {
   id: string
@@ -87,7 +88,7 @@ export default function MyAppointmentsPage() {
             <h1 className="sm:text-4xl text-3xl font-bold text-purple-900 mb-2">My Appointments</h1>
             <p className="text-gray-600 text-lg">Track and manage all you beauty & wellness appointments</p>
           </div>
-          <button className="flex items-center gap-2 mt-2 text-gray-600 hover:text-gray-800">
+          <button className="flex items-center gap-2 mt-2 text-gray-600 hover:text-gray-800 cursor-var-pointer">
             <span className="text-xl">👤</span>
             <span className="font-medium">Customer View</span>
           </button>
@@ -130,7 +131,7 @@ export default function MyAppointmentsPage() {
 
         {/* Recent Appointments */}
         <div className="bg-white rounded-2xl shadow-sm p-6 mb-8">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between flex-wrap gap-4 mb-6">
             <div className="flex items-center gap-3">
               <span className="text-2xl">🔮</span>
               <h2 className="text-xl font-bold text-gray-900">Recent Appointments</h2>
@@ -151,7 +152,7 @@ export default function MyAppointmentsPage() {
                 const noteColor = getNoteColor(booking.status)
                 
                 return (
-                  <div key={booking.id} className="flex items-center justify-between py-4 border-b border-gray-100 last:border-b-0">
+                  <div key={booking.id} className="sm:flex items-center justify-between flex-wrap gap-4 py-4 border-b border-gray-100 last:border-b-0">
                     <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <span className="text-lg">👤</span>
@@ -164,7 +165,7 @@ export default function MyAppointmentsPage() {
                         {booking.provider?.businessName || 'Provider'}
                       </p>
                       
-                      <div className="flex items-center gap-2 text-gray-700 mb-2 ml-8">
+                      <div className="flex items-center gap-2 flex-wrap text-gray-700 mb-2 ml-8">
                         <span className="text-gray-500">📅</span>
                         <span>
                           {booking.startTime ? 
@@ -194,21 +195,21 @@ export default function MyAppointmentsPage() {
                       )}
                     </div>
                     
-                    <div className="flex flex-col items-end gap-3">
+                    <div className="flex flex-col items-end gap-3 pt-2">
                       <span className={`px-4 py-1 rounded-full text-sm font-semibold ${statusBadge.className}`}>
                         {statusBadge.text}
                       </span>
-                      <div className="flex flex-col gap-2">
+                      <div className="flex flex-col gap-2 ">
                         <button 
                           onClick={() => router.push(`/booking/${booking.id}`)}
-                          className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold text-sm hover:bg-purple-700 transition"
+                          className="bg-purple-600 text-white px-6 py-2 rounded-lg font-semibold text-sm hover:bg-purple-700 transition cursor-var-pointer"
                         >
                           View Details
                         </button>
                         {booking.status === 'completed' && (
                           <button 
                             onClick={() => router.push(`/booking/${booking.id}/review`)}
-                            className={`px-6 py-2 rounded-lg font-semibold text-sm transition ${
+                            className={`px-6 py-2 rounded-lg font-semibold text-sm transition cursor-var-pointer ${
                               booking.hasReview 
                                 ? 'bg-green-600 text-white hover:bg-green-700'
                                 : 'bg-yellow-500 text-white hover:bg-yellow-600'
@@ -230,20 +231,21 @@ export default function MyAppointmentsPage() {
         <div className="flex flex-col sm:flex-row gap-4">
           <button 
             onClick={() => router.push('/browse')}
-            className="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-green-700 transition flex items-center justify-center gap-2"
+            className="bg-green-600 text-white px-8 py-4 rounded-2xl font-bold text-lg shadow-lg hover:bg-green-700 transition flex items-center justify-center gap-2 cursor-var-pointer"
           >
             <span className="text-xl">+</span>
             New Service
           </button>
           <button 
             onClick={() => router.push('/profile')}
-            className="bg-white text-purple-700 px-8 py-4 rounded-2xl font-bold text-lg border-2 border-purple-200 shadow-lg hover:bg-purple-50 transition flex items-center justify-center gap-2"
+            className="bg-white text-purple-700 px-8 py-4 rounded-2xl font-bold text-lg border-2 border-purple-200 shadow-lg hover:bg-purple-50 transition flex items-center justify-center gap-2 cursor-var-pointer"
           >
             <span className="text-xl">👤</span>
             View Profile
           </button>
         </div>
       </div>
+      <Footer />
     </div>
   )
 }

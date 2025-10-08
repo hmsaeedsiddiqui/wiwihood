@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Calendar, Clock, Star, MapPin, Phone, Mail, ArrowLeft, CreditCard } from 'lucide-react';
 import Link from 'next/link';
 import { getAuthHeaders } from '@/lib/auth';
+import Footer from '@/components/Footer';
 
 interface Booking {
   id: string;
@@ -199,22 +200,22 @@ export default function BookingDetailsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="w-[95%] max-w-[1400px] mx-auto py-8">
         {/* Header */}
         <div className="mb-8">
           <Link 
             href="/customer/bookings"
-            className="inline-flex items-center text-blue-600 hover:text-blue-700 mb-4"
+            className="inline-flex items-center cursor-pointer text-blue-600 hover:text-blue-700 mb-4"
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
             Back to bookings
           </Link>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between flex-wrap gap-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">Booking Details</h1>
               <p className="text-gray-600">Booking #{booking.bookingNumber}</p>
             </div>
-            <div className="flex space-x-3">
+            <div className="flex space-x-3 gap-3">
               <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(booking.status)}`}>
                 {booking.status ? (booking.status.charAt(0).toUpperCase() + booking.status.slice(1).replace('_', ' ')) : 'Unknown'}
               </span>
@@ -227,9 +228,9 @@ export default function BookingDetailsPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
-          <div className="lg:col-span-2 space-y-6">
+          <div className="lg:col-span-2 space-y-6 ">
             {/* Service Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Service Information</h2>
               <div className="space-y-4">
                 <div>
@@ -250,9 +251,9 @@ export default function BookingDetailsPage() {
             </div>
 
             {/* Provider Information */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
               <h2 className="text-xl font-semibold text-gray-900 mb-4">Provider Information</h2>
-              <div className="flex items-start space-x-4">
+              <div className="flex items-center gap-4 space-x-4">
                 <div className="w-16 h-16 bg-gray-200 rounded-full overflow-hidden flex-shrink-0">
                   {booking.provider.logo ? (
                     <img
@@ -329,7 +330,7 @@ export default function BookingDetailsPage() {
           {/* Sidebar */}
           <div className="space-y-6">
             {/* Quick Actions */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-4">
               <h3 className="font-semibold text-gray-900 mb-4">Quick Actions</h3>
               <div className="space-y-3">
                 {booking.status === 'completed' && (
@@ -343,14 +344,14 @@ export default function BookingDetailsPage() {
                 
                 <button
                   onClick={handleViewProviderProfile}
-                  className="block w-full border border-blue-600 text-blue-600 text-center py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors font-medium"
+                  className="block w-full border cursor-pointer mb-4 border-blue-600 text-blue-600 text-center py-2 px-4 rounded-lg hover:bg-blue-50 transition-colors font-medium"
                 >
                   View Provider Profile
                 </button>
                 
                 <button
                   onClick={() => router.push(`/customer/messages?providerId=${booking.provider.id}`)}
-                  className="block w-full border border-green-600 text-green-600 text-center py-2 px-4 rounded-lg hover:bg-green-50 transition-colors font-medium"
+                  className="block w-full border cursor-pointer mb-4 border-green-600 text-green-600 text-center py-2 px-4 rounded-lg hover:bg-green-50 transition-colors font-medium"
                 >
                   💬 Contact Provider
                 </button>
@@ -359,13 +360,13 @@ export default function BookingDetailsPage() {
                   <>
                     <button 
                       onClick={handleReschedule}
-                      className="block w-full bg-green-600 text-white text-center py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
+                      className="block w-full bg-green-600 cursor-pointer mb-4 text-white text-center py-2 px-4 rounded-lg hover:bg-green-700 transition-colors font-medium"
                     >
                       Reschedule
                     </button>
                     <button 
                       onClick={handleCancelBooking}
-                      className="block w-full bg-red-600 text-white text-center py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
+                      className="block w-full bg-red-600 cursor-pointer mb-4 text-white text-center py-2 px-4 rounded-lg hover:bg-red-700 transition-colors font-medium"
                     >
                       Cancel Booking
                     </button>
@@ -398,6 +399,7 @@ export default function BookingDetailsPage() {
           </div>
         </div>
       </div>
+      <Footer />
     </div>
   );
 }

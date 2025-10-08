@@ -4,6 +4,7 @@ import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '../../../components/AuthProvider';
 import SignupForm from '../../../components/auth/SignupForm';
+import Footer from '@/components/Footer';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -41,6 +42,7 @@ export default function RegisterPage() {
   }
 
   return (
+    <div>
     <div className="w-[95%] mx-auto max-w-[1400px] py-10 flex items-center justify-center ">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
@@ -50,6 +52,8 @@ export default function RegisterPage() {
         <SignupForm onSuccess={handleSignupSuccess} />
        
       </div>
+    </div>
+    <Footer />
     </div>
   );
 }

@@ -49,7 +49,7 @@ export default function ReviewsPage() {
     try {
       setLoading(true);
       const endpoint = activeTab === 'given' ? 'reviews/given' : 'reviews/received';
-      const response = await fetch(`http://localhost:8000/api/v1/${endpoint}`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/${endpoint}`, {
         headers: getAuthHeaders()
       });
 
@@ -70,7 +70,7 @@ export default function ReviewsPage() {
 
   const fetchReviewStats = async () => {
     try {
-      const response = await fetch('http://localhost:8000/api/v1/reviews/stats', {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/reviews/stats`, {
         headers: getAuthHeaders()
       });
 
