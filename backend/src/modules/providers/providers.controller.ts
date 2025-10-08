@@ -79,6 +79,18 @@ export class ProvidersController {
     return this.providersService.findAll(page, limit, search, status, categoryId, location);
   }
 
+  @Get('dashboard')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get provider dashboard stats' })
+  @ApiResponse({
+    status: 200,
+    description: 'Dashboard stats retrieved successfully',
+  })
+  async getDashboardStats(@Request() req) {
+    return this.providersService.getDashboardStats(req.user.id);
+  }
+
   @Get('me')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

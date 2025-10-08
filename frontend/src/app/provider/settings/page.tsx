@@ -1,6 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
+import { User, Shield, Bell, Save, Camera, Trash2, Settings, Mail, Phone, MapPin, Globe } from 'lucide-react';
+import QRTIntegration from '@/utils/qrtIntegration';
+import axios from 'axios';
 
 // Custom Hook to track window width
 const useWindowWidth = () => {
@@ -20,103 +23,151 @@ const useWindowWidth = () => {
 const SettingsPage = () => {
   const [activeSection, setActiveSection] = useState('profile');
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [userData, setUserData] = useState(null);
+  
+  // Form data states
+  const [profileData, setProfileData] = useState({
+    businessName: '',
+    ownerName: '',
+    email: '',
+    phone: '',
+    address: '',
+    description: '',
+    website: '',
+    country: 'United Arab Emirates',
+    timezone: 'GST (UTC+4)',
+    profilePicture: ''
+  });
+
+  const [securityData, setSecurityData] = useState({
+    twoFactorEnabled: false,
+    lastPasswordChange: '',
+    loginAlerts: true,
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+
+  const [notificationData, setNotificationData] = useState({
+    emailNotifications: true,
+    smsNotifications: false,
+    bookingAlerts: true,
+    marketingEmails: false,
+    weeklyReports: true
+  });
   
   const windowWidth = useWindowWidth();
-  // Define mobile breakpoint
-  const isMobile = windowWidth < 768; 
+  const isMobile = windowWidth < 768;
 
-  // Mock settings data (kept for completeness, but state is not used for form inputs)
-  const settingsData = {
-    // ... (Your settingsData object remains the same)
-    profile: {
-      businessName: "John Smith Freelancer",
-      ownerName: "John Smith", 
-      email: "john.smith@example.com",
-      phone: "+1 (555) 123-4567",
-      address: "123 Main St, Downtown City",
-      description: "Professional freelance designer and developer with 5+ years of experience in creating beautiful, functional digital experiences.",
-      website: "https://johnsmith.dev",
-      socialMedia: {
-        instagram: "@johnsmith_dev",
-        facebook: "John Smith Developer",
-        twitter: "@johnsmith_dev"
+  // Fetch user data on component mount
+  useEffect(() => {
+    fetchUserData();
+  }, []);
+
+  const fetchUserData = async () => {
+    try {
+      setLoading(true);
+      console.log('🚀 Settings: Fetching user data...');
+      
+      // Use QRT Integration for auth profile
+      const userData = await QRTIntegration.getAuthProfile();
+      
+      if (userData) {
+        console.log('✅ Settings: User data loaded:', userData.firstName, userData.lastName);
+        setUserData(userData);
+        
+        // Update profile data
+        setProfileData({
+          businessName: userData.businessName || `${userData.firstName} ${userData.lastName}`,
+          ownerName: `${userData.firstName} ${userData.lastName}`,
+          email: userData.email || '',
+          phone: userData.phone || '',
+          address: userData.address || '',
+          description: userData.bio || '',
+          website: userData.website || '',
+          country: userData.country || 'United Arab Emirates',
+          timezone: userData.timezone || 'GST (UTC+4)',
+          profilePicture: userData.profilePicture || ''
+        });
+        
+        setError('');
+      } else {
+        console.warn('⚠️ Settings: No user data available');
+        setError('Failed to load user data');
       }
-    },
-    business: {
-      category: "Design & Development",
-      licenseNumber: "DEV-2023-001",
-      taxId: "XX-XXXXXXX",
-      businessHours: {
-        monday: { open: "09:00", close: "18:00", closed: false },
-        tuesday: { open: "09:00", close: "18:00", closed: false },
-        wednesday: { open: "09:00", close: "18:00", closed: false },
-        thursday: { open: "09:00", close: "18:00", closed: false },
-        friday: { open: "09:00", close: "18:00", closed: false },
-        saturday: { open: "10:00", close: "16:00", closed: false },
-        sunday: { open: "", close: "", closed: true }
+    } catch (error) {
+      console.error('❌ Settings: Error fetching user data:', error);
+      setError('Failed to load settings data');
+    } finally {
+      setLoading(false);
+    }
+  }; 
+
+  const settingSections = [
+    { id: 'profile', label: 'Profile Settings', icon: User },
+    { id: 'account', label: 'Account & Security', icon: Shield },
+    { id: 'notifications', label: 'Notifications', icon: Bell }
+  ];
+
+  // Save functions
+  const handleSaveProfile = async () => {
+    try {
+      setSaving(true);
+      console.log('💾 Settings: Saving profile data...');
+      
+      const token = localStorage.getItem('providerToken');
+      if (!token) {
+        setError('Authentication token not found');
+        return;
       }
-    },
-    notifications: {
-      emailNotifications: {
-        newBookings: true,
-        cancellations: true,
-        reviews: true,
-        payments: true,
-        marketing: false
-      },
-      smsNotifications: {
-        newBookings: true,
-        cancellations: true,
-        reminders: true
-      },
-      pushNotifications: {
-        newBookings: true,
-        reviews: true,
-        promotions: false
+
+      // Update profile via API
+      const response = await axios.patch(
+        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/auth/profile`,
+        {
+          firstName: profileData.ownerName.split(' ')[0],
+          lastName: profileData.ownerName.split(' ').slice(1).join(' '),
+          email: profileData.email,
+          phone: profileData.phone,
+          address: profileData.address,
+          bio: profileData.description,
+          website: profileData.website,
+          country: profileData.country,
+          timezone: profileData.timezone
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true
+        }
+      );
+
+      if (response.data) {
+        console.log('✅ Settings: Profile updated successfully');
+        setShowSaveSuccess(true);
+        setTimeout(() => setShowSaveSuccess(false), 3000);
+        setError('');
       }
-    },
-    payment: {
-      bankAccount: {
-        accountHolder: "John Smith",
-        bankName: "Chase Bank",
-        accountNumber: "****1234",
-        routingNumber: "****5678",
-        accountType: "Checking"
-      },
-      paypal: {
-        email: "john.smith@example.com",
-        connected: true
-      },
-      stripe: {
-        accountId: "acct_xxxxxxxxx",
-        connected: true
-      }
-    },
-    booking: {
-      advanceBooking: 30,
-      cancellationPolicy: 24,
-      bufferTime: 15,
-      autoAcceptBookings: false,
-      requireDeposit: true,
-      depositPercentage: 25,
-      maxBookingsPerDay: 10
-    },
-    security: {
-      twoFactorEnabled: false,
-      lastPasswordChange: "2025-06-15",
-      loginAlerts: true
+    } catch (error) {
+      console.error('❌ Settings: Error saving profile:', error);
+      setError('Failed to save profile. Please try again.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const settingSections = [
-    { id: 'profile', label: 'Profile Settings', icon: '👤' },
-    { id: 'account', label: 'Account & Security', icon: '🔒' },
-    { id: 'notifications', label: 'Notifications', icon: '🔔' }
-  ];
-
   const handleSave = () => {
-    setShowSaveSuccess(true);
-    setTimeout(() => setShowSaveSuccess(false), 3000);
+    switch (activeSection) {
+      case 'profile':
+        handleSaveProfile();
+        break;
+      default:
+        setShowSaveSuccess(true);
+        setTimeout(() => setShowSaveSuccess(false), 3000);
+        break;
+    }
   };
 
   // --- Render Profile Settings (Optimized for Mobile) ---
@@ -443,70 +494,112 @@ const SettingsPage = () => {
     }
   };
 
-  return (
-    <div className={`min-h-screen bg-slate-50 `}>
-      <div className="">
-        {/* Header */}
-        <div className={`${isMobile ? 'mb-5' : 'mb-8'}`}>
-          <h1 className={`${isMobile ? 'text-2xl' : 'text-3xl'} font-bold text-slate-800 mb-2`}>
-            Settings
-          </h1>
-          <p className={`text-slate-500 ${isMobile ? 'text-sm' : 'text-base'}`}>
-            Manage your account settings and preferences
-          </p>
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center bg-white p-8 rounded-2xl shadow-xl">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Settings</h2>
+          <p className="text-gray-600">Fetching your account data...</p>
         </div>
+      </div>
+    );
+  }
 
-        {/* Main Content Grid (Changed to stack on mobile) */}
-        <div className={`grid ${isMobile ? 'grid-cols-1 gap-5' : 'grid-cols-[280px_1fr] gap-8'}`}>
-          
-          {/* Settings Navigation (Full width on mobile) */}
-          <div className={`bg-white rounded-xl shadow-sm border border-slate-200 h-fit ${isMobile ? 'p-2.5' : 'p-5'}`}>
-            <h3 className={`${isMobile ? 'text-sm' : 'text-base'} font-semibold text-slate-800 ${isMobile ? 'mb-2' : 'mb-4'}`}>
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Enhanced Header */}
+      <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 relative overflow-hidden">
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="relative max-w-7xl mx-auto px-6 py-8">
+          <div className="text-white">
+            <h1 className="text-4xl font-bold mb-2 drop-shadow-lg flex items-center">
+              <Settings className="mr-3 h-10 w-10" />
               Settings
-            </h3>
-            <nav className={`flex ${isMobile ? 'flex-row gap-1 overflow-x-auto pb-1' : 'flex-col gap-1'}`}>
-              {settingSections.map(section => (
-                <button
-                  key={section.id}
-                  onClick={() => setActiveSection(section.id)}
-                  className={`flex items-center gap-3 ${isMobile ? 'flex-shrink-0 px-3 py-2.5' : 'w-full px-4 py-3'} rounded-lg border-0 text-sm font-medium cursor-var-pointer text-left transition-all duration-200 ${
-                    activeSection === section.id 
-                      ? 'bg-sky-50 text-sky-700' 
-                      : 'bg-transparent text-slate-500 hover:bg-slate-50'
-                  }`}
-                >
-                  <span className="text-base">{section.icon}</span>
-                  {section.label}
-                </button>
-              ))}
+            </h1>
+            <p className="text-white/90 text-lg">Manage your account settings and preferences</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="max-w-7xl mx-auto px-6 py-8">
+
+        {/* Enhanced Main Content Grid */}
+        <div className={`grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-[320px_1fr] gap-8'}`}>
+          
+          {/* Enhanced Settings Navigation */}
+          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 h-fit p-6">
+            <h3 className="text-lg font-bold text-gray-900 mb-6">Settings Menu</h3>
+            <nav className={`flex ${isMobile ? 'flex-row gap-2 overflow-x-auto pb-2' : 'flex-col gap-2'}`}>
+              {settingSections.map(section => {
+                const IconComponent = section.icon;
+                return (
+                  <button
+                    key={section.id}
+                    onClick={() => setActiveSection(section.id)}
+                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all font-medium ${
+                      activeSection === section.id
+                        ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white shadow-lg'
+                        : 'text-gray-700 hover:bg-gray-50 hover:text-orange-600'
+                    } ${isMobile ? 'min-w-max' : 'w-full'}`}
+                  >
+                    <IconComponent className="h-5 w-5" />
+                    <span className={isMobile ? 'text-sm' : 'text-base'}>{section.label}</span>
+                  </button>
+                );
+              })}
             </nav>
           </div>
 
-          {/* Settings Content */}
+          {/* Enhanced Settings Content */}
           <div className="relative">
-            {renderSection()}
-            
-            {/* Save Button Bar */}
-            {(activeSection === 'profile' || activeSection === 'account' || activeSection === 'notifications') && (
-              <div className={`${isMobile ? 'mt-5 sticky bottom-0 left-0 right-0 p-2.5 bg-slate-50 border-t border-slate-200 z-10' : 'mt-8 static p-0 bg-transparent border-t-0 z-auto'} flex justify-end gap-3`}>
-                <button className={`bg-slate-100 text-slate-500 px-6 py-3 rounded-lg border border-slate-200 text-sm font-medium cursor-var-pointer ${isMobile ? 'w-1/2' : 'w-auto'}`}>
-                  Cancel
-                </button>
-                <button
-                  onClick={handleSave}
-                  className={`bg-green-500 text-white px-6 py-3 rounded-lg border-0 text-sm font-semibold cursor-var-pointer ${isMobile ? 'w-1/2' : 'w-auto'}`}
-                >
-                  Save Changes
-                </button>
+            {error && (
+              <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
+                <div className="flex items-center">
+                  <div className="text-red-600 mr-3">⚠️</div>
+                  <p className="text-red-700">{error}</p>
+                </div>
               </div>
             )}
 
-            {/* Success Message */}
             {showSaveSuccess && (
-              <div className={`fixed ${isMobile ? 'top-20 right-1/2 transform -translate-x-1/2 w-[90%]' : 'top-5 right-5 w-auto'} bg-green-100 text-green-600 px-5 py-3 rounded-lg border border-green-200 text-sm font-medium z-[1000] shadow-lg`}>
-                ✅ Settings saved successfully!
+              <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
+                <div className="flex items-center">
+                  <div className="text-green-600 mr-3">✅</div>
+                  <p className="text-green-700">Settings saved successfully!</p>
+                </div>
               </div>
             )}
+
+            {renderSection()}
+            
+            {/* Enhanced Save Button Bar */}
+            <div className="mt-8 flex justify-end gap-4 bg-white rounded-xl border border-gray-100 p-6">
+              <button 
+                className="px-6 py-3 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
+                onClick={() => fetchUserData()}
+              >
+                Reset
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={saving}
+                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold flex items-center disabled:opacity-50"
+              >
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <Save className="mr-2 h-4 w-4" />
+                    Save Changes
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>

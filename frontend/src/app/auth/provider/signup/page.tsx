@@ -22,27 +22,27 @@ export default function ProviderSignupPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  // Redirect if already logged in as provider
-  useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('providerToken') : null;
-    if (token) {
-      // Verify token is for provider
-      axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/profile`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        }
-      ).then(response => {
-        if (response.data && response.data.role === 'provider') {
-          router.push('/provider/dashboard');
-        }
-      }).catch(() => {
-        localStorage.removeItem('providerToken');
-        localStorage.removeItem('provider');
-      });
-    }
-  }, [router]);
+  // Redirect if already logged in as provider - DISABLED for testing
+  // useEffect(() => {
+  //   const token = typeof window !== 'undefined' ? localStorage.getItem('providerToken') : null;
+  //   if (token) {
+  //     // Verify token is for provider
+  //     axios.get(
+  //       `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/profile`,
+  //       {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //         withCredentials: true,
+  //       }
+  //     ).then(response => {
+  //       if (response.data && response.data.role === 'provider') {
+  //         router.push('/provider/dashboard');
+  //       }
+  //     }).catch(() => {
+  //       localStorage.removeItem('providerToken');
+  //       localStorage.removeItem('provider');
+  //     });
+  //   }
+  // }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -127,12 +127,58 @@ export default function ProviderSignupPage() {
     <div>
     <div className="provider-signup-bg">
       <div className="provider-signup-card">
-        <div className="provider-signup-header">
-          <div className="provider-signup-logo"><span>R</span></div>
-          <h2>Join as a Service Provider</h2>
-          <p className="provider-signup-sub">Start offering your services on Wiwihood</p>
-          <p className="provider-signup-link">Already have an account?{' '}
-            <Link href="/auth/provider/login">Sign in here</Link>
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 24px auto'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
+              borderRadius: '16px',
+              padding: '12px',
+              marginRight: '12px'
+            }}>
+              <span style={{
+                fontSize: '32px',
+                fontWeight: '700',
+                color: '#ffffff'
+              }}>
+                W
+              </span>
+            </div>
+            <span style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent'
+            }}>
+              Wiwihood
+            </span>
+          </div>
+          <h2 style={{
+            fontSize: '28px',
+            fontWeight: '700',
+            color: '#1f2937',
+            marginBottom: '8px'
+          }}>Join as a Service Provider</h2>
+          <p style={{
+            fontSize: '16px',
+            color: '#6b7280',
+            marginBottom: '8px'
+          }}>Start offering your services on Wiwihood</p>
+          <p style={{
+            fontSize: '14px',
+            color: '#6b7280'
+          }}>Already have an account?{' '}
+            <Link href="/auth/provider/login" style={{
+              color: '#f97316',
+              textDecoration: 'none',
+              fontWeight: '600'
+            }}>Sign in here</Link>
           </p>
         </div>
         <div className="provider-signup-formwrap">

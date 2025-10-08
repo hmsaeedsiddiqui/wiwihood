@@ -70,7 +70,15 @@ export default function AdminLoginPage() {
       <div className="bg-white p-12 rounded-xl shadow-lg w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="flex items-center justify-center mx-auto mb-6">
+            <div className="bg-gradient-to-r from-orange-500 to-pink-600 rounded-2xl p-3 mr-3">
+              <span className="text-2xl font-bold text-white">W</span>
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-pink-600 bg-clip-text text-transparent">
+              Wiwihood
+            </span>
+          </div>
+          <div className="w-16 h-16 bg-gradient-to-r from-orange-500 to-pink-600 rounded-full flex items-center justify-center mx-auto mb-4">
             <Shield className="w-8 h-8 text-white" />
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -104,7 +112,7 @@ export default function AdminLoginPage() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full p-3 border border-gray-300 rounded-lg text-base outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              className="w-full p-3 border border-gray-300 rounded-lg text-base outline-none transition-colors focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
               placeholder="Enter your admin email"
             />
           </div>
@@ -124,7 +132,7 @@ export default function AdminLoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full p-3 pr-12 border border-gray-300 rounded-lg text-base outline-none transition-colors focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                className="w-full p-3 pr-12 border border-gray-300 rounded-lg text-base outline-none transition-colors focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
                 placeholder="Enter your password"
               />
               <button
@@ -147,7 +155,7 @@ export default function AdminLoginPage() {
             className={`w-full p-3 rounded-lg border-none text-base font-semibold flex items-center justify-center gap-2 transition-colors ${
               loading 
                 ? 'bg-gray-400 cursor-not-allowed text-white' 
-                : 'bg-emerald-500 hover:bg-emerald-600 cursor-pointer text-white'
+                : 'bg-gradient-to-r from-orange-500 to-pink-600 hover:from-orange-600 hover:to-pink-700 cursor-pointer text-white'
             }`}
           >
             {loading && <Loader2 className="w-4 h-4 animate-spin" />}
@@ -161,7 +169,7 @@ export default function AdminLoginPage() {
             Need help?{' '}
             <Link 
               href="/contact" 
-              className="text-emerald-500 no-underline font-medium hover:text-emerald-600 transition-colors"
+              className="text-orange-500 no-underline font-medium hover:text-orange-600 transition-colors"
             >
               Contact Support
             </Link>

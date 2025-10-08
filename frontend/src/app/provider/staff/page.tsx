@@ -1,8 +1,11 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { User, Plus, Edit, Trash2, Mail, Phone, Calendar, Save, X } from "lucide-react";
+import { User, Plus, Edit, Trash2, Mail, Phone, Calendar, Save, X, Camera, Clock, CheckCircle, AlertCircle, Shield } from "lucide-react";
 import axios from 'axios';
 import QRTIntegration from '@/utils/qrtIntegration';
+import { ImageUpload } from '@/components/cloudinary/ImageUpload';
+import { StaffModal } from '@/components/StaffModal';
+import { useRouter } from 'next/navigation';
 
 interface Staff {
   id: string;
@@ -10,11 +13,13 @@ interface Staff {
   email: string;
   phone: string;
   role: string;
-  status: string;
+  status: 'active' | 'inactive' | 'pending_verification' | 'suspended';
   specialization: string;
   bio: string;
   profileImage?: string;
   workingHours?: WorkingHours[];
+  isVerified?: boolean;
+  verificationStatus?: 'pending' | 'approved' | 'rejected';
   createdAt: string;
 }
 
@@ -27,6 +32,7 @@ interface WorkingHours {
 }
 
 export default function StaffManagementPage() {
+  const router = useRouter();
   const [staff, setStaff] = useState<Staff[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -105,281 +111,197 @@ export default function StaffManagementPage() {
     }
   };
 
-  const StaffModal = ({ isEdit = false, staff: existingStaff = null, onClose, onSubmit }: {
-    isEdit?: boolean;
-    staff?: Staff | null;
-    onClose: () => void;
-    onSubmit: (data: any) => void;
-  }) => {
-    const [formData, setFormData] = useState({
-      name: existingStaff?.name || '',
-      email: existingStaff?.email || '',
-      phone: existingStaff?.phone || '',
-      role: existingStaff?.role || 'staff',
-      status: existingStaff?.status || 'active',
-      specialization: existingStaff?.specialization || '',
-      bio: existingStaff?.bio || '',
-    });
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active':
+        return 'bg-green-100 text-green-800';
+      case 'inactive':
+        return 'bg-gray-100 text-gray-800';
+      case 'pending_verification':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'suspended':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
-    const handleSubmit = (e: React.FormEvent) => {
-      e.preventDefault();
-      onSubmit(formData);
-    };
-
-    return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">{isEdit ? 'Edit Staff Member' : 'Add Staff Member'}</h3>
-            <button onClick={onClose}>
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-              <input
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({...formData, name: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-              <input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                required
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Phone</label>
-              <input
-                type="tel"
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-              <select
-                value={formData.role}
-                onChange={(e) => setFormData({...formData, role: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value="staff">Staff</option>
-                <option value="manager">Manager</option>
-                <option value="specialist">Specialist</option>
-                <option value="assistant">Assistant</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({...formData, status: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-              >
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="on_leave">On Leave</option>
-              </select>
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Specialization</label>
-              <input
-                type="text"
-                value={formData.specialization}
-                onChange={(e) => setFormData({...formData, specialization: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                placeholder="e.g., Hair Styling, Massage Therapy, etc."
-              />
-            </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Bio</label>
-              <textarea
-                value={formData.bio}
-                onChange={(e) => setFormData({...formData, bio: e.target.value})}
-                className="w-full border border-gray-300 rounded-lg px-3 py-2"
-                rows={3}
-                placeholder="Brief description about the staff member..."
-              />
-            </div>
-            
-            <div className="flex justify-end space-x-3">
-              <button
-                type="button"
-                onClick={onClose}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all"
-              >
-                {isEdit ? 'Update' : 'Add'} Staff
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    );
+  const getVerificationStatusColor = (status: string) => {
+    switch (status) {
+      case 'approved':
+        return 'text-green-600';
+      case 'rejected':
+        return 'text-red-600';
+      default:
+        return 'text-yellow-600';
+    }
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center bg-white p-8 rounded-2xl shadow-xl">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Staff</h2>
+          <p className="text-gray-600">Fetching your team members...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {/* Header */}
-      <div className="bg-white shadow-sm border-b border-gray-200">
-        <div className="px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center py-6">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-orange-500 to-pink-600 bg-clip-text text-transparent">Staff Management</h1>
-              <p className="text-gray-600 mt-1">Manage your team members, their roles, and schedules</p>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Enhanced Header */}
+      <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 relative overflow-hidden">
+        {/* Background Pattern */}
+        <div className="absolute inset-0 bg-black/10"></div>
+        <div className="absolute inset-0 opacity-30">
+          <div className="w-full h-full bg-white/10 bg-opacity-20" style={{
+            backgroundImage: `radial-gradient(circle at 1px 1px, rgba(255,255,255,0.15) 1px, transparent 0)`,
+            backgroundSize: '20px 20px'
+          }}></div>
+        </div>
+        
+        <div className="relative max-w-7xl mx-auto px-6 py-8">
+          <div className="flex justify-between items-center">
+            <div className="text-white">
+              <h1 className="text-4xl font-bold mb-2 drop-shadow-lg flex items-center">
+                <User className="mr-3 h-10 w-10" />
+                Staff Management
+              </h1>
+              <p className="text-white/90 text-lg">Manage your team members, their roles, and schedules</p>
             </div>
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all"
+                className="group bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-xl hover:bg-white/30 transition-all font-semibold flex items-center shadow-lg"
               >
-                <Plus className="h-4 w-4" />
-                <span>Add Staff</span>
+                <Plus className="mr-2 h-5 w-5 group-hover:rotate-90 transition-transform" />
+                Add Staff
               </button>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="px-4 sm:px-6 lg:px-8 py-8">
-        {/* Staff Grid */}
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Enhanced Staff Grid */}
         {staff.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {staff.map((member) => (
-              <div key={member.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-lg transition-all">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-12 h-12 bg-gradient-to-r from-orange-100 to-pink-100 rounded-full flex items-center justify-center">
-                      {member.profileImage ? (
-                        <img 
-                          src={member.profileImage} 
-                          alt={member.name}
-                          className="w-12 h-12 rounded-full object-cover"
-                        />
-                      ) : (
-                        <User className="h-6 w-6 text-orange-600" />
-                      )}
+              <div key={member.id} className="group bg-white rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl hover:border-orange-200 transition-all duration-300 transform hover:-translate-y-1 overflow-hidden">
+                {/* Card Header */}
+                <div className="bg-gradient-to-r from-orange-50 to-pink-50 p-6 border-b border-gray-100">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className="relative">
+                        {member.profileImage ? (
+                          <img 
+                            src={`https://res.cloudinary.com/dmhvsn3dm/image/upload/w_100,h_100,c_fill,g_face/${member.profileImage}`}
+                            alt={member.name}
+                            className="w-16 h-16 rounded-full object-cover border-4 border-white shadow-lg"
+                          />
+                        ) : (
+                          <div className="w-16 h-16 bg-gradient-to-br from-orange-400 to-pink-500 rounded-full flex items-center justify-center shadow-lg">
+                            <User className="h-8 w-8 text-white" />
+                          </div>
+                        )}
+                        
+                        {/* Verification Badge */}
+                        {member.verificationStatus === 'approved' && member.isVerified && (
+                          <div className="absolute -top-1 -right-1 bg-green-500 rounded-full p-1.5 shadow-lg">
+                            <CheckCircle className="h-4 w-4 text-white" />
+                          </div>
+                        )}
+                        {member.verificationStatus === 'pending' && (
+                          <div className="absolute -top-1 -right-1 bg-yellow-500 rounded-full p-1.5 shadow-lg">
+                            <Clock className="h-4 w-4 text-white" />
+                          </div>
+                        )}
+                      </div>
+                      
+                      <div>
+                        <h3 className="text-xl font-bold text-gray-900 mb-1">{member.name}</h3>
+                        <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(member.status)}`}>
+                          {member.status ? member.status.replace('_', ' ').toUpperCase() : 'UNKNOWN'}
+                        </span>
+                      </div>
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{member.name}</h3>
-                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                        member.status === 'active' 
-                          ? 'bg-green-100 text-green-800'
-                          : member.status === 'on_leave'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : member.status === 'inactive'
-                          ? 'bg-red-100 text-red-800'
-                          : 'bg-gray-100 text-gray-800'
-                      }`}>
-                        {member.status ? member.status.replace('_', ' ').toUpperCase() : 'UNKNOWN'}
-                      </span>
+                    
+                    {/* Action Buttons */}
+                    <div className="flex items-center space-x-2">
+                      <button
+                        onClick={() => {
+                          setEditingStaff(member);
+                          setShowEditModal(true);
+                        }}
+                        className="p-2 text-gray-500 hover:text-orange-600 hover:bg-orange-50 rounded-lg transition-all"
+                      >
+                        <Edit className="h-5 w-5" />
+                      </button>
+                      <button
+                        onClick={() => removeStaff(member.id)}
+                        className="p-2 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                      >
+                        <Trash2 className="h-5 w-5" />
+                      </button>
                     </div>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <button
-                      onClick={() => {
-                        setEditingStaff(member);
-                        setShowEditModal(true);
-                      }}
-                      className="text-gray-500 hover:text-gray-700 transition-colors"
-                    >
-                      <Edit className="h-4 w-4" />
-                    </button>
-                    <button
-                      onClick={() => removeStaff(member.id)}
-                      className="text-red-500 hover:text-red-700 transition-colors"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  <div>
-                    <p className="text-sm font-medium text-gray-700">Role</p>
-                    <p className="text-sm text-gray-600 capitalize">{member.role}</p>
+                {/* Card Body */}
+                <div className="p-6 space-y-4">
+                  <div className="grid grid-cols-1 gap-4">
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <p className="text-sm font-semibold text-gray-700 mb-1">Role</p>
+                      <p className="text-gray-900 capitalize font-medium">{member.role}</p>
+                    </div>
+                    
+                    {member.specialization && (
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <p className="text-sm font-semibold text-gray-700 mb-1">Specialization</p>
+                        <p className="text-gray-900">{member.specialization}</p>
+                      </div>
+                    )}
                   </div>
                   
-                  {member.specialization && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">Specialization</p>
-                      <p className="text-sm text-gray-600">{member.specialization}</p>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center space-x-4 text-sm text-gray-500">
+                  {/* Contact Info */}
+                  <div className="space-y-3 pt-4 border-t border-gray-100">
                     {member.email && (
-                      <div className="flex items-center space-x-1">
-                        <Mail className="h-4 w-4" />
-                        <span className="truncate">{member.email}</span>
+                      <div className="flex items-center space-x-3 text-sm">
+                        <div className="bg-orange-100 p-2 rounded-lg">
+                          <Mail className="h-4 w-4 text-orange-600" />
+                        </div>
+                        <span className="text-gray-600 truncate flex-1">{member.email}</span>
                       </div>
                     )}
                     {member.phone && (
-                      <div className="flex items-center space-x-1">
-                        <Phone className="h-4 w-4" />
-                        <span>{member.phone}</span>
+                      <div className="flex items-center space-x-3 text-sm">
+                        <div className="bg-pink-100 p-2 rounded-lg">
+                          <Phone className="h-4 w-4 text-pink-600" />
+                        </div>
+                        <span className="text-gray-600">{member.phone}</span>
                       </div>
                     )}
                   </div>
-                  
-                  {member.bio && (
-                    <div>
-                      <p className="text-sm font-medium text-gray-700">Bio</p>
-                      <p className="text-sm text-gray-600 line-clamp-2">{member.bio}</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="mt-4 pt-4 border-t border-gray-200">
-                  <button className="flex items-center space-x-2 text-sm text-orange-600 hover:text-orange-700 transition-colors">
-                    <Calendar className="h-4 w-4" />
-                    <span>View Schedule</span>
-                  </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <User className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-semibold text-gray-900">No staff members</h3>
-            <p className="mt-1 text-sm text-gray-500">Get started by adding your first staff member.</p>
-            <div className="mt-6">
+          <div className="text-center py-16">
+            <div className="bg-white rounded-2xl shadow-lg p-12 max-w-md mx-auto">
+              <div className="bg-gradient-to-br from-orange-100 to-pink-100 rounded-full p-6 w-24 h-24 mx-auto mb-6">
+                <User className="h-12 w-12 text-orange-600 mx-auto" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">No Staff Members Yet</h3>
+              <p className="text-gray-600 mb-8">Start building your team by adding your first staff member.</p>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-lg hover:shadow-lg transition-all"
+                className="bg-gradient-to-r from-orange-500 to-pink-600 text-white px-8 py-3 rounded-xl hover:shadow-lg transition-all font-semibold flex items-center mx-auto"
               >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Staff Member
+                <Plus className="h-5 w-5 mr-2" />
+                Add First Staff Member
               </button>
             </div>
           </div>

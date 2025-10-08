@@ -26,13 +26,18 @@ export const CloudinaryImage: React.FC<CloudinaryImageProps> = ({
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   
   if (!cloudName) {
-    console.error('Cloudinary cloud name not configured');
+    console.warn('Cloudinary cloud name not configured, using fallback');
     return (
       <div 
-        className={`bg-gray-200 flex items-center justify-center ${className}`}
+        className={`bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center rounded-lg ${className}`}
         style={{ width, height, ...style }}
       >
-        <span className="text-gray-500 text-sm">Image not available</span>
+        <div className="text-center">
+          <div className="w-8 h-8 bg-gray-400 rounded-full mx-auto mb-2 flex items-center justify-center">
+            <span className="text-white text-xs">📷</span>
+          </div>
+          <span className="text-gray-500 text-xs">No Image</span>
+        </div>
       </div>
     );
   }

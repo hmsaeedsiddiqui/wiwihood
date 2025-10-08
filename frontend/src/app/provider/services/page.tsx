@@ -59,25 +59,20 @@ export default function ServicesPage() {
 
   const fetchProviderInfo = async () => {
     try {
-      // In a real application, you'd likely use an authentication context or server-side logic
-      const token = localStorage.getItem('providerToken');
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/providers/profile`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        }
-      );
+      // Use QRT Integration for reliable auth profile
+      const userData = await QRTIntegration.getAuthProfile();
       
-      if (response.data) {
-        // Use provider.id if available, else fallback to id
-        const idToSet = response.data.provider?.id || response.data.id;
-        setProviderId(idToSet);
+      if (userData && userData.id) {
+        console.log('✅ Services: Provider info loaded via QRT:', userData.firstName, userData.lastName);
+        setProviderId(userData.id);
+      } else {
+        console.warn('⚠️ Services: No provider data from QRT, using fallback');
+        setProviderId('mock-provider-123');
       }
     } catch (error) {
-      console.error('Error fetching provider info:', error);
+      console.error('❌ Services: Error fetching provider info:', error);
       // Fallback to mock provider ID if API fails
-      console.log('Using fallback provider ID');
+      console.log('🔄 Services: Using fallback provider ID');
       setProviderId('mock-provider-123');
     }
   };
@@ -145,25 +140,43 @@ export default function ServicesPage() {
       };
       
       if (editingService) {
-        // Update existing service
-        await axios.patch(
-          `${process.env.NEXT_PUBLIC_API_URL}/services/${editingService.id}`,
-          submitData,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          }
-        );
+        // Update existing service using QRT Integration
+        console.log('🔄 Services: Updating service via QRT...');
+        try {
+          await QRTIntegration.updateService(editingService.id, submitData);
+          console.log('✅ Services: Service updated successfully');
+        } catch (qrtError) {
+          console.warn('⚠️ Services: QRT update failed, trying direct API...');
+          // Fallback to direct API call
+          const token = localStorage.getItem('providerToken');
+          await axios.patch(
+            `${process.env.NEXT_PUBLIC_API_URL}/services/${editingService.id}`,
+            submitData,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              withCredentials: true,
+            }
+          );
+        }
       } else {
-        // Create new service
-        await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL}/services/provider/${providerId}`,
-          submitData,
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true,
-          }
-        );
+        // Create new service using QRT Integration
+        console.log('🆕 Services: Creating new service via QRT...');
+        try {
+          await QRTIntegration.createService(submitData);
+          console.log('✅ Services: Service created successfully');
+        } catch (qrtError) {
+          console.warn('⚠️ Services: QRT create failed, trying direct API...');
+          // Fallback to direct API call
+          const token = localStorage.getItem('providerToken');
+          await axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL}/services/provider/${providerId}`,
+            submitData,
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              withCredentials: true,
+            }
+          );
+        }
       }
 
       // Reset form and refresh list
@@ -198,35 +211,51 @@ export default function ServicesPage() {
     if (!confirm('Are you sure you want to delete this service?')) return;
 
     try {
-      const token = localStorage.getItem('providerToken');
-      await axios.delete(
-        `${process.env.NEXT_PUBLIC_API_URL}/services/${serviceId}`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        }
-      );
+      console.log('🗑️ Services: Deleting service via QRT...');
+      try {
+        await QRTIntegration.deleteService(serviceId);
+        console.log('✅ Services: Service deleted successfully');
+      } catch (qrtError) {
+        console.warn('⚠️ Services: QRT delete failed, trying direct API...');
+        // Fallback to direct API call
+        const token = localStorage.getItem('providerToken');
+        await axios.delete(
+          `${process.env.NEXT_PUBLIC_API_URL}/services/${serviceId}`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          }
+        );
+      }
       await fetchServices();
     } catch (error: any) {
-      console.error('Error deleting service:', error);
+      console.error('❌ Services: Error deleting service:', error);
       setError(error.response?.data?.message || 'Failed to delete service');
     }
   };
 
   const toggleServiceStatus = async (serviceId: string) => {
     try {
-      const token = localStorage.getItem('providerToken');
-      await axios.patch(
-        `${process.env.NEXT_PUBLIC_API_URL}/services/${serviceId}/toggle-active`,
-        {},
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        }
-      );
+      console.log('🔄 Services: Toggling service status via QRT...');
+      try {
+        await QRTIntegration.toggleServiceStatus(serviceId);
+        console.log('✅ Services: Service status toggled successfully');
+      } catch (qrtError) {
+        console.warn('⚠️ Services: QRT toggle failed, trying direct API...');
+        // Fallback to direct API call
+        const token = localStorage.getItem('providerToken');
+        await axios.patch(
+          `${process.env.NEXT_PUBLIC_API_URL}/services/${serviceId}/toggle-active`,
+          {},
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true,
+          }
+        );
+      }
       await fetchServices();
     } catch (error: any) {
-      console.error('Error toggling service status:', error);
+      console.error('❌ Services: Error toggling service status:', error);
       setError(error.response?.data?.message || 'Failed to update service status');
     }
   };

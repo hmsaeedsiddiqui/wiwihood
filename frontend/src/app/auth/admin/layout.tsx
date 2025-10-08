@@ -41,10 +41,13 @@ export default function AdminAuthLayout({
               <span style={{
                 fontSize: '32px',
                 fontWeight: '700',
-                color: '#dc2626',
+                background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
+                backgroundClip: 'text',
+                WebkitBackgroundClip: 'text',
+                color: 'transparent',
                 letterSpacing: '-0.025em'
               }}>
-                Reservista
+                Wiwihood
               </span>
               <span style={{
                 fontSize: '14px',
@@ -189,7 +192,7 @@ export default function AdminAuthLayout({
             color: '#9ca3af',
             fontSize: '14px'
           }}>
-            © 2024 Reservista Admin Portal. All rights reserved.
+            © 2024 Wiwihood Admin Portal. All rights reserved.
           </div>
         </div>
       </footer>

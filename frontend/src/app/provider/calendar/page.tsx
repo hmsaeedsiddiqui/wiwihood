@@ -1,7 +1,10 @@
 ﻿"use client";
 import React, { useState, useEffect } from "react";
-import { Calendar, ChevronLeft, ChevronRight, Clock, User, MapPin } from "lucide-react";
+import { Calendar, ChevronLeft, ChevronRight, Clock, User, MapPin, Plus, Ban, RotateCcw } from "lucide-react";
 import QRTIntegration from "@/utils/qrtIntegration";
+import TimeBlockModal from "@/components/TimeBlockModal";
+import RecurringModal from "@/components/RecurringModal";
+import GoogleCalendarSync from "@/components/GoogleCalendarSync";
 
 interface Booking {
   id: string;
@@ -14,13 +17,46 @@ interface Booking {
   servicePrice?: number;
 }
 
+interface TimeBlock {
+  id: string;
+  date: string;
+  startTime: string;
+  endTime: string;
+  reason?: string;
+  type: 'blocked' | 'break' | 'vacation';
+}
+
+interface RecurringAppointment {
+  id: string;
+  customerName: string;
+  customerEmail: string;
+  serviceName: string;
+  startDate: string;
+  endDate?: string;
+  startTime: string;
+  duration: number;
+  interval: 'weekly' | 'biweekly' | 'monthly';
+  dayOfWeek?: number; // 0-6 for weekly
+  dayOfMonth?: number; // 1-31 for monthly
+  status: 'active' | 'paused' | 'ended';
+}
+
 export default function CalendarPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [timeBlocks, setTimeBlocks] = useState<TimeBlock[]>([]);
+  const [recurringAppointments, setRecurringAppointments] = useState<RecurringAppointment[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  // Modal states
+  const [showTimeBlockModal, setShowTimeBlockModal] = useState(false);
+  const [showRecurringModal, setShowRecurringModal] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   useEffect(() => {
     fetchBookings();
+    fetchTimeBlocks();
+    fetchRecurringAppointments();
   }, [currentDate]);
 
   const fetchBookings = async () => {
@@ -129,6 +165,65 @@ export default function CalendarPage() {
     return days;
   };
 
+  const fetchTimeBlocks = async () => {
+    try {
+      const token = localStorage.getItem('providerToken');
+      const startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1).toISOString().split('T')[0];
+      const endDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0).toISOString().split('T')[0];
+      
+      const response = await fetch(`http://localhost:8000/api/v1/time-blocks?startDate=${startDate}&endDate=${endDate}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setTimeBlocks(data);
+      } else {
+        // Fallback to empty array if API not available
+        setTimeBlocks([]);
+      }
+    } catch (error) {
+      console.error('Error fetching time blocks:', error);
+      setTimeBlocks([]);
+    }
+  };
+
+  const fetchRecurringAppointments = async () => {
+    try {
+      const token = localStorage.getItem('providerToken');
+      const response = await fetch('http://localhost:8000/api/v1/recurring-appointments', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setRecurringAppointments(data);
+      } else {
+        // Fallback to empty array if API not available
+        setRecurringAppointments([]);
+      }
+    } catch (error) {
+      console.error('Error fetching recurring appointments:', error);
+      setRecurringAppointments([]);
+    }
+  };
+
+  const handleTimeBlockCreated = (timeBlock: TimeBlock) => {
+    setTimeBlocks(prev => [...prev, timeBlock]);
+  };
+
+  const handleRecurringCreated = (recurring: RecurringAppointment) => {
+    setRecurringAppointments(prev => [...prev, recurring]);
+  };
+
+  const handleDateClick = (date: Date) => {
+    setSelectedDate(date);
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'confirmed': return 'bg-green-100 text-green-800 border-green-200';
@@ -172,7 +267,7 @@ export default function CalendarPage() {
         {/* Calendar Header */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 mb-6">
           <div className="p-6 border-b border-gray-200">
-            <div className="flex justify-between items-center">
+            <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold text-gray-900">
                 {currentDate.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
               </h2>
@@ -197,6 +292,47 @@ export default function CalendarPage() {
                 </button>
               </div>
             </div>
+            
+            {/* Action Buttons */}
+            <div className="flex flex-wrap gap-3">
+              <button
+                onClick={() => {
+                  setSelectedDate(new Date());
+                  setShowTimeBlockModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-red-50 text-red-700 border border-red-200 rounded-lg hover:bg-red-100 transition-colors"
+              >
+                <Ban className="w-4 h-4" />
+                Block Time
+              </button>
+              
+              <button
+                onClick={() => {
+                  setSelectedDate(new Date());
+                  setShowRecurringModal(true);
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-700 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+              >
+                <RotateCcw className="w-4 h-4" />
+                Recurring Appointment
+              </button>
+              
+              <button
+                onClick={() => {
+                  // TODO: Implement Google Calendar sync
+                  alert('Google Calendar sync coming soon!');
+                }}
+                className="flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg hover:bg-green-100 transition-colors"
+              >
+                <Calendar className="w-4 h-4" />
+                Sync with Google
+              </button>
+            </div>
+          </div>
+
+          {/* Google Calendar Integration */}
+          <div className="p-6 border-b border-gray-200">
+            <GoogleCalendarSync onSyncComplete={() => fetchBookings()} />
           </div>
 
           {/* Calendar Grid */}
@@ -211,11 +347,33 @@ export default function CalendarPage() {
             
             <div className="grid grid-cols-7 gap-1">
               {generateCalendarDays().map((day, index) => (
-                <div key={index} className="h-32 border border-gray-200 bg-white rounded-lg">
+                <div 
+                  key={index} 
+                  className={`h-32 border border-gray-200 rounded-lg transition-colors ${
+                    day ? 'bg-white hover:bg-gray-50 cursor-pointer' : 'bg-gray-50'
+                  }`}
+                  onClick={() => day && handleDateClick(day.fullDate)}
+                >
                   {day && (
                     <div className={`h-full p-2 rounded-lg ${day.isToday ? 'bg-orange-50 border-orange-200' : ''}`}>
-                      <div className={`text-sm font-medium mb-2 ${day.isToday ? 'text-orange-600' : 'text-gray-900'}`}>
-                        {day.date}
+                      <div className={`text-sm font-medium mb-2 flex justify-between items-center ${day.isToday ? 'text-orange-600' : 'text-gray-900'}`}>
+                        <span>{day.date}</span>
+                        <div className="flex gap-1">
+                          {/* Time block indicators */}
+                          {timeBlocks.filter(block => 
+                            block.date === day.fullDate.toISOString().split('T')[0]
+                          ).slice(0, 2).map((block, idx) => (
+                            <div 
+                              key={idx}
+                              className={`w-2 h-2 rounded-full ${
+                                block.type === 'blocked' ? 'bg-red-400' :
+                                block.type === 'break' ? 'bg-yellow-400' :
+                                'bg-blue-400'
+                              }`}
+                              title={`${block.type}: ${block.startTime}-${block.endTime}`}
+                            />
+                          ))}
+                        </div>
                       </div>
                       <div className="space-y-1">
                         {day.bookings.slice(0, 2).map((booking) => (
@@ -294,23 +452,60 @@ export default function CalendarPage() {
 
         {/* Legend */}
         <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">Status Legend</h3>
-          <div className="grid grid-cols-3 gap-4">
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-green-100 border border-green-200 rounded"></div>
-              <span className="text-sm text-gray-700">Confirmed</span>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Legend</h3>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Booking Status</h4>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-green-100 border border-green-200 rounded"></div>
+                  <span className="text-sm text-gray-700">Confirmed</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-yellow-100 border border-yellow-200 rounded"></div>
+                  <span className="text-sm text-gray-700">Pending</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 bg-red-100 border border-red-200 rounded"></div>
+                  <span className="text-sm text-gray-700">Cancelled</span>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-yellow-100 border border-yellow-200 rounded"></div>
-              <span className="text-sm text-gray-700">Pending</span>
-            </div>
-            <div className="flex items-center space-x-2">
-              <div className="w-4 h-4 bg-red-100 border border-red-200 rounded"></div>
-              <span className="text-sm text-gray-700">Cancelled</span>
+            <div>
+              <h4 className="font-medium text-gray-900 mb-2">Time Blocks</h4>
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-red-400 rounded-full"></div>
+                  <span className="text-sm text-gray-700">Blocked Time</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-yellow-400 rounded-full"></div>
+                  <span className="text-sm text-gray-700">Break Time</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-3 h-3 bg-blue-400 rounded-full"></div>
+                  <span className="text-sm text-gray-700">Vacation</span>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       </div>
+      
+      {/* Modals */}
+      <TimeBlockModal
+        isOpen={showTimeBlockModal}
+        onClose={() => setShowTimeBlockModal(false)}
+        selectedDate={selectedDate}
+        onTimeBlockCreated={handleTimeBlockCreated}
+      />
+      
+      <RecurringModal
+        isOpen={showRecurringModal}
+        onClose={() => setShowRecurringModal(false)}
+        selectedDate={selectedDate}
+        onRecurringCreated={handleRecurringCreated}
+      />
     </div>
   );
 }

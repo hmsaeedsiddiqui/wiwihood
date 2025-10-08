@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsEmail, IsOptional, IsNumber, IsBoolean, IsEnum, IsUUID, Min, Max } from 'class-validator';
+import { IsString, IsEmail, IsOptional, IsNumber, IsBoolean, IsEnum, IsUUID, Min, Max, IsIn } from 'class-validator';
 import { StaffStatus, StaffRole } from '../../../entities/staff.entity';
 
 export class CreateStaffDto {
@@ -81,13 +81,33 @@ export class CreateStaffDto {
   bio?: string;
 
   @ApiProperty({ 
-    description: 'Profile image URL', 
-    example: 'https://example.com/images/staff/sarah-johnson.jpg',
+    description: 'Profile image URL or Cloudinary public ID', 
+    example: 'staff/profile_images/sarah_johnson_abc123',
     required: false 
   })
   @IsOptional()
   @IsString()
   profileImage?: string;
+
+  @ApiProperty({ 
+    description: 'Verification status for admin approval', 
+    example: 'pending',
+    enum: ['pending', 'approved', 'rejected'],
+    required: false 
+  })
+  @IsOptional()
+  @IsIn(['pending', 'approved', 'rejected'])
+  verificationStatus?: 'pending' | 'approved' | 'rejected';
+
+  @ApiProperty({ 
+    description: 'Whether staff is verified by admin', 
+    example: false,
+    default: false,
+    required: false 
+  })
+  @IsOptional()
+  @IsBoolean()
+  isVerified?: boolean;
 
   @ApiProperty({ 
     description: 'Hourly rate', 
@@ -280,6 +300,12 @@ export class StaffResponseDto {
 
   @ApiProperty({ description: 'Whether staff is available' })
   isAvailable: boolean;
+
+  @ApiProperty({ description: 'Verification status' })
+  verificationStatus: 'pending' | 'approved' | 'rejected';
+
+  @ApiProperty({ description: 'Whether staff is verified by admin' })
+  isVerified: boolean;
 
   @ApiProperty({ description: 'Provider ID' })
   providerId: string;

@@ -42,6 +42,8 @@ import { ServiceAddonsModule } from './modules/service-addons/service-addons.mod
 import { RecurringBookingsModule } from './modules/recurring-bookings/recurring-bookings.module';
 import { PromotionsModule } from './modules/promotions/promotions.module';
 import { StaffModule } from './modules/staff/staff.module';
+import { TimeBlocksModule } from './modules/time-blocks/time-blocks.module';
+import { RecurringAppointmentsModule } from './modules/recurring-appointments/recurring-appointments.module';
 
 @Module({
   imports: [
@@ -104,6 +106,8 @@ import { StaffModule } from './modules/staff/staff.module';
     RecurringBookingsModule, // Register RecurringBookingsModule
     PromotionsModule, // Register PromotionsModule
     StaffModule, // Register StaffModule
+    TimeBlocksModule, // Register TimeBlocksModule
+    RecurringAppointmentsModule, // Register RecurringAppointmentsModule
   ],
   controllers: [AppController, PaymentController],
   providers: [AppService, PaymentService],

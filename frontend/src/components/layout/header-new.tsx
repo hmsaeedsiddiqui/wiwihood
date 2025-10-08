@@ -50,7 +50,7 @@ export function Header() {
     <>
       <header className="site-header">
         {/* Top Banner */}
-        <div className="bg-emerald-500 text-white text-[13px] py-2.5 font-medium hidden lg:block">
+        <div className="bg-gradient-to-r from-orange-500 to-pink-600 text-white text-[13px] py-2.5 font-medium hidden lg:block">
           <div className="max-w-[1400px] w-[95%] mx-auto flex justify-between items-center">
             <p>
               FREE delivery &amp; 40% Discount for next 3 Bookings! Place your first appointment in.
@@ -99,9 +99,14 @@ export function Header() {
             <div className="flex items-center">
               <Link
                 href="/"
-                className="text-2xl font-bold cursor-pointer text-gray-900 mr-4 hover:text-emerald-600 transition-colors no-underline"
+                className="flex items-center cursor-pointer mr-4 hover:opacity-80 transition-opacity no-underline"
               >
-                Reservista
+                <div className="bg-gradient-to-r from-orange-500 to-pink-600 rounded-xl p-2 mr-3">
+                  <span className="text-white font-bold text-xl">W</span>
+                </div>
+                <span className="text-2xl font-bold bg-gradient-to-r from-orange-500 to-pink-600 bg-clip-text text-transparent">
+                  Wiwihood
+                </span>
               </Link>
               <div className="hidden md:flex items-center gap-2 ml-2">
                 <div>
@@ -109,7 +114,7 @@ export function Header() {
                 </div>
                 <div className="text-sm text-gray-600">
                   <p>Available near</p>
-                  <a href="#" className="hover:text-emerald-700">
+                  <a href="#" className="hover:text-orange-600">
                     you
                   </a>
                 </div>
@@ -121,7 +126,7 @@ export function Header() {
               <li>
                 <a
                   href="/"
-                  className="text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+                  className="text-gray-700 hover:text-orange-600 font-medium transition-colors"
                 >
                   Home
                 </a>
@@ -129,7 +134,7 @@ export function Header() {
               <li>
                 <a
                   href="/shop"
-                  className="text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+                  className="text-gray-700 hover:text-orange-600 font-medium transition-colors"
                 >
                   Shop
                 </a>
@@ -138,7 +143,7 @@ export function Header() {
                 <li key={cat.id}>
                   <a
                     href={`/category/${cat.slug}`}
-                    className="text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+                    className="text-gray-700 hover:text-orange-600 font-medium transition-colors"
                   >
                     {cat.name}
                   </a>
@@ -147,7 +152,7 @@ export function Header() {
               <li>
                 <a
                   href="/contact"
-                  className="text-gray-700 hover:text-emerald-600 font-medium transition-colors"
+                  className="text-gray-700 hover:text-orange-600 font-medium transition-colors"
                 >
                   Contact
                 </a>
@@ -161,7 +166,7 @@ export function Header() {
                 <button
                   type="button"
                   onClick={() => setShowWishlistModal(true)}
-                  className="flex items-center justify-center text-gray-700 text-xl relative w-8 h-8 hover:text-emerald-600"
+                  className="flex items-center justify-center text-gray-700 text-xl relative w-8 h-8 hover:text-orange-600"
                 >
                   <i className="fa-regular fa-heart"></i>
                   {mounted && wishlist.length > 0 && (
@@ -173,7 +178,7 @@ export function Header() {
 
                 <button
                   onClick={handleCartClick}
-                  className="flex items-center justify-center text-gray-700 text-xl relative w-8 h-8 hover:text-emerald-600"
+                  className="flex items-center justify-center text-gray-700 text-xl relative w-8 h-8 hover:text-orange-600"
                 >
                   <i className="fa-solid fa-cart-shopping"></i>
                   {mounted && cart.length > 0 && (
@@ -252,7 +257,7 @@ export function Header() {
               {/* Mobile Menu Toggle */}
               <button
                 onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-                className="lg:hidden flex items-center justify-center text-gray-700 text-xl w-8 h-8 hover:text-emerald-600 order-3"
+                className="lg:hidden flex items-center justify-center text-gray-700 text-xl w-8 h-8 hover:text-orange-600 order-3"
               >
                 <i className="fa-solid fa-bars"></i>
               </button>
@@ -263,12 +268,12 @@ export function Header() {
           {isMobileMenuOpen && (
             <ul className="lg:hidden mt-4 space-y-2 px-4">
               <li>
-                <a href="/" className="block py-2 text-gray-700 hover:text-emerald-600">
+                <a href="/" className="block py-2 text-gray-700 hover:text-orange-600">
                   Home
                 </a>
               </li>
               <li>
-                <a href="/shop" className="block py-2 text-gray-700 hover:text-emerald-600">
+                <a href="/shop" className="block py-2 text-gray-700 hover:text-orange-600">
                   Shop
                 </a>
               </li>
@@ -276,14 +281,14 @@ export function Header() {
                 <li key={cat.id}>
                   <a
                     href={`/category/${cat.slug}`}
-                    className="block py-2 text-gray-700 hover:text-emerald-600"
+                    className="block py-2 text-gray-700 hover:text-orange-600"
                   >
                     {cat.name}
                   </a>
                 </li>
               ))}
               <li>
-                <a href="/contact" className="block py-2 text-gray-700 hover:text-emerald-600">
+                <a href="/contact" className="block py-2 text-gray-700 hover:text-orange-600">
                   Contact
                 </a>
               </li>
@@ -294,13 +299,13 @@ export function Header() {
                   <>
                     {isAuthenticated && user ? (
                       <>
-                        <a href="/profile" className="block py-2 text-gray-700 hover:text-emerald-600">
+                        <a href="/profile" className="block py-2 text-gray-700 hover:text-orange-600">
                           My Profile
                         </a>
-                        <a href="/bookings" className="block py-2 text-gray-700 hover:text-emerald-600">
+                        <a href="/bookings" className="block py-2 text-gray-700 hover:text-orange-600">
                           My Bookings
                         </a>
-                        <a href="/settings" className="block py-2 text-gray-700 hover:text-emerald-600">
+                        <a href="/settings" className="block py-2 text-gray-700 hover:text-orange-600">
                           Settings
                         </a>
                         <button
@@ -313,7 +318,7 @@ export function Header() {
                     ) : (
                       <Link
                         href="/auth/login"
-                        className="block py-2 text-gray-700 hover:text-emerald-600"
+                        className="block py-2 text-gray-700 hover:text-orange-600"
                       >
                         Sign In / Account
                       </Link>

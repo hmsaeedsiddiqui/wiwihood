@@ -190,6 +190,42 @@ export class StaffService {
     };
   }
 
+  async verifyStaff(id: string, status: 'approved' | 'rejected'): Promise<StaffResponseDto> {
+    const staff = await this.staffRepository.findOne({
+      where: { id },
+      relations: ['provider']
+    });
+
+    if (!staff) {
+      throw new NotFoundException('Staff member not found');
+    }
+
+    staff.verificationStatus = status;
+    staff.isVerified = status === 'approved';
+    
+    if (status === 'approved') {
+      staff.status = StaffStatus.ACTIVE;
+    } else if (status === 'rejected') {
+      staff.status = StaffStatus.INACTIVE;
+    }
+
+    const updatedStaff = await this.staffRepository.save(staff);
+    return this.formatStaffResponse(updatedStaff);
+  }
+
+  async getPendingVerification(): Promise<StaffResponseDto[]> {
+    const pendingStaff = await this.staffRepository.find({
+      where: { 
+        verificationStatus: 'pending',
+        isVerified: false 
+      },
+      relations: ['provider'],
+      order: { createdAt: 'DESC' }
+    });
+
+    return pendingStaff.map(staff => this.formatStaffResponse(staff));
+  }
+
   private formatStaffResponse(staff: Staff): StaffResponseDto {
     return {
       id: staff.id,
@@ -209,6 +245,8 @@ export class StaffService {
       isBookable: staff.isBookable,
       isPublic: staff.isPublic,
       isAvailable: staff.isAvailable,
+      verificationStatus: staff.verificationStatus,
+      isVerified: staff.isVerified,
       providerId: staff.providerId,
       providerName: staff.provider?.businessName,
       userId: staff.userId,

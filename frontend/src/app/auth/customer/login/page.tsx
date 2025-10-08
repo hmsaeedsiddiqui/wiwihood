@@ -14,27 +14,27 @@ export default function CustomerLoginPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  // Redirect if already logged in as customer
-  useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('customerToken') : null;
-    if (token) {
-      // Verify token is for customer
-      axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/auth/profile`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        }
-      ).then(response => {
-        if (response.data && response.data.role === 'customer') {
-          router.push('/');
-        }
-      }).catch(() => {
-        localStorage.removeItem('customerToken');
-        localStorage.removeItem('customer');
-      });
-    }
-  }, [router]);
+  // Redirect if already logged in as customer - DISABLED for testing
+  // useEffect(() => {
+  //   const token = typeof window !== 'undefined' ? localStorage.getItem('customerToken') : null;
+  //   if (token) {
+  //     // Verify token is for customer
+  //     axios.get(
+  //       `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/auth/profile`,
+  //       {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //         withCredentials: true,
+  //       }
+  //     ).then(response => {
+  //       if (response.data && response.data.role === 'customer') {
+  //         router.push('/');
+  //       }
+  //     }).catch(() => {
+  //       localStorage.removeItem('customerToken');
+  //       localStorage.removeItem('customer');
+  //     });
+  //   }
+  // }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -92,21 +92,34 @@ export default function CustomerLoginPage() {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{
-            width: '64px',
-            height: '64px',
-            backgroundColor: '#059669',
-            borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 16px auto'
+            margin: '0 auto 24px auto'
           }}>
-            <span style={{
-              fontSize: '32px',
-              fontWeight: '700',
-              color: '#ffffff'
+            <div style={{
+              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
+              borderRadius: '16px',
+              padding: '12px',
+              marginRight: '12px'
             }}>
-              R
+              <span style={{
+                fontSize: '32px',
+                fontWeight: '700',
+                color: '#ffffff'
+              }}>
+                W
+              </span>
+            </div>
+            <span style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent'
+            }}>
+              Wiwihood
             </span>
           </div>
           <h1 style={{
@@ -130,7 +143,7 @@ export default function CustomerLoginPage() {
           }}>
             Don't have an account?{' '}
             <Link href="/auth/customer/register" style={{
-              color: '#059669',
+              color: '#f97316',
               textDecoration: 'none',
               fontWeight: '600'
             }}>
@@ -259,7 +272,7 @@ export default function CustomerLoginPage() {
               </label>
               <Link href="/auth/customer/forgot-password" style={{
                 fontSize: '14px',
-                color: '#059669',
+                color: '#f97316',
                 textDecoration: 'none',
                 fontWeight: '500'
               }}>
@@ -274,7 +287,7 @@ export default function CustomerLoginPage() {
             style={{
               width: '100%',
               padding: '12px',
-              backgroundColor: loading ? '#9ca3af' : '#059669',
+              background: loading ? '#9ca3af' : 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
               color: '#ffffff',
               border: 'none',
               borderRadius: '6px',

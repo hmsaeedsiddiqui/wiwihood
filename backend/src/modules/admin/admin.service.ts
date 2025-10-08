@@ -53,7 +53,7 @@ export class AdminService {
         .where('booking.status = :status', { status: 'completed' })
         .getRawOne(),
             this.usersRepository.count({ where: { status: 'active' } }),
-            this.bookingsRepository.count({ where: { status: BookingStatus.PENDING } }),
+            this.bookingsRepository.count({ where: { status: 'pending' } }),
       this.usersRepository
         .createQueryBuilder('user')
         .where('user.createdAt >= :date', {

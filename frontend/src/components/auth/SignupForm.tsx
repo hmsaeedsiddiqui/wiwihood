@@ -40,6 +40,40 @@ export default function SignupForm({ onSuccess }: { onSuccess?: () => void }) {
   return (
     <div className="bg-gray-50 p-3 rounded-2xl">
       <div className="">
+        {/* Wiwihood Header */}
+        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            margin: '0 auto 24px auto'
+          }}>
+            <div style={{
+              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
+              borderRadius: '16px',
+              padding: '12px',
+              marginRight: '12px'
+            }}>
+              <span style={{
+                fontSize: '32px',
+                fontWeight: '700',
+                color: '#ffffff'
+              }}>
+                W
+              </span>
+            </div>
+            <span style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent'
+            }}>
+              Wiwihood
+            </span>
+          </div>
+        </div>
         <h2 className="auth-form-title">Create Account</h2>
         
         {error && (

@@ -76,7 +76,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
   const router = useRouter();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [user, setUser] = useState({ name: 'Admin User', email: 'admin@reservista.com', role: 'Super Admin' });
+  const [user, setUser] = useState({ name: 'Admin User', email: 'admin@wiwihood.com', role: 'Super Admin' });
 
   useEffect(() => {
     // Check admin authentication
@@ -111,7 +111,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         // Update user state with real data
         setUser({
           name: userData.name || 'Admin User',
-          email: userData.email || 'admin@reservista.com',
+          email: userData.email || 'admin@wiwihood.com',
           role: 'Admin'
         });
 
@@ -141,11 +141,16 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
       }`}>
         <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-pink-600 rounded-lg flex items-center justify-center">
               <Shield className="h-5 w-5 text-white" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">Reservista</h1>
+              <div className="flex items-center">
+                <div className="w-8 h-8 bg-gradient-to-br from-orange-500 to-pink-600 rounded-lg flex items-center justify-center shadow-sm mr-3">
+                  <span className="text-white font-bold text-sm">W</span>
+                </div>
+                <h1 className="text-lg font-bold text-gray-900">Wiwi<span className="text-orange-500">hood</span></h1>
+              </div>
               <p className="text-xs text-gray-500">Admin Panel</p>
             </div>
           </div>
@@ -172,13 +177,13 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                       href={item.href}
                       className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
                         isActive(item.href)
-                          ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                          : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                          ? 'bg-orange-50 text-orange-700 border-r-2 border-orange-600'
+                          : 'text-gray-700 hover:bg-orange-50 hover:text-orange-600'
                       }`}
                       onClick={() => setSidebarOpen(false)}
                     >
                       <Icon className={`mr-3 h-5 w-5 transition-colors ${
-                        isActive(item.href) ? 'text-blue-700' : 'text-gray-400 group-hover:text-gray-500'
+                        isActive(item.href) ? 'text-orange-600' : 'text-gray-400 group-hover:text-orange-500'
                       }`} />
                       {item.name}
                     </Link>

@@ -15,27 +15,27 @@ export default function ProviderLoginPage() {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
 
-  // Redirect if already logged in as provider
-  useEffect(() => {
-    const token = typeof window !== 'undefined' ? localStorage.getItem('providerToken') : null;
-    if (token) {
-      // Verify token is for provider
-      axios.get(
-  `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/profile`,
-        {
-          headers: { Authorization: `Bearer ${token}` },
-          withCredentials: true,
-        }
-      ).then(response => {
-        if (response.data && response.data.role === 'provider') {
-          router.push('/provider/dashboard');
-        }
-      }).catch(() => {
-        localStorage.removeItem('providerToken');
-        localStorage.removeItem('provider');
-      });
-    }
-  }, [router]);
+  // Redirect if already logged in as provider - DISABLED for testing
+  // useEffect(() => {
+  //   const token = typeof window !== 'undefined' ? localStorage.getItem('providerToken') : null;
+  //   if (token) {
+  //     // Verify token is for provider
+  //     axios.get(
+  // `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/profile`,
+  //       {
+  //         headers: { Authorization: `Bearer ${token}` },
+  //         withCredentials: true,
+  //       }
+  //     ).then(response => {
+  //       if (response.data && response.data.role === 'provider') {
+  //         router.push('/provider/dashboard');
+  //       }
+  //     }).catch(() => {
+  //       localStorage.removeItem('providerToken');
+  //       localStorage.removeItem('provider');
+  //     });
+  //   }
+  // }, [router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -132,21 +132,34 @@ export default function ProviderLoginPage() {
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '32px' }}>
           <div style={{
-            width: '64px',
-            height: '64px',
-            backgroundColor: '#059669',
-            borderRadius: '50%',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            margin: '0 auto 16px auto'
+            margin: '0 auto 24px auto'
           }}>
-            <span style={{
-              fontSize: '32px',
-              fontWeight: '700',
-              color: '#ffffff'
+            <div style={{
+              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
+              borderRadius: '16px',
+              padding: '12px',
+              marginRight: '12px'
             }}>
-              R
+              <span style={{
+                fontSize: '32px',
+                fontWeight: '700',
+                color: '#ffffff'
+              }}>
+                W
+              </span>
+            </div>
+            <span style={{
+              fontSize: '28px',
+              fontWeight: '700',
+              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
+              backgroundClip: 'text',
+              WebkitBackgroundClip: 'text',
+              color: 'transparent'
+            }}>
+              Wiwihood
             </span>
           </div>
           <h1 style={{
@@ -170,7 +183,7 @@ export default function ProviderLoginPage() {
           }}>
             Don't have an account?{' '}
             <Link href="/auth/provider/signup" style={{
-              color: '#059669',
+              color: '#f97316',
               textDecoration: 'none',
               fontWeight: '600'
             }}>
@@ -294,7 +307,7 @@ export default function ProviderLoginPage() {
               </label>
             </div>
             <div style={{ fontSize: '14px' }}>
-              <Link href="/auth/forgot-password" style={{ color: '#059669', textDecoration: 'none', fontWeight: 600 }}>
+              <Link href="/auth/forgot-password" style={{ color: '#f97316', textDecoration: 'none', fontWeight: 600 }}>
                 Forgot your password?
               </Link>
             </div>
@@ -306,7 +319,7 @@ export default function ProviderLoginPage() {
             style={{
               width: '100%',
               padding: '12px',
-              backgroundColor: '#10b981',
+              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
               color: '#fff',
               border: 'none',
               borderRadius: '6px',

@@ -23,7 +23,11 @@ import {
   Scissors,
   Wallet,
   Clock,
-  ChevronDown
+  ChevronDown,
+  Heart,
+  FileText,
+  ShoppingBag,
+  Users
 } from 'lucide-react';
 
 interface User {
@@ -180,11 +184,13 @@ export default function ProviderLayout({
     { name: 'Dashboard', href: '/provider/dashboard', icon: LayoutDashboard, current: pathname === '/provider/dashboard' },
     { name: 'Appointments', href: '/provider/appointments', icon: Calendar, current: pathname === '/provider/appointments' },
     { name: 'Services', href: '/provider/services', icon: Scissors, current: pathname === '/provider/services' },
-    { name: 'Staff', href: '/provider/staff', icon: User, current: pathname === '/provider/staff' },
-    { name: 'Calendar', href: '/provider/calendar', icon: Clock, current: pathname === '/provider/calendar' },
-    { name: 'Notifications', href: '/provider/notifications', icon: Bell, current: pathname === '/provider/notifications' },
-    { name: 'Earnings', href: '/provider/wallet', icon: Wallet, current: pathname === '/provider/wallet' },
-    { name: 'Profile', href: '/provider/profile', icon: Settings, current: pathname === '/provider/profile' },
+    { name: 'Availability', href: '/provider/availability', icon: Clock, current: pathname === '/provider/availability' },
+    { name: 'Staff', href: '/provider/staff', icon: Users, current: pathname === '/provider/staff' || pathname.startsWith('/provider/staff/') },
+    { name: 'Wallet', href: '/provider/wallet', icon: Wallet, current: pathname === '/provider/wallet' },
+    { name: 'Favorites', href: '/provider/favorites', icon: Heart, current: pathname === '/provider/favorites' },
+    { name: 'Forms', href: '/provider/forms', icon: FileText, current: pathname === '/provider/forms' },
+    { name: 'Product orders', href: '/provider/orders', icon: ShoppingBag, current: pathname === '/provider/orders' },
+    { name: 'Settings', href: '/provider/settings', icon: Settings, current: pathname === '/provider/settings' },
   ];
 
   const handleLogout = async () => {
@@ -271,7 +277,7 @@ export default function ProviderLayout({
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-4 py-6 space-y-2 overflow-y-auto scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent">
+        <nav className="flex-1 px-4 py-6 space-y-2 overflow-hidden">
           {navigationItems.map((item) => {
             const Icon = item.icon;
             return (

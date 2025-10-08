@@ -12,7 +12,7 @@ const Footer = () => {
   }, []);
 
   const footerStyles: React.CSSProperties = {
-    backgroundColor: '#10b981',
+    background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
     color: '#fff',
     paddingTop: '10vh',
     clipPath: 'polygon(0 22%, 100% 0, 100% 100%, 0 100%)',
@@ -115,7 +115,7 @@ const Footer = () => {
     <footer style={footerStyles}>
       <div style={containerStyles}>
         <div style={footerMainStyles}>
-          <div style={logoStyles}>Reservista</div>
+          <div style={logoStyles}>Wiwihood</div>
           <ul style={navStyles}>
             <li><Link href="/" style={navLinkStyles}>Home</Link></li>
             <li><Link href="/shop" style={navLinkStyles}>Shop</Link></li>
@@ -128,7 +128,7 @@ const Footer = () => {
         </div>
         <div style={bottomStyles}>
           <div style={copyrightStyles}>
-            ©2025 Reservista. Design & Develop with <span role="img" aria-label="love">❤️</span>
+            ©2025 Wiwihood. Design & Develop with <span role="img" aria-label="love">❤️</span>
           </div>
           <div style={socialsStyles}>
             <a href="#" style={socialIconStyles}>{svgIcon("M16 8a6 6 0 0 1-12 0c0-3.31 2.69-6 6-6s6 2.69 6 6z")}</a>

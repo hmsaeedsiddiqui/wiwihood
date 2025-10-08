@@ -225,4 +225,36 @@ export class StaffController {
     await this.staffService.remove(id);
     return { message: 'Staff member deleted successfully' };
   }
+
+  @Patch(':id/verify')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Verify staff member (admin only)' })
+  @ApiParam({ name: 'id', description: 'Staff ID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Staff verification updated successfully',
+    type: StaffResponseDto,
+  })
+  async verifyStaff(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateData: { status: 'approved' | 'rejected' },
+  ): Promise<StaffResponseDto> {
+    return this.staffService.verifyStaff(id, updateData.status);
+  }
+
+  @Get('pending-verification')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all staff pending verification (admin only)' })
+  @ApiResponse({
+    status: 200,
+    description: 'Pending staff retrieved successfully',
+    type: [StaffResponseDto],
+  })
+  async getPendingVerification(): Promise<StaffResponseDto[]> {
+    return this.staffService.getPendingVerification();
+  }
 }

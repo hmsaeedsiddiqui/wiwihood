@@ -1,5 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Set the correct output file tracing root to prevent workspace detection warnings
+  outputFileTracingRoot: require('path').resolve(__dirname),
   eslint: {
     // Warning: This allows production builds to successfully complete even if
     // your project has ESLint errors.

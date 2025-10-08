@@ -17,7 +17,19 @@ import {
   BarChart3,
   PieChart,
   Activity,
-  Loader2
+  Loader2,
+  ShieldAlert,
+  Percent,
+  Eye,
+  CreditCard,
+  Settings,
+  FileText,
+  MessageSquare,
+  UserCheck,
+  Ban,
+  AlertTriangle,
+  Target,
+  Zap
 } from 'lucide-react';
 import { adminApi } from '../../../lib/adminApi';
 
@@ -30,6 +42,9 @@ export default function AdminDashboard() {
   const [pendingApprovals, setPendingApprovals] = useState<any[]>([]);
   const [dashboardData, setDashboardData] = useState<any>(null);
   const [selectedTab, setSelectedTab] = useState(0);
+  const [earningsData, setEarningsData] = useState<any>(null);
+  const [disputes, setDisputes] = useState<any[]>([]);
+  const [systemAlerts, setSystemAlerts] = useState<any[]>([]);
 
   useEffect(() => {
     loadDashboardData();
@@ -57,13 +72,41 @@ export default function AdminDashboard() {
         totalProviders: statsData.totalProviders || 0,
         totalBookings: statsData.totalBookings || 0,
         totalRevenue: statsData.totalRevenue || 0,
+        pendingDisputes: 8, // Mock data - would come from API
+        totalCommissions: 15420, // Mock data - would come from API
+        listingFees: 3200, // Mock data - would come from API
+        adRevenue: 8900, // Mock data - would come from API
         monthlyGrowth: {
           users: parseFloat(userGrowth.toFixed(1)),
           providers: parseFloat(providerGrowth.toFixed(1)),
           bookings: 15.2, // This would come from charts data analysis
-          revenue: 23.4   // This would come from charts data analysis
+          revenue: 23.4,   // This would come from charts data analysis
+          commissions: 18.7,
+          disputes: -12.5
         }
       });
+
+      // Mock earnings data
+      setEarningsData({
+        commission: { amount: 15420, percentage: 8.5, growth: 18.7 },
+        listingFees: { amount: 3200, percentage: 12, growth: 22.1 },
+        adRevenue: { amount: 8900, percentage: 15, growth: 31.2 },
+        subscriptions: { amount: 2800, percentage: 25, growth: 45.8 }
+      });
+
+      // Mock disputes data
+      setDisputes([
+        { id: 1, type: 'Payment Issue', customer: 'John Smith', provider: 'Beauty Salon XYZ', amount: 85, status: 'open', priority: 'high', createdAt: '2025-10-08' },
+        { id: 2, type: 'Service Quality', customer: 'Sarah Johnson', provider: 'Spa Wellness', amount: 120, status: 'investigating', priority: 'medium', createdAt: '2025-10-07' },
+        { id: 3, type: 'Cancellation', customer: 'Mike Brown', provider: 'Hair Studio', amount: 65, status: 'resolved', priority: 'low', createdAt: '2025-10-06' }
+      ]);
+
+      // Mock system alerts
+      setSystemAlerts([
+        { id: 1, type: 'security', message: 'Unusual login activity detected from 3 accounts', severity: 'high', timestamp: '2025-10-08T10:30:00Z' },
+        { id: 2, type: 'performance', message: 'Database response time increased by 15%', severity: 'medium', timestamp: '2025-10-08T09:15:00Z' },
+        { id: 3, type: 'business', message: '5 new providers pending verification', severity: 'low', timestamp: '2025-10-08T08:00:00Z' }
+      ]);
 
       // Set recent bookings from API
       setRecentBookings(recentActivity.recentBookings || []);
@@ -107,11 +150,11 @@ export default function AdminDashboard() {
   };
 
   // Quick Actions handlers
-  const handleAddNewUser = () => {
+  const handleManageUsers = () => {
     router.push('/admin/users');
   };
 
-  const handleQuickApproveProvider = () => {
+  const handleApproveProviders = () => {
     router.push('/admin/providers');
   };
 
@@ -119,8 +162,36 @@ export default function AdminDashboard() {
     router.push('/admin/analytics');
   };
 
+  const handleResolveDisputes = () => {
+    router.push('/admin/disputes');
+  };
+
+  const handleViewEarnings = () => {
+    router.push('/admin/earnings');
+  };
+
+  const handleSystemSettings = () => {
+    router.push('/admin/settings');
+  };
+
+  const handleViewReports = () => {
+    router.push('/admin/reports');
+  };
+
   const handleSystemAlerts = () => {
     router.push('/admin/alerts');
+  };
+
+  const handleAddNewUser = () => {
+    router.push('/admin/users/create');
+  };
+
+  const handleApproveBusinesses = () => {
+    router.push('/admin/approvals');
+  };
+
+  const handleQuickApproveProvider = () => {
+    router.push('/admin/providers/pending');
   };
 
   const StatCard = ({ title, value, change, icon: Icon, prefix = '', suffix = '' }: {
@@ -139,8 +210,8 @@ export default function AdminDashboard() {
             {prefix}{loading ? '...' : value.toLocaleString()}{suffix}
           </p>
         </div>
-        <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
-          <Icon className="h-6 w-6 text-blue-600" />
+        <div className="w-12 h-12 bg-gradient-to-br from-orange-50 to-pink-50 rounded-lg flex items-center justify-center">
+          <Icon className="h-6 w-6 text-orange-600" />
         </div>
       </div>
       <div className="flex items-center mt-4">
@@ -160,7 +231,7 @@ export default function AdminDashboard() {
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'completed': return 'bg-green-100 text-green-800';
-      case 'confirmed': return 'bg-blue-100 text-blue-800';
+      case 'confirmed': return 'bg-green-100 text-green-800';
       case 'pending': return 'bg-yellow-100 text-yellow-800';
       case 'cancelled': return 'bg-red-100 text-red-800';
       default: return 'bg-gray-100 text-gray-800';
@@ -172,7 +243,7 @@ export default function AdminDashboard() {
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-center min-h-96">
           <div className="text-center">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+            <Loader2 className="h-8 w-8 animate-spin text-orange-600 mx-auto mb-4" />
             <p className="text-gray-600">Loading dashboard data...</p>
           </div>
         </div>
@@ -190,7 +261,7 @@ export default function AdminDashboard() {
             <p className="text-gray-600 mb-4">{error}</p>
             <button 
               onClick={loadDashboardData}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-lg hover:from-orange-600 hover:to-pink-700 transition-all"
             >
               Try Again
             </button>
@@ -215,7 +286,7 @@ export default function AdminDashboard() {
         <button
           onClick={loadDashboardData}
           disabled={loading}
-          className="flex items-center px-4 cursor-pointer py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          className="flex items-center px-4 cursor-pointer py-2 bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-lg hover:from-orange-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
         >
           <Activity className="h-4 w-4 mr-2" />
           Refresh
@@ -223,7 +294,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-6 mb-8">
         <StatCard
           title="Total Users"
           value={stats.totalUsers}
@@ -237,33 +308,65 @@ export default function AdminDashboard() {
           icon={Building2}
         />
         <StatCard
-          title="Total Bookings"
-          value={stats.totalBookings}
-          change={stats.monthlyGrowth.bookings}
-          icon={Calendar}
-        />
-        <StatCard
-          title="Total Revenue"
+          title="Platform Revenue"
           value={stats.totalRevenue}
           change={stats.monthlyGrowth.revenue}
           icon={DollarSign}
           prefix="$"
         />
+        <StatCard
+          title="Commissions Earned"
+          value={stats.totalCommissions}
+          change={stats.monthlyGrowth.commissions}
+          icon={Percent}
+          prefix="$"
+        />
+        <StatCard
+          title="Ad Revenue"
+          value={stats.adRevenue}
+          change={15.3}
+          icon={Target}
+          prefix="$"
+        />
+        <StatCard
+          title="Pending Disputes"
+          value={stats.pendingDisputes}
+          change={stats.monthlyGrowth.disputes}
+          icon={ShieldAlert}
+        />
+      </div>
+
+      {/* Platform Revenue Breakdown */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-8">
+        {earningsData && Object.entries(earningsData).map(([key, data]: [string, any]) => (
+          <div key={key} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h4 className="text-sm font-medium text-gray-600 capitalize">{key.replace(/([A-Z])/g, ' $1')}</h4>
+              <span className={`text-xs px-2 py-1 rounded-full ${data.growth > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                {data.growth > 0 ? '+' : ''}{data.growth}%
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-2xl font-bold text-gray-900">${data.amount.toLocaleString()}</span>
+              <span className="text-sm text-gray-500">{data.percentage}% fee</span>
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Charts and Tables */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
-        {/* Revenue Chart */}
+        {/* Platform Analytics Chart */}
         <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6 flex-wrap gap-4">
-            <h3 className="text-lg font-semibold text-gray-900">Revenue Overview</h3>
+            <h3 className="text-lg font-semibold text-gray-900">Platform Analytics</h3>
             <div className="flex items-center space-x-2">
-              {['30 Days', '90 Days', '1 Year'].map((label, idx) => (
+              {['Revenue', 'Commissions', 'Users', 'Bookings'].map((label, idx) => (
               <button
                 key={label}
                 className={`px-3 py-1 text-sm cursor-pointer font-medium rounded-md ${
                 idx === selectedTab
-                  ? 'text-blue-600 bg-blue-50'
+                  ? 'text-orange-600 bg-orange-50'
                   : 'text-gray-600 hover:bg-gray-50'
                 }`}
                 onClick={() => setSelectedTab(idx)}
@@ -274,27 +377,53 @@ export default function AdminDashboard() {
             </div>
           </div>
           
-          {/* Simple Chart Mockup */}
-          <div className="h-64 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg flex items-end justify-center p-4">
-            <div className="flex items-end space-x-2 h-full w-full max-w-md gap-2">
-              {[65, 85, 45, 75, 95, 55, 80, 90, 70, 100, 85, 75].map((height, index) => (
-                <div
-                  key={index}
-                  className="flex-1 bg-gradient-to-t from-blue-600 to-blue-400 rounded-t-sm transition-all duration-300 hover:from-blue-700 hover:to-blue-500"
-                  style={{ height: `${height}%` }}
-                />
+          {/* Enhanced Chart Mockup */}
+          <div className="h-64 bg-gradient-to-r from-orange-50 to-pink-50 rounded-lg flex items-end justify-center p-4">
+            <div className="flex items-end space-x-1 h-full w-full max-w-lg">
+              {[
+                { commission: 65, ads: 45, listing: 30 },
+                { commission: 85, ads: 60, listing: 40 },
+                { commission: 45, ads: 35, listing: 25 },
+                { commission: 75, ads: 55, listing: 35 },
+                { commission: 95, ads: 70, listing: 50 },
+                { commission: 55, ads: 40, listing: 30 },
+                { commission: 80, ads: 65, listing: 45 },
+                { commission: 90, ads: 75, listing: 55 },
+                { commission: 70, ads: 50, listing: 35 },
+                { commission: 100, ads: 80, listing: 60 },
+                { commission: 85, ads: 65, listing: 45 },
+                { commission: 75, ads: 55, listing: 40 }
+              ].map((data, index) => (
+                <div key={index} className="flex-1 flex flex-col items-end gap-1">
+                  <div
+                    className="w-full bg-gradient-to-t from-orange-600 to-orange-400 rounded-t-sm"
+                    style={{ height: `${data.commission}%` }}
+                  />
+                  <div
+                    className="w-full bg-gradient-to-t from-green-600 to-green-400 rounded-t-sm"
+                    style={{ height: `${data.ads}%` }}
+                  />
+                  <div
+                    className="w-full bg-gradient-to-t from-purple-600 to-purple-400 rounded-t-sm"
+                    style={{ height: `${data.listing}%` }}
+                  />
+                </div>
               ))}
             </div>
           </div>
           
-          <div className="mt-4 flex justify-center space-x-6 gap-2 text-sm">
+          <div className="mt-4 flex justify-center space-x-6 gap-2 text-sm flex-wrap">
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-blue-600 rounded-full mr-2"></div>
-              <span className="text-gray-600">Revenue</span>
+              <div className="w-3 h-3 bg-orange-600 rounded-full mr-2"></div>
+              <span className="text-gray-600">Commissions</span>
             </div>
             <div className="flex items-center">
-              <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-              <span className="text-gray-600">Profit</span>
+              <div className="w-3 h-3 bg-green-600 rounded-full mr-2"></div>
+              <span className="text-gray-600">Ad Revenue</span>
+            </div>
+            <div className="flex items-center">
+              <div className="w-3 h-3 bg-purple-600 rounded-full mr-2"></div>
+              <span className="text-gray-600">Listing Fees</span>
             </div>
           </div>
         </div>
@@ -305,13 +434,13 @@ export default function AdminDashboard() {
           <div className="space-y-3">
             <button 
               onClick={handleAddNewUser}
-              className="w-full flex items-center justify-between mb-4 p-3 cursor-pointer bg-blue-50 hover:bg-blue-100 rounded-lg transition-colors"
+              className="w-full flex items-center justify-between mb-4 p-3 cursor-pointer bg-orange-50 hover:bg-orange-100 rounded-lg transition-colors"
             >
               <div className="flex items-center">
-                <Users className="h-5 w-5 text-blue-600 mr-3" />
-                <span className="font-medium text-blue-900">Add New User</span>
+                <Users className="h-5 w-5 text-orange-600 mr-3" />
+                <span className="font-medium text-orange-900">Add New User</span>
               </div>
-              <ArrowUpRight className="h-4 w-4 text-blue-600" />
+              <ArrowUpRight className="h-4 w-4 text-orange-600" />
             </button>
             
             <button 
@@ -350,84 +479,129 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Recent Activity */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        {/* Recent Bookings */}
+      {/* Dispute Management & System Monitoring */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        {/* Active Disputes */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Recent Bookings</h3>
-            <button className="text-sm cursor-pointer font-medium text-blue-600 hover:text-blue-700">
-              View All
-            </button>
+            <h3 className="text-lg font-semibold text-gray-900">Active Disputes</h3>
+            <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
+              {disputes.length} pending
+            </span>
           </div>
           
           <div className="space-y-4">
-            {recentBookings.length > 0 ? (
-              recentBookings.map((booking) => (
-                <div key={booking.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium text-gray-900">
-                        {booking.user?.firstName} {booking.user?.lastName}
-                      </span>
-                      <span className="text-sm font-medium text-gray-900">
-                        ${booking.totalAmount || booking.amount || 0}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">
-                        {booking.service?.name || booking.service} at {booking.provider?.businessName || booking.provider}
-                      </span>
-                      <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(booking.status)}`}>
-                        {booking.status}
-                      </span>
-                    </div>
+            {disputes.slice(0, 5).map((dispute, index) => (
+              <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className={`w-2 h-2 rounded-full ${
+                    dispute.priority === 'high' ? 'bg-red-500' :
+                    dispute.priority === 'medium' ? 'bg-yellow-500' : 'bg-green-500'
+                  }`}></div>
+                  <div>
+                    <span className="text-sm text-gray-900 block">{dispute.type}</span>
+                    <span className="text-xs text-gray-500">#{dispute.id}</span>
                   </div>
                 </div>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <Calendar className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No recent bookings found</p>
+                <div className="text-right">
+                  <span className="text-xs text-gray-500 block">{dispute.time}</span>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    dispute.priority === 'high' ? 'bg-red-100 text-red-800' :
+                    dispute.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
+                    'bg-green-100 text-green-800'
+                  }`}>
+                    {dispute.priority}
+                  </span>
+                </div>
               </div>
-            )}
+            ))}
+          </div>
+          
+          <button 
+            onClick={handleResolveDisputes}
+            className="w-full mt-4 px-4 py-2 text-sm text-white bg-gradient-to-r from-orange-500 to-pink-600 rounded-lg hover:from-orange-600 hover:to-pink-700 transition-all"
+          >
+            Manage All Disputes
+          </button>
+        </div>
+
+        {/* System Alerts */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+          <h3 className="text-lg font-semibold text-gray-900 mb-6">System Alerts</h3>
+          
+          <div className="space-y-4">
+            {systemAlerts.map((alert, index) => (
+              <div key={index} className={`p-4 rounded-lg border-l-4 ${
+                alert.type === 'error' ? 'bg-red-50 border-red-400' :
+                alert.type === 'warning' ? 'bg-yellow-50 border-yellow-400' :
+                'bg-orange-50 border-orange-400'
+              }`}>
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    {alert.type === 'error' ? (
+                      <AlertTriangle className="h-5 w-5 text-red-400" />
+                    ) : alert.type === 'warning' ? (
+                      <AlertTriangle className="h-5 w-5 text-yellow-400" />
+                    ) : (
+                      <ShieldAlert className="h-5 w-5 text-orange-400" />
+                    )}
+                  </div>
+                  <div className="ml-3">
+                    <h4 className={`text-sm font-medium ${
+                      alert.type === 'error' ? 'text-red-800' :
+                      alert.type === 'warning' ? 'text-yellow-800' :
+                      'text-orange-800'
+                    }`}>
+                      {alert.title}
+                    </h4>
+                    <p className={`mt-1 text-sm ${
+                      alert.type === 'error' ? 'text-red-700' :
+                      alert.type === 'warning' ? 'text-yellow-700' :
+                      'text-orange-700'
+                    }`}>
+                      {alert.message}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
-        {/* Pending Approvals */}
+        {/* Business Approvals */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900">Pending Approvals</h3>
-            <span className="bg-red-100 text-red-800 text-xs px-2 py-1 rounded-full">
-              {pendingApprovals.length}
+            <h3 className="text-lg font-semibold text-gray-900">Business Approvals</h3>
+            <span className="bg-yellow-100 text-yellow-800 text-xs px-2 py-1 rounded-full">
+              {pendingApprovals.length} pending
             </span>
           </div>
           
           <div className="space-y-4">
             {pendingApprovals.length > 0 ? (
-              pendingApprovals.map((item) => (
+              pendingApprovals.slice(0, 4).map((item) => (
                 <div key={item.id} className="flex items-center justify-between p-3 bg-yellow-50 rounded-lg border border-yellow-200">
                   <div className="flex-1">
                     <div className="flex items-center mb-1">
-                      <AlertCircle className="h-4 w-4 text-yellow-600 mr-2" />
-                      <span className="font-medium text-gray-900">{item.businessName || item.name}</span>
+                      <UserCheck className="h-4 w-4 text-yellow-600 mr-2" />
+                      <span className="font-medium text-gray-900 text-sm">{item.businessName || item.name}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-gray-600">
-                        {item.category || 'New Provider'} • {new Date(item.createdAt || item.date).toLocaleDateString()}
+                      <span className="text-xs text-gray-600">
+                        {item.category || 'New Provider'}
                       </span>
-                      <div className="flex space-x-2">
+                      <div className="flex space-x-1">
                         <button 
                           onClick={() => handleApproveProvider(item.id)}
-                          className="px-3 py-1 bg-green-600 text-white text-xs rounded-md hover:bg-green-700"
+                          className="px-2 py-1 bg-green-600 text-white text-xs rounded hover:bg-green-700"
                         >
-                          Approve
+                          ✓
                         </button>
                         <button 
                           onClick={() => handleRejectProvider(item.id)}
-                          className="px-3 py-1 bg-red-600 text-white text-xs rounded-md hover:bg-red-700"
+                          className="px-2 py-1 bg-red-600 text-white text-xs rounded hover:bg-red-700"
                         >
-                          Reject
+                          ✗
                         </button>
                       </div>
                     </div>
@@ -437,10 +611,17 @@ export default function AdminDashboard() {
             ) : (
               <div className="text-center py-8">
                 <CheckCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500">No pending approvals</p>
+                <p className="text-gray-500 text-sm">No pending approvals</p>
               </div>
             )}
           </div>
+          
+          <button 
+            onClick={handleApproveBusinesses}
+            className="w-full mt-4 px-4 py-2 text-sm text-orange-600 border border-orange-200 rounded-lg hover:bg-orange-50 transition-colors"
+          >
+            View All Applications
+          </button>
         </div>
       </div>
     </div>

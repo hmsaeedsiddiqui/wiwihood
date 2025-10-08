@@ -224,6 +224,62 @@ export class UploadController {
     }
   }
 
+  @Post('staff-photo')
+  @ApiOperation({ summary: 'Upload staff member photo' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+        staffId: {
+          type: 'string',
+        },
+        providerId: {
+          type: 'string',
+        },
+      },
+    },
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadStaffPhoto(
+    @UploadedFile() file: Express.Multer.File,
+    @Body('staffId') staffId: string,
+    @Body('providerId') providerId: string,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (!file.mimetype.startsWith('image/')) {
+      throw new BadRequestException('File must be an image');
+    }
+
+    try {
+      const result = await this.cloudinaryService.uploadImage(
+        file,
+        `reservista/staff/${providerId}/${staffId}`,
+        this.cloudinaryService.getProfileImageTransformation()
+      );
+
+      return {
+        success: true,
+        data: {
+          url: result.secure_url,
+          publicId: result.public_id,
+          format: result.format,
+          width: result.width,
+          height: result.height,
+        },
+      };
+    } catch (error) {
+      throw new BadRequestException(`Upload failed: ${error.message}`);
+    }
+  }
+
   @Post('shop-cover')
   @ApiOperation({ summary: 'Upload shop cover image' })
   @ApiConsumes('multipart/form-data')

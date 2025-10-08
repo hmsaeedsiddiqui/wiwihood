@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import ProviderNav from '@/components/ProviderNav';
+import { Calendar, Clock, Settings, Shield, CheckCircle, AlertCircle } from 'lucide-react';
 
 interface TimeSlot {
   id: string;
@@ -161,13 +161,11 @@ export default function ProviderAvailabilityPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <ProviderNav />
-        <div className="max-w-7xl mx-auto px-4 py-8 flex justify-center items-center">
-          <div className="text-center">
-            <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-            <p className="mt-2 text-sm md:text-base text-gray-600">Loading availability settings...</p>
-          </div>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center bg-white p-8 rounded-2xl shadow-xl">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-orange-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Loading Availability</h2>
+          <p className="text-gray-600">Setting up your schedule...</p>
         </div>
       </div>
     );
@@ -175,78 +173,99 @@ export default function ProviderAvailabilityPage() {
 
   if (error) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <ProviderNav />
-        <div className="max-w-7xl mx-auto px-4 py-8 flex justify-center items-center">
-          <div className="text-center bg-white p-6 md:p-8 rounded-lg shadow-md">
-            <h2 className="text-xl md:text-2xl font-bold text-red-600 mb-4">Error</h2>
-            <p className="text-sm md:text-base text-gray-600 mb-6">{error}</p>
-            <button 
-              onClick={fetchAvailability}
-              className="px-6 py-2 bg-blue-600 text-white text-sm md:text-base rounded hover:bg-blue-700"
-            >
-              Retry
-            </button>
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
+        <div className="text-center bg-white p-8 rounded-2xl shadow-xl max-w-md">
+          <div className="mb-4">
+            <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
           </div>
+          <h2 className="text-2xl font-bold text-red-600 mb-4">Error Loading</h2>
+          <p className="text-gray-600 mb-6">{error}</p>
+          <button 
+            onClick={fetchAvailability}
+            className="px-6 py-3 bg-orange-500 text-white font-semibold rounded-xl hover:bg-orange-600 transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <ProviderNav />
-      
-      <div className=" ">
-        {/* Header */}
-        <div className="flex items-center justify-between py-4 gap-4 flex-wrap">
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Availability Management</h1>
-            <p className="text-sm md:text-base text-gray-600">Set your working hours and booking time slots</p>
-          </div>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={saveAvailability}
-              disabled={saving}
-              className="bg-blue-600 cursor-pointer text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition disabled:opacity-50 w-full sm:w-auto text-sm md:text-base"
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </button>
-            <Link
-              href="/provider/calendar"
-              className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition text-center w-full sm:w-auto text-sm md:text-base"
-            >
-              📅 View Calendar
-            </Link>
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
+      {/* Enhanced Header */}
+      <div className="bg-gradient-to-r from-orange-500 to-pink-600 text-white">
+        <div className="max-w-7xl mx-auto px-6 py-8">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div>
+              <h1 className="text-3xl font-bold mb-2 drop-shadow-lg">
+                <Calendar className="inline-block mr-3 h-8 w-8" />
+                Availability Management
+              </h1>
+              <p className="text-white/90 text-lg">Set your working hours and booking time slots</p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={saveAvailability}
+                disabled={saving}
+                className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-xl hover:bg-white/30 transition-all disabled:opacity-50 flex items-center font-semibold"
+              >
+                {saving ? (
+                  <>
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle className="mr-2 h-4 w-4" />
+                    Save Changes
+                  </>
+                )}
+              </button>
+              <Link
+                href="/provider/calendar"
+                className="bg-white/20 backdrop-blur-sm text-white px-6 py-3 rounded-xl hover:bg-white/30 transition-all text-center font-semibold flex items-center"
+              >
+                <Calendar className="mr-2 h-4 w-4" />
+                View Calendar
+              </Link>
+            </div>
           </div>
         </div>
+      </div>
 
-        {/* Tabs */}
-        <div className="bg-white rounded-lg shadow-sm mb-6 overflow-hidden">
-          <div className="border-b border-gray-200 overflow-x-auto">
-            <nav className="flex space-x-4 md:space-x-8 px-4 md:px-6 min-w-max">
+      <div className="max-w-7xl mx-auto px-6 py-8">
+
+        {/* Enhanced Tabs */}
+        <div className="bg-white rounded-2xl shadow-xl mb-8 overflow-hidden">
+          <div className="border-b border-gray-200">
+            <nav className="flex space-x-8 px-6">
               {[
-                { id: 'schedule', label: 'Weekly Schedule' },
-                { id: 'timeslots', label: 'Time Slots' },
-                { id: 'settings', label: 'Settings' },
-                { id: 'blocked', label: 'Blocked' }
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setActiveTab(tab.id)}
-                  className={`py-3 md:py-4 px-1 border-b-2 font-medium text-xs md:text-sm whitespace-nowrap ${
-                    activeTab === tab.id
-                      ? "border-blue-500 text-blue-600"
-                      : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
+                { id: 'schedule', label: 'Weekly Schedule', icon: Calendar },
+                { id: 'timeslots', label: 'Time Slots', icon: Clock },
+                { id: 'settings', label: 'Settings', icon: Settings },
+                { id: 'blocked', label: 'Blocked Times', icon: Shield }
+              ].map((tab) => {
+                const IconComponent = tab.icon;
+                return (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`py-4 px-2 border-b-2 font-semibold text-sm flex items-center transition-all ${
+                      activeTab === tab.id
+                        ? "border-orange-500 text-orange-600"
+                        : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    }`}
+                  >
+                    <IconComponent className="mr-2 h-4 w-4" />
+                    {tab.label}
+                  </button>
+                );
+              })}
             </nav>
           </div>
 
-          <div className="p-4 md:p-6">
+          <div className="p-8">
             {/* Weekly Schedule Tab */}
             {activeTab === 'schedule' && (
               <div>

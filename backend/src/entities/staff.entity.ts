@@ -115,6 +115,19 @@ export class Staff {
   @Column({ name: 'is_public', type: 'boolean', default: true })
   isPublic: boolean;
 
+  @ApiProperty({ description: 'Verification status for admin approval' })
+  @Column({ 
+    name: 'verification_status', 
+    type: 'enum', 
+    enum: ['pending', 'approved', 'rejected'], 
+    default: 'pending' 
+  })
+  verificationStatus: 'pending' | 'approved' | 'rejected';
+
+  @ApiProperty({ description: 'Whether staff is verified by admin' })
+  @Column({ name: 'is_verified', type: 'boolean', default: false })
+  isVerified: boolean;
+
   @ApiProperty({ description: 'Provider ID this staff belongs to' })
   @Column({ name: 'provider_id', type: 'uuid' })
   providerId: string;

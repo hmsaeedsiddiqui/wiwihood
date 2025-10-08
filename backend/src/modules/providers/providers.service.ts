@@ -289,4 +289,29 @@ export class ProvidersService {
       data: availabilityData,
     };
   }
+
+  async getDashboardStats(userId: string) {
+    const provider = await this.providerRepository.findOne({
+      where: { userId },
+    });
+
+    if (!provider) {
+      throw new NotFoundException('Provider not found');
+    }
+
+    // Mock dashboard stats - in real implementation, these would come from actual bookings/earnings data
+    return {
+      totalAppointments: 156,
+      todayAppointments: 8,
+      monthlyEarnings: 12450.75,
+      completedServices: 133,
+      rating: 4.8,
+      pendingBookings: 5,
+      provider: {
+        id: provider.id,
+        businessName: provider.businessName,
+        status: provider.status,
+      },
+    };
+  }
 }

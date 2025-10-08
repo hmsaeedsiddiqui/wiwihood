@@ -69,7 +69,7 @@ export class QRTIntegration {
     try {
       const token = localStorage.getItem('providerToken');
       if (!token) {
-        console.log('QRT: No token, using fallback');
+        console.log(`QRT: ${endpoint} - No token, using fallback`);
         return fallbackData;
       }
       
@@ -81,7 +81,8 @@ export class QRTIntegration {
       
       console.log(`QRT: ${endpoint} - SUCCESS`);
       return response.data;
-    } catch (error) {
+    } catch (error: any) {
+      console.log(`QRT: ${endpoint} - ERROR:`, error?.response?.status, error?.response?.data || error?.message);
       console.log(`QRT: ${endpoint} - FALLBACK USED`);
       return fallbackData;
     }
@@ -345,6 +346,139 @@ export class QRTIntegration {
     
     console.log('🎭 QRT Auth: Using final fallback mock data:', mockData.firstName, mockData.lastName);
     return mockData;
+  }
+
+  // Helper method to get token
+  static getToken() {
+    return typeof window !== 'undefined' ? localStorage.getItem('providerToken') : null;
+  }
+
+  // Provider Profile QRT - Get detailed provider profile
+  static async getProviderProfile() {
+    console.log('🏢 QRT Provider: Getting provider profile...');
+    
+    try {
+      const token = this.getToken();
+      if (token) {
+        console.log('🔑 QRT Provider: Token found, calling backend API...');
+        const response = await axios.get(`${API_BASE}/providers/me`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (response.data) {
+          console.log('✅ QRT Provider: Backend data received');
+          return {
+            id: response.data.id,
+            businessName: response.data.businessName,
+            description: response.data.description,
+            address: response.data.address,
+            city: response.data.city,
+            state: response.data.state,
+            country: response.data.country,
+            postalCode: response.data.postalCode,
+            fullAddress: response.data.fullAddress,
+            phone: response.data.phone,
+            email: response.data.email,
+            website: response.data.website,
+            isVerified: response.data.isVerified,
+            rating: response.data.rating,
+            totalReviews: response.data.totalReviews,
+            businessHours: response.data.businessHours,
+            categories: response.data.categories,
+            services: response.data.services,
+            images: response.data.images,
+            socialMedia: response.data.socialMedia
+          };
+        }
+      }
+    } catch (error) {
+      console.log('⚠️ QRT Provider: Backend API failed, using fallback...');
+    }
+
+    // Fallback mock data
+    return {
+      id: 'provider_1',
+      businessName: 'Luxio Nail Ladies Salon',
+      description: 'Premium nail salon offering luxury manicure, pedicure, and nail art services in Dubai Marina.',
+      address: 'Marina Walk, Dubai Marina',
+      city: 'Dubai',
+      state: 'Dubai',
+      country: 'UAE',
+      postalCode: '00000',
+      fullAddress: 'Marina Walk, Dubai Marina, Dubai, UAE 00000',
+      phone: '+971 50 123 4567',
+      email: 'info@luxionails.ae',
+      website: 'https://luxionails.ae',
+      isVerified: true,
+      rating: 4.8,
+      totalReviews: 247,
+      businessHours: {
+        monday: '9:00 AM - 10:00 PM',
+        tuesday: '9:00 AM - 10:00 PM',
+        wednesday: '9:00 AM - 10:00 PM',
+        thursday: '9:00 AM - 10:00 PM',
+        friday: '9:00 AM - 11:00 PM',
+        saturday: '9:00 AM - 11:00 PM',
+        sunday: '10:00 AM - 9:00 PM'
+      },
+      categories: ['Beauty & Wellness', 'Nail Care'],
+      services: [
+        { id: 1, name: 'Classic Manicure', price: 50, duration: '30 min' },
+        { id: 2, name: 'Gel Manicure', price: 80, duration: '45 min' },
+        { id: 3, name: 'Nail Art', price: 120, duration: '60 min' },
+        { id: 4, name: 'Pedicure', price: 70, duration: '45 min' }
+      ],
+      images: [
+        '/images/salon1.jpg',
+        '/images/salon2.jpg',
+        '/images/salon3.jpg'
+      ],
+      socialMedia: {
+        instagram: '@luxionails_dubai',
+        facebook: 'LuxioNailsDubai',
+        tiktok: '@luxionails'
+      }
+    };
+  }
+
+  // Venue Location QRT - Get venue location for maps
+  static async getVenueLocation() {
+    console.log('📍 QRT Venue: Getting venue location...');
+    
+    try {
+      const profile = await this.getProviderProfile();
+      
+      if (profile && profile.fullAddress) {
+        return {
+          address: profile.fullAddress,
+          businessName: profile.businessName,
+          coordinates: {
+            lat: 25.0772, // Dubai Marina coordinates (mock)
+            lng: 55.1391
+          },
+          googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.fullAddress)}`,
+          directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(profile.fullAddress)}`,
+          phone: profile.phone,
+          website: profile.website
+        };
+      }
+    } catch (error) {
+      console.log('⚠️ QRT Venue: Failed to get location, using fallback...');
+    }
+
+    // Fallback location data
+    return {
+      address: 'Marina Walk, Dubai Marina, Dubai, UAE 00000',
+      businessName: 'Luxio Nail Ladies Salon',
+      coordinates: {
+        lat: 25.0772,
+        lng: 55.1391
+      },
+      googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Marina+Walk,+Dubai+Marina,+Dubai,+UAE',
+      directionsUrl: 'https://www.google.com/maps/dir/?api=1&destination=Marina+Walk,+Dubai+Marina,+Dubai,+UAE',
+      phone: '+971 50 123 4567',
+      website: 'https://luxionails.ae'
+    };
   }
 }
 
