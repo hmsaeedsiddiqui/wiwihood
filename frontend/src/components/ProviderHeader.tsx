@@ -144,7 +144,7 @@ export default function ProviderHeader() {
               color: '#059669',
               letterSpacing: '-0.025em'
             }}>
-              Reservista
+              Wiwihood
             </span>
             <span style={{
               fontSize: '14px',

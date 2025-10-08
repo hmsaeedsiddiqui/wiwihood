@@ -6,7 +6,7 @@ import ConditionalLayout from '../components/ConditionalLayout'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Reservista - Professional Service Booking Platform',
+  title: 'Wiwihood - Professional Service Booking Platform',
   description: 'Book professional services with verified providers. Manage appointments, reviews, and payments all in one place.',
   keywords: ['booking', 'services', 'appointments', 'providers', 'reservations'],
 }
