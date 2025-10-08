@@ -17,7 +17,7 @@ export default function ProviderHeader() {
                 <span className="text-white font-bold text-lg">R</span>
               </div>
               <div>
-                <div className="text-xl font-bold text-gray-900">Reservista</div>
+                <div className="text-xl font-bold text-gray-900">Wiwihood</div>
                 <div className="text-xs text-blue-600 font-medium">Provider Portal</div>
               </div>
             </Link>

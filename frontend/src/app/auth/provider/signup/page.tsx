@@ -130,7 +130,7 @@ export default function ProviderSignupPage() {
         <div className="provider-signup-header">
           <div className="provider-signup-logo"><span>R</span></div>
           <h2>Join as a Service Provider</h2>
-          <p className="provider-signup-sub">Start offering your services on Reservista</p>
+          <p className="provider-signup-sub">Start offering your services on Wiwihood</p>
           <p className="provider-signup-link">Already have an account?{' '}
             <Link href="/auth/provider/login">Sign in here</Link>
           </p>

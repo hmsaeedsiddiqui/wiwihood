@@ -421,7 +421,7 @@ const HomePage = () => {
           Become a Provider
         </p>
         <h2 className="text-[1.8rem] lg:text-[2.1rem] font-extrabold text-gray-800 leading-[1.2] mb-[14px] font-[Manrope,sans-serif]">
-          List Your Services on Reservista
+          List Your Services on Wiwihood
         </h2>
         <p className="text-base text-gray-600 leading-[1.5] mb-7 font-[Manrope,sans-serif] max-w-[420px]">
           Reach more clients, manage your appointments, and get paid securely.
@@ -528,7 +528,7 @@ const HomePage = () => {
             How it's Work?
           </h2>
           <p className="text-gray-300 font-[Manrope,sans-serif] font-normal text-base text-center mb-12 tracking-wide leading-relaxed max-w-[700px] mx-auto">
-            It's simple to get started with Reservista. Just follow these easy steps to book your next service.
+            It's simple to get started with Wiwihood. Just follow these easy steps to book your next service.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 justify-center items-stretch ">
             {/* Card 1 */}
