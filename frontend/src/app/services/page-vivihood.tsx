@@ -20,7 +20,7 @@ export default function ServicesPage() {
       rating: 4.8,
       reviews: 88,
       price: 149,
-      image: "/service1.png",
+      image: "/services/nail-1.jpg",
       category: "Nail Services",
       duration: 60,
       description: "Professional nail care with premium products and expert techniques"
@@ -32,7 +32,7 @@ export default function ServicesPage() {
       rating: 4.9,
       reviews: 156,
       price: 199,
-      image: "/facial-treatment.jpg",
+      image: "/services/facial-1.jpg",
       category: "Facial Services",
       duration: 90,
       description: "Deep cleansing and rejuvenating facial treatment for all skin types"
@@ -44,7 +44,7 @@ export default function ServicesPage() {
       rating: 4.7,
       reviews: 203,
       price: 299,
-      image: "/service2.jpg",
+      image: "/services/massage-1.jpg",
       category: "Massage Services",
       duration: 120,
       description: "Therapeutic massage to relieve tension and promote relaxation"
@@ -56,7 +56,7 @@ export default function ServicesPage() {
       rating: 4.8,
       reviews: 134,
       price: 179,
-      image: "/service3.jpg",
+      image: "/services/hair-1.jpg",
       category: "Hair Services",
       duration: 75,
       description: "Professional haircut and styling by expert stylists"
@@ -221,11 +221,14 @@ export default function ServicesPage() {
                   <div className={`relative overflow-hidden ${
                     viewMode === 'list' ? 'w-64 h-48' : 'h-64'
                   }`}>
-                    <img 
-                      src={service.image}
-                      alt={service.title}
-                      className="w-full h-full object-cover"
-                    />
+                    <div className="w-full h-full bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center">
+                      {service.category === 'Nail Services' && <div className="text-6xl">💅</div>}
+                      {service.category === 'Facial Services' && <div className="text-6xl">✨</div>}
+                      {service.category === 'Massage Services' && <div className="text-6xl">💆‍♀️</div>}
+                      {service.category === 'Hair Services' && <div className="text-6xl">✂️</div>}
+                      {service.category === 'Beauty Services' && <div className="text-6xl">💄</div>}
+                      {!['Nail Services', 'Facial Services', 'Massage Services', 'Hair Services', 'Beauty Services'].includes(service.category) && <div className="text-6xl">🌸</div>}
+                    </div>
                   </div>
                   
                   <div className={`p-6 ${viewMode === 'list' ? 'flex-1' : ''}`}>
