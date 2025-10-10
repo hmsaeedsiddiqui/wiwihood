@@ -79,10 +79,13 @@ export default function ServicesPage() {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/categories`
-      );
-      setCategories(response.data || []);
+      console.log('🚀 QRT: Loading categories...');
+      
+      // Use QRT Integration for better error handling
+      const categoriesData = await QRTIntegration.getCategories();
+      setCategories(categoriesData || []);
+      
+      console.log('✅ QRT: Categories loaded successfully', categoriesData.length);
     } catch (error) {
       console.error('Error fetching categories:', error);
       // Set fallback categories if API fails

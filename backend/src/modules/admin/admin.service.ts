@@ -50,10 +50,10 @@ export class AdminService {
       this.bookingsRepository
         .createQueryBuilder('booking')
         .select('SUM(booking.totalPrice)', 'total')
-        .where('booking.status = :status', { status: 'completed' })
+        .where('booking.status = :status', { status: BookingStatus.COMPLETED })
         .getRawOne(),
             this.usersRepository.count({ where: { status: 'active' } }),
-            this.bookingsRepository.count({ where: { status: 'pending' } }),
+            this.bookingsRepository.count({ where: { status: BookingStatus.PENDING } }),
       this.usersRepository
         .createQueryBuilder('user')
         .where('user.createdAt >= :date', {
@@ -425,7 +425,7 @@ export class AdminService {
       .select('DATE(booking.createdAt)', 'date')
       .addSelect('SUM(booking.totalPrice)', 'revenue')
       .addSelect('COUNT(*)', 'bookings')
-      .where('booking.status = :status', { status: 'completed' });
+      .where('booking.status = :status', { status: BookingStatus.COMPLETED });
 
     if (dateFrom && dateTo) {
       queryBuilder.andWhere('booking.createdAt BETWEEN :dateFrom AND :dateTo', {
@@ -699,7 +699,7 @@ export class AdminService {
       Promise.resolve(true),
       this.usersRepository.count(),
       this.providersRepository.count(),
-      this.bookingsRepository.count({ where: { status: In(['confirmed', 'in-progress']) } }),
+      this.bookingsRepository.count({ where: { status: In([BookingStatus.CONFIRMED, BookingStatus.IN_PROGRESS]) } }),
     ]);
 
     return {

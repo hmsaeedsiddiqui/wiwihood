@@ -112,238 +112,111 @@ export default function ProviderLoginPage() {
   }
 
   return (
-    <div>
-    <div style={{
-      minHeight: 'calc(100vh - 80px)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      backgroundColor: '#f9fafb',
-      padding: '48px 24px'
-    }}>
-      <div style={{
-        backgroundColor: '#ffffff',
-        padding: '48px',
-        borderRadius: '12px',
-        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-        width: '100%',
-        maxWidth: '400px'
-      }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 24px auto'
-          }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
-              borderRadius: '16px',
-              padding: '12px',
-              marginRight: '12px'
-            }}>
-              <span style={{
-                fontSize: '32px',
-                fontWeight: '700',
-                color: '#ffffff'
-              }}>
-                W
+    <div className="min-h-screen bg-gray-50">
+      <div className="py-20 flex items-center justify-center w-[95%] mx-auto max-w-[400px]">
+        <div className="w-full bg-white p-12 rounded-2xl shadow-lg border border-gray-100">
+          {/* Wiwihood Header */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center mb-6">
+              <div className="bg-gradient-to-br from-orange-500 to-pink-500 rounded-2xl p-3 mr-3">
+                <span className="text-2xl font-bold text-white">W</span>
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-br from-orange-500 to-pink-500 bg-clip-text text-transparent">
+                Wiwihood
               </span>
             </div>
-            <span style={{
-              fontSize: '28px',
-              fontWeight: '700',
-              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              color: 'transparent'
-            }}>
-              Wiwihood
-            </span>
-          </div>
-          <h1 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#1f2937',
-            marginBottom: '8px'
-          }}>
-            Provider Sign In
-          </h1>
-          <p style={{
-            fontSize: '16px',
-            color: '#6b7280'
-          }}>
-            Access your provider dashboard
-          </p>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280',
-            marginTop: '8px'
-          }}>
-            Don't have an account?{' '}
-            <Link href="/auth/provider/signup" style={{
-              color: '#f97316',
-              textDecoration: 'none',
-              fontWeight: '600'
-            }}>
-              Sign up as a provider
-            </Link>
-          </p>
-        </div>
-
-        {/* Form */}
-        <form onSubmit={handleSubmit} style={{ width: '100%' }}>
-          {error && (
-            <div style={{
-              backgroundColor: '#fee2e2',
-              border: '1px solid #fca5a5',
-              color: '#dc2626',
-              padding: '12px',
-              borderRadius: '6px',
-              marginBottom: '16px',
-              fontSize: '14px'
-            }}>
-              {error}
-            </div>
-          )}
-
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '6px'
-            }}>
-              Email address
-            </label>
-            <input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-              placeholder="Enter your email"
-              style={{
-                width: '100%',
-                padding: '12px',
-                border: '1px solid #d1d5db',
-                borderRadius: '6px',
-                fontSize: '16px',
-                backgroundColor: '#ffffff',
-                color: '#111827'
-              }}
-            />
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Provider Sign In</h1>
+            <p className="text-gray-600 mb-2">Access your provider dashboard</p>
+            <p className="text-sm text-gray-600">
+              Don't have an account?{' '}
+              <Link href="/auth/provider/signup" className="text-orange-600 font-semibold hover:text-orange-500 transition-colors">
+                Sign up as a provider
+              </Link>
+            </p>
           </div>
 
-          <div style={{ marginBottom: '20px' }}>
-            <label style={{
-              display: 'block',
-              fontSize: '14px',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '6px'
-            }}>
-              Password
-            </label>
-            <div style={{ position: 'relative' }}>
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email address</label>
               <input
-                type={showPassword ? 'text' : 'password'}
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                placeholder="Enter your password"
-                style={{
-                  width: '100%',
-                  padding: '12px',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '6px',
-                  fontSize: '16px',
-                  backgroundColor: '#ffffff',
-                  color: '#111827',
-                  paddingRight: '40px'
-                }}
+                placeholder="Enter your email"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               />
-              <button
-                type="button"
-                style={{
-                  position: 'absolute',
-                  right: '8px',
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  padding: 0
-                }}
-                onClick={() => setShowPassword(!showPassword)}
-              >
-                {showPassword ? (
-                  <EyeOff size={20} color="#9ca3af" />
-                ) : (
-                  <Eye size={20} color="#9ca3af" />
-                )}
-              </button>
             </div>
-          </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px' }}>
-            <div style={{ display: 'flex', alignItems: 'center' }}>
-              <input
-                id="remember-me"
-                name="remember-me"
-                type="checkbox"
-                style={{
-                  height: '16px',
-                  width: '16px',
-                  color: '#10b981',
-                  border: '1px solid #d1d5db',
-                  borderRadius: '4px',
-                  marginRight: '6px'
-                }}
-              />
-              <label htmlFor="remember-me" style={{ fontSize: '14px', color: '#374151' }}>
-                Remember me
-              </label>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <div className="relative">
+                <input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Enter your password"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="h-5 w-5" />
+                  ) : (
+                    <Eye className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
             </div>
-            <div style={{ fontSize: '14px' }}>
-              <Link href="/auth/forgot-password" style={{ color: '#f97316', textDecoration: 'none', fontWeight: 600 }}>
+
+            <div className="flex items-center justify-between">
+              <div className="flex items-center">
+                <input
+                  id="remember-me"
+                  name="remember-me"
+                  type="checkbox"
+                  className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                />
+                <label htmlFor="remember-me" className="ml-2 text-sm text-gray-700">
+                  Remember me
+                </label>
+              </div>
+              <Link href="/auth/forgot-password" className="text-sm text-orange-600 hover:text-orange-500 transition-colors font-medium">
                 Forgot your password?
               </Link>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '12px',
-              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '6px',
-              fontWeight: 600,
-              fontSize: '16px',
-              cursor: 'pointer',
-              marginBottom: '12px',
-              opacity: loading ? 0.7 : 1
-            }}
-          >
-            {loading && <Loader2 className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" />}
-            Sign in
-          </button>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-gradient-to-br from-orange-500 to-pink-500 text-white py-3 px-4 rounded-lg font-semibold hover:from-orange-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center space-x-2"
+            >
+              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+              <span>Sign in</span>
+            </button>
 
-          <div style={{ textAlign: 'center', fontSize: '14px', marginTop: '8px' }}>
-            <Link href="/auth/customer/login" style={{ color: '#374151', textDecoration: 'none', fontWeight: 500 }}>
-              Looking for customer login?
-            </Link>
-          </div>
-        </form>
+            <div className="text-center text-sm text-gray-600">
+              <Link href="/auth/login" className="hover:text-orange-600 transition-colors font-medium">
+                Looking for customer login?
+              </Link>
+            </div>
+          </form>
+        </div>
       </div>
-      
-    </div>
-    <Footer />
+      <Footer />
     </div>
   )
 }

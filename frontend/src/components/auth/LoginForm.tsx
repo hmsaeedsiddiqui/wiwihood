@@ -27,80 +27,67 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
   };
 
   return (
-    <div className="bg-gray-50 p-3 rounded-2xl">
-      <div className="">
+    <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+      <div className="space-y-6">
         {/* Wiwihood Header */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 24px auto'
-          }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
-              borderRadius: '16px',
-              padding: '12px',
-              marginRight: '12px'
-            }}>
-              <span style={{
-                fontSize: '32px',
-                fontWeight: '700',
-                color: '#ffffff'
-              }}>
-                W
-              </span>
+        <div className="text-center">
+          <div className="flex items-center justify-center mb-6">
+            <div className="bg-gradient-to-br from-orange-500 to-pink-500 rounded-2xl p-3 mr-3">
+              <span className="text-2xl font-bold text-white">W</span>
             </div>
-            <span style={{
-              fontSize: '28px',
-              fontWeight: '700',
-              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              color: 'transparent'
-            }}>
+            <span className="text-2xl font-bold bg-gradient-to-br from-orange-500 to-pink-500 bg-clip-text text-transparent">
               Wiwihood
             </span>
           </div>
         </div>
-        <h2 className="auth-form-title">Sign In</h2>
+        
+        <h2 className="text-2xl font-bold text-gray-900 text-center">Sign In</h2>
         
         {error && (
-          <div className="auth-error-message">
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
             {error}
           </div>
         )}
         
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
             <input
               type="email"
               value={email}
               onChange={e => setEmail(e.target.value)}
               required
-              className="form-input"
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
               placeholder="Your Email"
               autoComplete="email"
             />
           </div>
           
-          <div className="form-group">
-            <div className="password-input-container">
+          <div>
+            <div className="relative">
               <input
                 type={showPassword ? "text" : "password"}
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                className="form-input"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent pr-12"
                 placeholder="Your Password"
                 autoComplete="current-password"
               />
               <button
                 type="button"
-                className="password-toggle-btn"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-gray-700"
                 onClick={() => setShowPassword(!showPassword)}
               >
-                <i className={`fas ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`}></i>
+                {showPassword ? (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.878 9.878L7.05 7.05M9.878 9.878a3 3 0 00-.007 4.243m4.242-4.242L16.95 7.05M14.121 14.121a3 3 0 01-4.243 0m4.243 0l2.829 2.829M14.121 14.121L19.071 9.171" />
+                  </svg>
+                ) : (
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                )}
               </button>
             </div>
           </div>
@@ -108,23 +95,33 @@ export default function LoginForm({ onSuccess }: { onSuccess?: () => void }) {
           <button
             type="submit"
             disabled={loading}
-            className="auth-submit-btn"
+            className="w-full bg-gradient-to-r from-orange-500 to-pink-500 text-white py-3 px-4 rounded-lg font-semibold hover:from-orange-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
-            {loading ? "Signing in..." : "Sign In"}
+            {loading ? (
+              <div className="flex items-center justify-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Signing in...
+              </div>
+            ) : (
+              "Sign In"
+            )}
           </button>
-           <div className="text-center mt-6">
-          <p className="text-gray-600">
-            Don't have an account?{' '}
-            <a 
-              href="/auth/register" 
-              className="text-green-600 font-semibold hover:text-green-500 transition-colors"
-            >
-              Sign up here
-            </a>
-          </p>
-        </div>
+          
+          <div className="text-center mt-6">
+            <p className="text-gray-600">
+              Don't have an account?{' '}
+              <a 
+                href="/auth/register" 
+                className="text-orange-600 font-semibold hover:text-orange-500 transition-colors"
+              >
+                Sign up here
+              </a>
+            </p>
+          </div>
         </form>
-        
       </div>
     </div>
   );

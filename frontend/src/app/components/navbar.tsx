@@ -92,17 +92,21 @@ function Navbar() {
       {/* Right side buttons */}
       <div className="flex items-center space-x-4 relative z-10">
         {/* Login/Signup */}
-        <div className="flex items-center text-white cursor-pointer">
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-          </svg>
-          <span className="text-sm">Login/Signup</span>
-        </div>
+        <Link href="/auth/login">
+          <div className="flex items-center text-white cursor-pointer hover:text-gray-200 transition-colors">
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+            </svg>
+            <span className="text-sm">Login/Signup</span>
+          </div>
+        </Link>
         
         {/* List Your Business Button */}
-        <button className="bg-[#2C2C2C] text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-500 transition-colors">
-          List Your Business
-        </button>
+        <Link href="/auth/provider/signup">
+          <button className="bg-[#2C2C2C] text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-gray-500 transition-colors">
+            List Your Business
+          </button>
+        </Link>
         
         {/* Menu Button with Dropdown */}
         <div className="relative" ref={menuRef}>
@@ -152,8 +156,8 @@ function Navbar() {
                     setIsMenuOpen(false)
                   }}
                 >
-                  <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                   <span className="font-medium">About Us</span>
                 </Link>
@@ -166,8 +170,8 @@ function Navbar() {
                     setIsMenuOpen(false)
                   }}
                 >
-                  <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                  <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m8 0H8m8 0v1a2 2 0 01-2 2H10a2 2 0 01-2-2V6m8 0V5a1 1 0 011 1v6.5M8 6V5a1 1 0 00-1 1v6.5" />
                   </svg>
                   <span className="font-medium">Services</span>
                 </Link>
@@ -182,14 +186,14 @@ function Navbar() {
                     }}
                   >
                     <div className="flex items-center">
-                      <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
                       </svg>
                       <span className="font-medium">Categories</span>
                     </div>
                     <svg 
-                      className={`w-4 h-4 transition-transform duration-200 ${isCategoriesOpen ? 'rotate-90' : ''}`} 
-                      fill="none" 
+                      className={`w-4 h-4 transition-transform duration-200 text-[#E89B8B] ${isCategoriesOpen ? 'rotate-90' : ''}`} 
+                      fill="currentColor" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
                     >
@@ -217,7 +221,38 @@ function Navbar() {
                               setIsCategoriesOpen(false)
                             }}
                           >
-                            <span className="text-2xl mr-3">{category.icon}</span>
+                            {/* Custom SVG icons based on category name */}
+                            {category.name === 'Hair Services' ? (
+                              <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C8.14 2 5 5.14 5 9c0 3.31 2.24 6.09 5.27 6.81L9 17v5h2v-5h2v5h2v-5l-1.27-1.19C16.76 15.09 19 12.31 19 9c0-3.86-3.14-7-7-7z"/>
+                              </svg>
+                            ) : category.name === 'Nail Services' ? (
+                              <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2c-5.5 0-10 4.5-10 10s4.5 10 10 10 10-4.5 10-10-4.5-10-10-10zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                                <path d="M12 6c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6-2.69-6-6-6z"/>
+                              </svg>
+                            ) : category.name === 'Massage Services' ? (
+                              <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2s2-.9 2-2V4c0-1.1-.9-2-2-2zm7 7h-3v2h3c1.1 0 2-.9 2-2s-.9-2-2-2zm-14 2c0 1.1.9 2 2 2h3V9H5c-1.1 0-2 .9-2 2zm9 7c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2v-2h-4v2zm-6 0v-2H4v2c0 1.1.9 2 2 2h2c1.1 0 2-.9 2-2z"/>
+                              </svg>
+                            ) : category.name === 'Facial Services' ? (
+                              <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                              </svg>
+                            ) : category.name === 'Beauty Services' ? (
+                              <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+                                <path d="M19 7h-3V4h-2v3h-3v2h3v3h2V9h3V7z"/>
+                              </svg>
+                            ) : category.name === 'Wellness Services' ? (
+                              <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+                              </svg>
+                            ) : (
+                              <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                              </svg>
+                            )}
                             <span>{category.name}</span>
                           </Link>
                         ))
@@ -238,7 +273,7 @@ function Navbar() {
                     setIsMenuOpen(false)
                   }}
                 >
-                  <svg className="w-5 h-5 mr-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="currentColor" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
                   </svg>
                   <span className="font-medium">Home</span>

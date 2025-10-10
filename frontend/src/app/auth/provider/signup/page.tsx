@@ -124,143 +124,186 @@ export default function ProviderSignupPage() {
   }
 
   return (
-    <div>
-    <div className="provider-signup-bg">
-      <div className="provider-signup-card">
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 24px auto'
-          }}>
-            <div style={{
-              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
-              borderRadius: '16px',
-              padding: '12px',
-              marginRight: '12px'
-            }}>
-              <span style={{
-                fontSize: '32px',
-                fontWeight: '700',
-                color: '#ffffff'
-              }}>
-                W
+    <div className="min-h-screen bg-gray-50">
+      <div className="py-20 flex items-center justify-center w-[95%] mx-auto max-w-[600px]">
+        <div className="w-full bg-white p-8 rounded-2xl shadow-lg border border-gray-100">
+          {/* Wiwihood Header */}
+          <div className="text-center mb-8">
+            <div className="flex items-center justify-center mb-6">
+              <div className="bg-gradient-to-br from-orange-500 to-pink-500 rounded-2xl p-3 mr-3">
+                <span className="text-2xl font-bold text-white">W</span>
+              </div>
+              <span className="text-2xl font-bold bg-gradient-to-br from-orange-500 to-pink-500 bg-clip-text text-transparent">
+                Wiwihood
               </span>
             </div>
-            <span style={{
-              fontSize: '28px',
-              fontWeight: '700',
-              background: 'linear-gradient(135deg, #f97316 0%, #ec4899 100%)',
-              backgroundClip: 'text',
-              WebkitBackgroundClip: 'text',
-              color: 'transparent'
-            }}>
-              Wiwihood
-            </span>
+            <h2 className="text-2xl font-bold text-gray-900 mb-2">Join as a Service Provider</h2>
+            <p className="text-gray-600 mb-2">Start offering your services on Wiwihood</p>
+            <p className="text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link href="/auth/provider/login" className="text-orange-600 font-semibold hover:text-orange-500 transition-colors">
+                Sign in here
+              </Link>
+            </p>
           </div>
-          <h2 style={{
-            fontSize: '28px',
-            fontWeight: '700',
-            color: '#1f2937',
-            marginBottom: '8px'
-          }}>Join as a Service Provider</h2>
-          <p style={{
-            fontSize: '16px',
-            color: '#6b7280',
-            marginBottom: '8px'
-          }}>Start offering your services on Wiwihood</p>
-          <p style={{
-            fontSize: '14px',
-            color: '#6b7280'
-          }}>Already have an account?{' '}
-            <Link href="/auth/provider/login" style={{
-              color: '#f97316',
-              textDecoration: 'none',
-              fontWeight: '600'
-            }}>Sign in here</Link>
-          </p>
-        </div>
-        <div className="provider-signup-formwrap">
-          <form className="provider-signup-form" onSubmit={handleSubmit}>
+
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
             {error && (
-              <div className="provider-signup-error">
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                 {Array.isArray(error) ? (
-                  <ul>
+                  <ul className="list-disc list-inside space-y-1">
                     {error.map((msg, i) => <li key={i}>{msg}</li>)}
                   </ul>
                 ) : error}
               </div>
             )}
 
-            <div className="provider-signup-row">
-              <div className="provider-signup-field">
-                <label htmlFor="firstName">First Name</label>
-                <input id="firstName" name="firstName" type="text" required value={formData.firstName} onChange={handleChange} placeholder="First name" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="firstName" className="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                <input 
+                  id="firstName" 
+                  name="firstName" 
+                  type="text" 
+                  required 
+                  value={formData.firstName} 
+                  onChange={handleChange} 
+                  placeholder="First name"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
               </div>
-              <div className="provider-signup-field">
-                <label htmlFor="lastName">Last Name</label>
-                <input id="lastName" name="lastName" type="text" required value={formData.lastName} onChange={handleChange} placeholder="Last name" />
+              
+              <div>
+                <label htmlFor="lastName" className="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                <input 
+                  id="lastName" 
+                  name="lastName" 
+                  type="text" 
+                  required 
+                  value={formData.lastName} 
+                  onChange={handleChange} 
+                  placeholder="Last name"
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
               </div>
             </div>
 
-            <div className="provider-signup-field">
-              <label htmlFor="email">Email address</label>
-              <input id="email" name="email" type="email" autoComplete="email" required value={formData.email} onChange={handleChange} placeholder="Enter your email" />
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">Email address</label>
+              <input 
+                id="email" 
+                name="email" 
+                type="email" 
+                autoComplete="email" 
+                required 
+                value={formData.email} 
+                onChange={handleChange} 
+                placeholder="Enter your email"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
             </div>
 
-            <div className="provider-signup-field">
-              <label htmlFor="phone">Phone Number (optional)</label>
-              <input id="phone" name="phone" type="tel" value={formData.phone} onChange={handleChange} placeholder="Enter your phone number" />
+            <div>
+              <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">Phone Number (optional)</label>
+              <input 
+                id="phone" 
+                name="phone" 
+                type="tel" 
+                value={formData.phone} 
+                onChange={handleChange} 
+                placeholder="Enter your phone number"
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+              />
             </div>
 
-            <div className="provider-signup-field">
-              <label htmlFor="password">Password</label>
-              <div className="provider-signup-password-wrap">
-                <input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="new-password" required value={formData.password} onChange={handleChange} placeholder="Create a password" />
-                <button type="button" className="provider-signup-eye" onClick={() => setShowPassword(!showPassword)}>
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <div className="relative">
+                <input 
+                  id="password" 
+                  name="password" 
+                  type={showPassword ? 'text' : 'password'} 
+                  autoComplete="new-password" 
+                  required 
+                  value={formData.password} 
+                  onChange={handleChange} 
+                  placeholder="Create a password"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
                   {showPassword ? (
-                    <EyeOff className="provider-signup-eye-icon" />
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <Eye className="provider-signup-eye-icon" />
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>
-              <p className="provider-signup-password-hint">Must contain uppercase, lowercase, number or special character (min. 8 chars)</p>
+              <p className="text-xs text-gray-500 mt-1">Must contain uppercase, lowercase, number or special character (min. 8 chars)</p>
             </div>
 
-            <div className="provider-signup-field">
-              <label htmlFor="confirmPassword">Confirm Password</label>
-              <div className="provider-signup-password-wrap">
-                <input id="confirmPassword" name="confirmPassword" type={showConfirmPassword ? 'text' : 'password'} autoComplete="new-password" required value={formData.confirmPassword} onChange={handleChange} placeholder="Confirm your password" />
-                <button type="button" className="provider-signup-eye" onClick={() => setShowConfirmPassword(!showConfirmPassword)}>
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-medium text-gray-700 mb-2">Confirm Password</label>
+              <div className="relative">
+                <input 
+                  id="confirmPassword" 
+                  name="confirmPassword" 
+                  type={showConfirmPassword ? 'text' : 'password'} 
+                  autoComplete="new-password" 
+                  required 
+                  value={formData.confirmPassword} 
+                  onChange={handleChange} 
+                  placeholder="Confirm your password"
+                  className="w-full px-4 py-3 pr-12 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
                   {showConfirmPassword ? (
-                    <EyeOff className="provider-signup-eye-icon" />
+                    <EyeOff className="h-5 w-5" />
                   ) : (
-                    <Eye className="provider-signup-eye-icon" />
+                    <Eye className="h-5 w-5" />
                   )}
                 </button>
               </div>
             </div>
 
             <div>
-              <button type="submit" disabled={loading} className="provider-signup-btn">
-                {loading && <Loader2 className="provider-signup-btn-loader" />}
-                Create Provider Account
+              <button 
+                type="submit" 
+                disabled={loading} 
+                className="w-full bg-gradient-to-br from-orange-500 to-pink-500 text-white py-3 px-4 rounded-lg font-semibold hover:from-orange-600 hover:to-pink-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center space-x-2"
+              >
+                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+                <span>Create Provider Account</span>
               </button>
             </div>
 
-            <div className="provider-signup-customer-link">
-              <Link href="/auth/register">Looking to book services? Sign up as a customer</Link>
+            <div className="text-center">
+              <Link 
+                href="/auth/register" 
+                className="text-sm text-gray-600 hover:text-orange-600 transition-colors"
+              >
+                Looking to book services? Sign up as a customer
+              </Link>
             </div>
-            <div className="provider-signup-terms">
-              By creating an account, you agree to our <Link href="/terms">Terms of Service</Link> and <Link href="/privacy">Privacy Policy</Link>
+            
+            <div className="text-center text-xs text-gray-500">
+              By creating an account, you agree to our{' '}
+              <Link href="/terms" className="text-orange-600 hover:text-orange-500 transition-colors">Terms of Service</Link>
+              {' '}and{' '}
+              <Link href="/privacy" className="text-orange-600 hover:text-orange-500 transition-colors">Privacy Policy</Link>
             </div>
           </form>
         </div>
       </div>
-    </div>
-    <Footer />
+      <Footer />
     </div>
   )
 }

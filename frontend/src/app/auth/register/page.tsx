@@ -42,18 +42,17 @@ export default function RegisterPage() {
   }
 
   return (
-    <div>
-    <div className="w-[95%] mx-auto max-w-[1400px] py-10 flex items-center justify-center ">
-      <div className="max-w-md w-full">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h1>
-          <p className="text-gray-600">Join Reservista to book amazing services</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="py-20 flex items-center justify-center w-[95%] mx-auto max-w-[600px]">
+        <div className="w-full">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h1>
+            <p className="text-gray-600">Join Wiwihood to book amazing services</p>
+          </div>
+          <SignupForm onSuccess={handleSignupSuccess} />
         </div>
-        <SignupForm onSuccess={handleSignupSuccess} />
-       
       </div>
-    </div>
-    <Footer />
+      <Footer />
     </div>
   );
 }

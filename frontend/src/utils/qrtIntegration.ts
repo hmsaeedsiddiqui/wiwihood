@@ -480,6 +480,47 @@ export class QRTIntegration {
       website: 'https://luxionails.ae'
     };
   }
+
+  // Categories QRT
+  static async getCategories() {
+    return this.qrtCall('/categories', [
+      {
+        id: 'hair-services',
+        name: 'Hair Services',
+        slug: 'hair-services',
+        description: 'Professional hair cutting, styling, and treatment services',
+        isActive: true
+      },
+      {
+        id: 'beauty-services',
+        name: 'Beauty Services',
+        slug: 'beauty-services',
+        description: 'Makeup, skincare, and beauty enhancement services',
+        isActive: true
+      },
+      {
+        id: 'nail-services',
+        name: 'Nail Services',
+        slug: 'nail-services',
+        description: 'Manicure, pedicure, and nail art services',
+        isActive: true
+      },
+      {
+        id: 'spa-wellness',
+        name: 'Spa & Wellness',
+        slug: 'spa-wellness',
+        description: 'Massage, facial, and relaxation services',
+        isActive: true
+      },
+      {
+        id: 'fitness',
+        name: 'Fitness & Training',
+        slug: 'fitness',
+        description: 'Personal training and fitness services',
+        isActive: true
+      }
+    ]);
+  }
 }
 
 export default QRTIntegration;
