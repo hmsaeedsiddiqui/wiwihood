@@ -32,8 +32,8 @@ interface TimeSlot {
 export default function BookServicePage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const serviceId = searchParams.get('serviceId')
-  const providerId = searchParams.get('providerId')
+  const serviceId = searchParams?.get('serviceId')
+  const providerId = searchParams?.get('providerId')
 
   const [service, setService] = useState<Service | null>(null)
   const [provider, setProvider] = useState<Provider | null>(null)
@@ -43,6 +43,9 @@ export default function BookServicePage() {
   const [notes, setNotes] = useState('')
   const [loading, setLoading] = useState(false)
   const [bookingLoading, setBookingLoading] = useState(false)
+  const [dataLoading, setDataLoading] = useState(true)
+
+  console.log('BookServicePage - serviceId:', serviceId, 'providerId:', providerId)
 
   // Fetch real available time slots from backend
   const fetchAvailableTimeSlots = async (providerId: string, serviceId: string, date: string) => {
@@ -115,25 +118,66 @@ export default function BookServicePage() {
   // Fetch real service and provider data from API
   const fetchServiceAndProviderData = async (serviceId: string, providerId: string) => {
     try {
-      setLoading(true);
+      setDataLoading(true);
+      console.log('Fetching service and provider data...', { serviceId, providerId });
       
-      // Fetch service data
+      // First try to get data from localStorage (from service detail page)
+      const storedService = localStorage.getItem('selectedServiceForBooking');
+      if (storedService) {
+        try {
+          const parsedService = JSON.parse(storedService);
+          console.log('Found stored service data:', parsedService);
+          
+          setService({
+            id: parsedService.id,
+            name: parsedService.name,
+            description: parsedService.description,
+            price: parsedService.basePrice || parsedService.price,
+            duration: parsedService.duration,
+            category: parsedService.category?.name || 'General'
+          });
+          
+          setProvider({
+            id: parsedService.provider?.id || providerId,
+            businessName: parsedService.provider?.businessName || 'Unknown Provider',
+            user: {
+              firstName: parsedService.provider?.user?.firstName || '',
+              lastName: parsedService.provider?.user?.lastName || ''
+            }
+          });
+          
+          setDataLoading(false);
+          return;
+        } catch (e) {
+          console.log('Error parsing stored service data:', e);
+        }
+      }
+      
+      // Fetch service data from API
       const serviceResponse = await fetch(`http://localhost:8000/api/v1/services/${serviceId}`, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
       
-      // Fetch provider data
+      // Fetch provider data from API
       const providerResponse = await fetch(`http://localhost:8000/api/v1/providers/${providerId}`, {
         headers: {
           'Content-Type': 'application/json',
         },
       });
 
+      console.log('API Response status:', { 
+        service: serviceResponse.status, 
+        provider: providerResponse.status 
+      });
+
       if (serviceResponse.ok && providerResponse.ok) {
         const serviceData = await serviceResponse.json();
         const providerData = await providerResponse.json();
+        
+        console.log('API Service data:', serviceData);
+        console.log('API Provider data:', providerData);
         
         // Convert backend data to frontend format
         setService({
@@ -195,7 +239,7 @@ export default function BookServicePage() {
         }
       });
     } finally {
-      setLoading(false);
+      setDataLoading(false);
     }
   };
 
@@ -307,6 +351,18 @@ export default function BookServicePage() {
     )
   }
 
+  if (dataLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mb-4"></div>
+          <h1 className="text-xl font-semibold text-gray-900 mb-2">Loading Booking Page</h1>
+          <p className="text-gray-600">Fetching service details...</p>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-6 py-8">
@@ -341,10 +397,25 @@ export default function BookServicePage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-gray-500">💰</span>
-                    <span className="font-semibold">${service.price}</span>
+                    <span className="font-semibold">AED {service.price}</span>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Debug Information (remove in production) */}
+        {process.env.NODE_ENV === 'development' && (
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <h4 className="font-semibold text-yellow-800 mb-2">Debug Info:</h4>
+            <div className="text-sm text-yellow-700 space-y-1">
+              <div>Service ID: {serviceId}</div>
+              <div>Provider ID: {providerId}</div>
+              <div>Service loaded: {service ? 'Yes' : 'No'}</div>
+              <div>Provider loaded: {provider ? 'Yes' : 'No'}</div>
+              <div>Data loading: {dataLoading ? 'Yes' : 'No'}</div>
+              <div>Time slots loaded: {timeSlots.length}</div>
             </div>
           </div>
         )}
@@ -429,7 +500,7 @@ export default function BookServicePage() {
                 </div>
                 <div className="flex justify-between font-semibold border-t pt-2">
                   <span>Total:</span>
-                  <span>${service.price}</span>
+                  <span>AED {service.price}</span>
                 </div>
               </div>
             </div>

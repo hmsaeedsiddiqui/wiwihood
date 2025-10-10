@@ -25,20 +25,3 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
-/* Ensure navbar and dropdowns always stay on top */
-nav {
-  position: fixed !important;
-  z-index: 99997 !important;
-}
-
-nav .dropdown-menu {
-  z-index: 99999 !important;
-  position: fixed !important;
-}
-
-/* Force dropdown to be on top of everything */
-.navbar-dropdown {
-  z-index: 999999 !important;
-  position: fixed !important;
-}
-

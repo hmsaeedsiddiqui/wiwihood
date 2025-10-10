@@ -1,306 +1,996 @@
-"use client";
+"use client"
 
-import React, { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { Search, Star, MapPin, Clock, ArrowRight, Filter, Grid, List } from 'lucide-react';
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
+import Footer from "../components/footer";
+import Navbar from "../components/navbar";
+import ServiceHero from "../services/service-hero";
 
-export default function ServicesPage() {
-  const [services, setServices] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [viewMode, setViewMode] = useState('grid');
-  const [selectedCategory, setSelectedCategory] = useState('all');
+interface Shop {
+  id: number;
+  category: string;
+  name: string;
+  image: string;
+  description: string;
+  rating: number;
+  reviews: number;
+  verified: boolean;
+  priceFrom: number;
+  distance: number;
+  availableSlots: string[];
+  tags?: string[];
+}
 
-  // Mock services data matching vivihood design
-  const mockServices = [
-    {
-      id: 1,
-      title: "Luxe Nail Studio",
-      provider: "Beauty Pro Spa Salon - Al Watery",
-      rating: 4.8,
-      reviews: 88,
-      price: 149,
-      image: "/service1.png",
-      category: "Nail Services",
-      duration: 60,
-      description: "Professional nail care with premium products and expert techniques"
+function ServicesPage() {
+  const searchParams = useSearchParams();
+  const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
+  const [selectedService, setSelectedService] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [priceRange, setPriceRange] = useState([0, 500]);
+  const [minRating, setMinRating] = useState(0);
+  const [maxDistance, setMaxDistance] = useState(50);
+  const [showServiceDropdown, setShowServiceDropdown] = useState(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9; // 3x3 grid
+
+  // Service options with wiwihood theme icons
+  // Click outside handler to close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.dropdown-container')) {
+        setShowServiceDropdown(false);
+        setShowLocationDropdown(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  const serviceOptions = [
+    { 
+      value: '', 
+      label: 'All Services',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+        </svg>
+      )
     },
-    {
-      id: 2,
-      title: "Signature Facial Treatment",
-      provider: "Glow Wellness Center - Dubai Marina",
-      rating: 4.9,
-      reviews: 156,
-      price: 199,
-      image: "/facial-treatment.jpg",
-      category: "Facial Services",
-      duration: 90,
-      description: "Deep cleansing and rejuvenating facial treatment for all skin types"
+    { 
+      value: 'nails', 
+      label: 'Nails',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21l4-4h6l-4 4M3 17l4-4V7a4 4 0 118 0v6l4 4" />
+        </svg>
+      )
     },
-    {
-      id: 3,
-      title: "Relaxing Deep Tissue Massage",
-      provider: "Zen Spa & Wellness - JLT",
-      rating: 4.7,
-      reviews: 203,
-      price: 299,
-      image: "/service2.jpg",
-      category: "Massage Services",
-      duration: 120,
-      description: "Therapeutic massage to relieve tension and promote relaxation"
+    { 
+      value: 'hair', 
+      label: 'Hair Cut',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9M21 9H9M21 13H9M21 17H9" />
+        </svg>
+      )
     },
-    {
-      id: 4,
-      title: "Hair Cut & Styling",
-      provider: "Elite Hair Studio - Business Bay",
-      rating: 4.8,
-      reviews: 134,
-      price: 179,
-      image: "/service3.jpg",
-      category: "Hair Services",
-      duration: 75,
-      description: "Professional haircut and styling by expert stylists"
+    { 
+      value: 'spa', 
+      label: 'Spa',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+        </svg>
+      )
     },
-    {
-      id: 5,
-      title: "Eyebrow Threading & Shaping",
-      provider: "Perfect Brows Salon - Downtown",
-      rating: 4.6,
-      reviews: 92,
-      price: 89,
-      image: "/services/brow-1.jpg",
-      category: "Beauty Services",
-      duration: 45,
-      description: "Precision eyebrow threading and shaping for perfect arch"
+    { 
+      value: 'makeup', 
+      label: 'Makeup',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+          <circle cx="9" cy="9" r="1.5" fill="currentColor" />
+          <circle cx="15" cy="9" r="1.5" fill="currentColor" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 13s1.5 2 4 2 4-2 4-2" />
+        </svg>
+      )
     },
-    {
-      id: 6,
-      title: "Manicure & Pedicure Combo",
-      provider: "Luxury Nail Lounge - Palm Jumeirah",
-      rating: 4.9,
-      reviews: 167,
-      price: 249,
-      image: "/services/mani-pedi-1.jpg",
-      category: "Nail Services",
-      duration: 105,
-      description: "Complete nail care package with luxury treatments"
+    { 
+      value: 'massage', 
+      label: 'Massage',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2M7 4h10M7 4l-2 16h14L17 4M12 8v8M9 12h6" />
+        </svg>
+      )
+    },
+    { 
+      value: 'facial', 
+      label: 'Facial',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+          <circle cx="9" cy="9" r="1.5" fill="currentColor" />
+          <circle cx="15" cy="9" r="1.5" fill="currentColor" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 13s1.5 2 4 2 4-2 4-2" />
+        </svg>
+      )
+    },
+    { 
+      value: 'eyebrows', 
+      label: 'Eyebrows',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      )
+    },
+    { 
+      value: 'waxing', 
+      label: 'Waxing',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      )
     }
   ];
 
-  const categories = [
-    { id: 'all', name: 'All Services' },
-    { id: 'nail', name: 'Nail Services' },
-    { id: 'facial', name: 'Facial Services' },
-    { id: 'massage', name: 'Massage Services' },
-    { id: 'hair', name: 'Hair Services' },
-    { id: 'beauty', name: 'Beauty Services' }
+  // Location options with wiwihood theme icons
+  const locationOptions = [
+    { 
+      value: '', 
+      label: 'All Locations',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      )
+    },
+    { 
+      value: 'dubai-marina', 
+      label: 'Dubai Marina',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      )
+    },
+    { 
+      value: 'downtown-dubai', 
+      label: 'Downtown Dubai',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      )
+    },
+    { 
+      value: 'jumeirah', 
+      label: 'Jumeirah',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+        </svg>
+      )
+    },
+    { 
+      value: 'business-bay', 
+      label: 'Business Bay',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      )
+    },
+    { 
+      value: 'difc', 
+      label: 'DIFC',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+        </svg>
+      )
+    },
+    { 
+      value: 'jbr', 
+      label: 'JBR',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+        </svg>
+      )
+    }
   ];
 
+  const shops: Shop[] = [
+    {
+      id: 1,
+      category: "nails",
+      name: "Lumi Nail Studio",
+      image: "/service1.png",
+      description: "Double Tree by Hilton M-Square AWR Properties. Al Masihood",
+      rating: 4.5,
+      reviews: 12,
+      verified: true,
+      priceFrom: 89,
+      distance: 2.3,
+      availableSlots: ["10:00 AM", "2:00 PM", "4:30 PM"],
+      tags: ["top-rated", "popular"]
+    },
+    {
+      id: 2,
+      category: "hair",
+      name: "Elite Hair Salon",
+      image: "/service2.jpg",
+      description: "Professional hair styling and treatment services",
+      rating: 4.8,
+      reviews: 28,
+      verified: true,
+      priceFrom: 120,
+      distance: 1.8,
+      availableSlots: ["9:00 AM", "1:00 PM", "5:00 PM"],
+      tags: ["top-rated", "deals"]
+    },
+    {
+      id: 3,
+      category: "spa",
+      name: "Serenity Spa",
+      image: "/service3.jpg",
+      description: "Relaxing spa treatments and wellness services",
+      rating: 4.9,
+      reviews: 45,
+      verified: true,
+      priceFrom: 200,
+      distance: 3.1,
+      availableSlots: ["11:00 AM", "3:00 PM", "6:00 PM"],
+      tags: ["popular", "new"]
+    },
+    {
+      id: 4,
+      category: "makeup",
+      name: "Glamour Studio",
+      image: "/service1.png",
+      description: "Professional makeup and beauty services",
+      rating: 4.6,
+      reviews: 18,
+      verified: true,
+      priceFrom: 150,
+      distance: 2.7,
+      availableSlots: ["10:30 AM", "2:30 PM", "7:00 PM"],
+      tags: ["deals", "choice"]
+    },
+    {
+      id: 5,
+      category: "massage",
+      name: "Wellness Center",
+      image: "/service2.jpg",
+      description: "Therapeutic massage and wellness treatments",
+      rating: 4.7,
+      reviews: 32,
+      verified: true,
+      priceFrom: 180,
+      distance: 1.5,
+      availableSlots: ["9:30 AM", "1:30 PM", "5:30 PM"],
+      tags: ["top-rated", "choice"]
+    },
+    {
+      id: 6,
+      category: "facial",
+      name: "Beauty Hub",
+      image: "/service3.jpg",
+      description: "Advanced facial treatments and skincare",
+      rating: 4.4,
+      reviews: 22,
+      verified: true,
+      priceFrom: 95,
+      distance: 4.2,
+      availableSlots: ["11:30 AM", "3:30 PM", "6:30 PM"],
+      tags: ["new", "popular"]
+    },
+    {
+      id: 7,
+      category: "eyebrows",
+      name: "Brow Studio",
+      image: "/service1.png",
+      description: "Expert eyebrow shaping and threading",
+      rating: 4.8,
+      reviews: 15,
+      verified: true,
+      priceFrom: 45,
+      distance: 1.2,
+      availableSlots: ["10:00 AM", "2:00 PM", "5:00 PM"],
+      tags: ["deals", "new"]
+    },
+    {
+      id: 8,
+      category: "waxing",
+      name: "Smooth Skin Salon",
+      image: "/service2.jpg",
+      description: "Professional waxing services for all areas",
+      rating: 4.3,
+      reviews: 19,
+      verified: true,
+      priceFrom: 65,
+      distance: 3.8,
+      availableSlots: ["9:00 AM", "1:00 PM", "4:00 PM"],
+      tags: ["choice", "popular"]
+    },
+    // Additional shops for pagination testing
+    {
+      id: 9,
+      category: "hair",
+      name: "Royal Hair Studio",
+      image: "/service1.png",
+      description: "Luxury hair cutting and styling services",
+      rating: 4.6,
+      reviews: 45,
+      verified: true,
+      priceFrom: 120,
+      distance: 1.5,
+      availableSlots: ["11:00 AM", "3:00 PM", "5:30 PM"],
+      tags: ["top-rated", "new"]
+    },
+    {
+      id: 10,
+      category: "nails",
+      name: "Crystal Nails",
+      image: "/service2.jpg",
+      description: "Premium nail art and manicure services",
+      rating: 4.7,
+      reviews: 38,
+      verified: true,
+      priceFrom: 95,
+      distance: 2.1,
+      availableSlots: ["10:30 AM", "2:30 PM", "4:00 PM"],
+      tags: ["popular", "deals"]
+    },
+    {
+      id: 11,
+      category: "spa",
+      name: "Wellness Spa Center",
+      image: "/service1.png",
+      description: "Full body spa and relaxation treatments",
+      rating: 4.9,
+      reviews: 67,
+      verified: true,
+      priceFrom: 180,
+      distance: 4.2,
+      availableSlots: ["9:30 AM", "1:30 PM", "3:30 PM"],
+      tags: ["top-rated", "choice"]
+    },
+    {
+      id: 12,
+      category: "makeup",
+      name: "Glamour Beauty",
+      image: "/service2.jpg",
+      description: "Professional makeup for all occasions",
+      rating: 4.4,
+      reviews: 29,
+      verified: true,
+      priceFrom: 110,
+      distance: 3.1,
+      availableSlots: ["12:00 PM", "4:00 PM", "6:00 PM"],
+      tags: ["new", "popular"]
+    },
+    {
+      id: 13,
+      category: "facial",
+      name: "Glow Facial Studio",
+      image: "/service1.png",
+      description: "Advanced facial treatments and skincare",
+      rating: 4.8,
+      reviews: 52,
+      verified: true,
+      priceFrom: 85,
+      distance: 2.8,
+      availableSlots: ["10:00 AM", "2:00 PM", "5:00 PM"],
+      tags: ["top-rated", "deals"]
+    },
+    {
+      id: 14,
+      category: "eyebrows",
+      name: "Perfect Brow Bar",
+      image: "/service2.jpg",
+      description: "Expert eyebrow shaping and threading",
+      rating: 4.5,
+      reviews: 34,
+      verified: true,
+      priceFrom: 45,
+      distance: 1.8,
+      availableSlots: ["11:30 AM", "3:30 PM", "5:30 PM"],
+      tags: ["choice", "new"]
+    },
+    {
+      id: 15,
+      category: "massage",
+      name: "Relax Massage Center",
+      image: "/service1.png",
+      description: "Therapeutic and relaxation massage services",
+      rating: 4.6,
+      reviews: 41,
+      verified: true,
+      priceFrom: 130,
+      distance: 3.5,
+      availableSlots: ["9:00 AM", "1:00 PM", "4:30 PM"],
+      tags: ["popular", "top-rated"]
+    }
+  ];
+
+  // Filter based on URL parameters and user selections
   useEffect(() => {
-    // Simulate loading
-    setTimeout(() => {
-      setServices(mockServices);
-      setLoading(false);
-    }, 1000);
+    const filterType = searchParams?.get('filter');
+    const category = searchParams?.get('category');
+    
+    let filtered = shops;
+
+    // Apply URL parameter filters
+    if (filterType) {
+      switch (filterType) {
+        case 'top-rated':
+          filtered = filtered.filter(shop => shop.tags?.includes('top-rated'));
+          break;
+        case 'deals':
+          filtered = filtered.filter(shop => shop.tags?.includes('deals'));
+          break;
+        case 'popular':
+          filtered = filtered.filter(shop => shop.tags?.includes('popular'));
+          break;
+        case 'new':
+          filtered = filtered.filter(shop => shop.tags?.includes('new'));
+          break;
+        case 'choice':
+          filtered = filtered.filter(shop => shop.tags?.includes('choice'));
+          break;
+      }
+    }
+
+    if (category) {
+      filtered = filtered.filter(shop => shop.category.toLowerCase() === category.toLowerCase());
+    }
+
+    // Apply user selections
+    if (selectedService) {
+      filtered = filtered.filter(shop => shop.category === selectedService);
+    }
+
+    if (priceRange[1] < 500) {
+      filtered = filtered.filter(shop => shop.priceFrom <= priceRange[1]);
+    }
+
+    if (minRating > 0) {
+      filtered = filtered.filter(shop => shop.rating >= minRating);
+    }
+
+    if (maxDistance < 50) {
+      filtered = filtered.filter(shop => shop.distance <= maxDistance);
+    }
+
+    setFilteredShops(filtered);
+    
+    // Reset to first page when filters change
+    setCurrentPage(1);
+  }, [searchParams, selectedService, priceRange, minRating, maxDistance]);
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredShops.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentShops = filteredShops.slice(startIndex, endIndex);
+
+  // Initialize
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(today);
   }, []);
 
-  const filteredServices = services.filter(service => {
-    const matchesSearch = service.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         service.provider.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || 
-                           service.category.toLowerCase().includes(selectedCategory);
-    return matchesSearch && matchesCategory;
-  });
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-orange-200 border-t-orange-500 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading services...</p>
-        </div>
-      </div>
-    );
-  }
+  // Clear filters
+  const clearFilters = () => {
+    setSelectedService('');
+    setSelectedLocation('');
+    setSelectedDate('');
+    setSelectedTime('');
+    setPriceRange([0, 500]);
+    setMinRating(0);
+    setMaxDistance(50);
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-orange-200 via-pink-200 to-rose-300 py-24">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h1 className="text-4xl md:text-6xl font-light text-gray-800 mb-6">
-            Our Services
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Discover premium beauty and wellness services from trusted professionals
-          </p>
-
-          {/* Search Bar */}
-          <div className="max-w-2xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-              <input
-                type="text"
-                placeholder="Search for services..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-12 pr-4 py-4 border-2 border-gray-200 rounded-xl focus:border-orange-300 focus:outline-none text-lg"
-              />
+      <Navbar />
+      <ServiceHero />
+      
+      {/* Enhanced Filter Section with Better Alignment */}
+      <div className="bg-gray-50 py-12">
+        <div className="container mx-auto px-6">
+          {/* Filter Header - Better Spacing */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-4xl font-light text-gray-800 mb-2">Beauty Services</h1>
+              <p className="text-lg text-gray-600">
+                {filteredShops.length} services available near you
+              </p>
             </div>
+            <button 
+              onClick={clearFilters}
+              className="bg-white text-[#E89B8B] border border-[#E89B8B] px-6 py-3 rounded-lg font-medium hover:bg-[#E89B8B] hover:text-white transition-all duration-200 shadow-sm"
+            >
+              Clear All Filters
+            </button>
           </div>
-        </div>
-      </section>
 
-      {/* Filters and View Controls */}
-      <section className="py-8 bg-white border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col lg:flex-row justify-between items-center gap-6">
-            {/* Category Filter */}
-            <div className="flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <button
-                  key={category.id}
-                  onClick={() => setSelectedCategory(category.id)}
-                  className={`px-4 py-2 rounded-full border-2 font-medium transition-all ${
-                    selectedCategory === category.id
-                      ? 'bg-orange-500 text-white border-orange-500'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-orange-300'
-                  }`}
-                >
-                  {category.name}
-                </button>
-              ))}
-            </div>
-
-            {/* View Mode and Results Count */}
-            <div className="flex items-center gap-4">
-              <span className="text-gray-600">
-                {filteredServices.length} services found
-              </span>
-              
-              <div className="flex border border-gray-200 rounded-lg">
-                <button
-                  onClick={() => setViewMode('grid')}
-                  className={`p-2 ${
-                    viewMode === 'grid' 
-                      ? 'bg-orange-500 text-white' 
-                      : 'bg-white text-gray-600'
-                  }`}
-                >
-                  <Grid className="h-4 w-4" />
-                </button>
-                <button
-                  onClick={() => setViewMode('list')}
-                  className={`p-2 ${
-                    viewMode === 'list' 
-                      ? 'bg-orange-500 text-white' 
-                      : 'bg-white text-gray-600'
-                  }`}
-                >
-                  <List className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Services Grid */}
-      <section className="py-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className={`grid gap-8 ${
-            viewMode === 'grid' 
-              ? 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3' 
-              : 'grid-cols-1'
-          }`}>
-            {filteredServices.map((service) => (
-              <Link key={service.id} href={`/service/${service.id}`}>
-                <div className={`bg-white rounded-2xl shadow-lg overflow-hidden hover:shadow-xl transition-all border border-gray-100 cursor-pointer ${
-                  viewMode === 'list' ? 'flex' : ''
-                }`}>
-                  <div className={`relative overflow-hidden ${
-                    viewMode === 'list' ? 'w-64 h-48' : 'h-64'
-                  }`}>
-                    <img 
-                      src={service.image}
-                      alt={service.title}
-                      className="w-full h-full object-cover"
-                    />
-                  </div>
-                  
-                  <div className={`p-6 ${viewMode === 'list' ? 'flex-1' : ''}`}>
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="text-xl font-semibold text-gray-800">{service.title}</h3>
-                      <span className="text-2xl font-bold text-orange-500">AED {service.price}</span>
-                    </div>
-                    
-                    <div className="flex items-center text-gray-600 mb-3">
-                      <MapPin className="h-4 w-4 mr-2" />
-                      <span className="text-sm">{service.provider}</span>
-                    </div>
-                    
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                      {service.description}
-                    </p>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <Star className="h-4 w-4 text-yellow-400 fill-current mr-1" />
-                        <span className="text-sm font-medium text-gray-700">{service.rating}</span>
-                        <span className="text-sm text-gray-500 ml-1">({service.reviews})</span>
-                      </div>
-                      
-                      <div className="flex items-center text-gray-500 text-sm">
-                        <Clock className="h-4 w-4 mr-1" />
-                        <span>{service.duration} min</span>
-                      </div>
-                    </div>
-                    
-                    <button className="w-full mt-4 bg-gradient-to-r from-orange-400 to-pink-400 text-white py-3 px-6 rounded-xl font-semibold hover:shadow-lg transition-all">
-                      Book Now
-                    </button>
+          {/* Main Filter Grid - Better Spacing */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            
+            {/* Filters Sidebar - Better Design */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-8 border border-gray-100">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-gray-800">Filters</h3>
+                  <div className="w-8 h-8 bg-[#F5F0EF] rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-[#E89B8B]" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
+                    </svg>
                   </div>
                 </div>
-              </Link>
-            ))}
-          </div>
+                
+                {/* Service Category Filter - Better Styling */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9M21 9H9M21 13H9M21 17H9" />
+                    </svg>
+                    Service Category
+                  </label>
+                  <div className="relative dropdown-container">
+                    <button
+                      onClick={() => setShowServiceDropdown(!showServiceDropdown)}
+                      className="w-full p-4 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#E89B8B] focus:border-[#E89B8B] text-left flex items-center justify-between"
+                    >
+                      <div className="flex items-center">
+                        {serviceOptions.find(option => option.value === selectedService)?.icon}
+                        <span className="ml-2">
+                          {serviceOptions.find(option => option.value === selectedService)?.label || 'All Services'}
+                        </span>
+                      </div>
+                      <svg className={`w-5 h-5 text-[#E89B8B] transition-transform ${showServiceDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {showServiceDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                        {serviceOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={() => {
+                              setSelectedService(option.value);
+                              setShowServiceDropdown(false);
+                            }}
+                            className="w-full p-3 text-left hover:bg-[#F5F0EF] flex items-center transition-colors"
+                          >
+                            {option.icon}
+                            <span className="ml-2">{option.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
 
-          {/* No Results */}
-          {filteredServices.length === 0 && (
-            <div className="text-center py-16">
-              <div className="text-6xl mb-4">🔍</div>
-              <h3 className="text-xl font-semibold text-gray-800 mb-2">No services found</h3>
-              <p className="text-gray-600 mb-6">Try adjusting your search or category filter</p>
-              <button 
-                onClick={() => {
-                  setSearchQuery('');
-                  setSelectedCategory('all');
-                }}
-                className="bg-orange-500 text-white px-6 py-3 rounded-lg font-semibold hover:bg-orange-600 transition-colors"
-              >
-                Clear Filters
-              </button>
+                {/* Location Filter - Better Styling */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Location
+                  </label>
+                  <div className="relative dropdown-container">
+                    <button
+                      onClick={() => setShowLocationDropdown(!showLocationDropdown)}
+                      className="w-full p-4 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#E89B8B] focus:border-[#E89B8B] text-left flex items-center justify-between"
+                    >
+                      <div className="flex items-center">
+                        {locationOptions.find(option => option.value === selectedLocation)?.icon}
+                        <span className="ml-2">
+                          {locationOptions.find(option => option.value === selectedLocation)?.label || 'All Locations'}
+                        </span>
+                      </div>
+                      <svg className={`w-5 h-5 text-[#E89B8B] transition-transform ${showLocationDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {showLocationDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                        {locationOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={() => {
+                              setSelectedLocation(option.value);
+                              setShowLocationDropdown(false);
+                            }}
+                            className="w-full p-3 text-left hover:bg-[#F5F0EF] flex items-center transition-colors"
+                          >
+                            {option.icon}
+                            <span className="ml-2">{option.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Date & Time - Side by Side */}
+                <div className="grid grid-cols-1 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E89B8B] focus:border-[#E89B8B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Time
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedTime}
+                        onChange={(e) => setSelectedTime(e.target.value)}
+                        className="w-full p-4 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#E89B8B] focus:border-[#E89B8B] appearance-none"
+                      >
+                        <option value="">Any Time</option>
+                        <option value="09:00">9:00 AM</option>
+                        <option value="10:00">10:00 AM</option>
+                        <option value="11:00">11:00 AM</option>
+                        <option value="12:00">12:00 PM</option>
+                        <option value="13:00">1:00 PM</option>
+                        <option value="14:00">2:00 PM</option>
+                        <option value="15:00">3:00 PM</option>
+                        <option value="16:00">4:00 PM</option>
+                        <option value="17:00">5:00 PM</option>
+                        <option value="18:00">6:00 PM</option>
+                      </select>
+                      <svg className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#E89B8B] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Price Range Filter - Enhanced Design */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                    Price Range (AED)
+                  </label>
+                  <div className="bg-[#F5F0EF] rounded-xl p-4">
+                    <div className="flex justify-between text-sm text-[#E89B8B] font-medium mb-3">
+                      <span>AED {priceRange[0]}</span>
+                      <span>AED {priceRange[1]}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="500"
+                      value={priceRange[1]}
+                      onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
+                      className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, #E89B8B 0%, #E89B8B ${(priceRange[1]/500)*100}%, #e5e7eb ${(priceRange[1]/500)*100}%, #e5e7eb 100%)`
+                      }}
+                    />
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Min Price</label>
+                        <input
+                          type="number"
+                          placeholder="0"
+                          value={priceRange[0]}
+                          onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
+                          className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#E89B8B]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Max Price</label>
+                        <input
+                          type="number"
+                          placeholder="500"
+                          value={priceRange[1]}
+                          onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 500])}
+                          className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#E89B8B]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rating Filter - Enhanced Design */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    Minimum Rating
+                  </label>
+                  <div className="space-y-3">
+                    {[4.5, 4.0, 3.5, 3.0, 0].map((rating) => (
+                      <label key={rating} className="flex items-center cursor-pointer p-3 rounded-xl hover:bg-[#F5F0EF] transition-colors group">
+                        <input
+                          type="radio"
+                          name="rating"
+                          value={rating}
+                          checked={minRating === rating}
+                          onChange={(e) => setMinRating(parseFloat(e.target.value))}
+                          className="mr-3 text-[#E89B8B] focus:ring-[#E89B8B] w-4 h-4"
+                        />
+                        <div className="flex items-center">
+                          <div className="flex text-yellow-400 text-sm mr-2">
+                            {'★'.repeat(Math.floor(rating || 1))}
+                            {'☆'.repeat(5 - Math.floor(rating || 1))}
+                          </div>
+                          <span className="text-sm text-gray-600 font-medium group-hover:text-[#E89B8B]">
+                            {rating > 0 ? `${rating}+ stars` : 'Any rating'}
+                          </span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Distance Filter - Enhanced Design */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    Distance
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={maxDistance}
+                      onChange={(e) => setMaxDistance(parseInt(e.target.value))}
+                      className="w-full p-4 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#E89B8B] focus:border-[#E89B8B] appearance-none"
+                    >
+                      <option value={1}>Within 1 km</option>
+                      <option value={5}>Within 5 km</option>
+                      <option value={10}>Within 10 km</option>
+                      <option value={25}>Within 25 km</option>
+                      <option value={50}>Within 50 km</option>
+                    </select>
+                    <svg className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#E89B8B] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Results Count - Enhanced Design */}
+                <div className="bg-gradient-to-r from-[#E89B8B] to-[#D4876F] p-4 rounded-xl text-center shadow-sm">
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-white font-semibold">
+                      {filteredShops.length} services found
+                    </p>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
-        </div>
-      </section>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-r from-orange-200 to-pink-200">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-gray-800 mb-4">
-            Don't see what you're looking for?
-          </h2>
-          <p className="text-gray-600 text-lg mb-8">
-            Contact us and we'll help you find the perfect service provider
-          </p>
-          <Link href="/contact">
-            <button className="bg-white text-orange-600 px-8 py-4 rounded-xl font-semibold text-lg hover:shadow-lg transition-all">
-              Get in Touch
-            </button>
-          </Link>
+            {/* Services Grid - Home Page Style Cards */}
+            <div className="lg:col-span-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {currentShops.map((shop) => (
+                  <Link key={shop.id} href={`/services/${shop.id}`} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
+                    
+                    {/* Image Container */}
+                    <div className="relative h-48 overflow-hidden">
+                      <img
+                        src={shop.image}
+                        alt={shop.name}
+                        className="w-full h-full object-cover"
+                      />
+                      
+                      {/* Category Badge */}
+                      <div className="absolute top-3 left-3 bg-white px-2 py-1 rounded text-xs text-gray-600 font-medium">
+                        {shop.category}
+                      </div>
+                    </div>
+
+                    {/* Content Section */}
+                    <div className="p-4 flex flex-col flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1" title={shop.name}>
+                        {shop.name.length > 25 ? `${shop.name.substring(0, 25)}...` : shop.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2 line-clamp-2 flex-1" title={shop.description}>
+                        {shop.description.length > 60 ? `${shop.description.substring(0, 60)}...` : shop.description}
+                      </p>
+                      <p className="text-xs text-gray-500 mb-3">📍 {shop.distance} km away</p>
+                      
+                      {/* Rating */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center">
+                          <div className="flex items-center mr-2">
+                            {[...Array(5)].map((_, i) => (
+                              <svg 
+                                key={i} 
+                                className={`w-4 h-4 ${i < Math.floor(shop.rating) ? 'text-yellow-400' : 'text-gray-200'}`} 
+                                fill="currentColor" 
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-600">({shop.reviews})</span>
+                        </div>
+                        <span className="text-sm font-semibold text-[#E89B8B]">From AED {shop.priceFrom}</span>
+                      </div>
+
+                      {/* Available Slots */}
+                      {shop.availableSlots && shop.availableSlots.length > 0 && (
+                        <div className="mb-3">
+                          <div className="flex flex-wrap gap-1">
+                            {shop.availableSlots.slice(0, 2).map((slot, index) => (
+                              <span
+                                key={index}
+                                className="bg-green-50 text-green-700 px-2 py-1 rounded text-xs font-medium"
+                              >
+                                {slot}
+                              </span>
+                            ))}
+                            {shop.availableSlots.length > 2 && (
+                              <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
+                                +{shop.availableSlots.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Book Button */}
+                      <button className="w-full bg-[#E89B8B] text-white py-2 rounded-lg font-medium hover:bg-[#D4876F] transition-colors text-sm mt-auto">
+                        Book Now
+                      </button>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+
+              {/* No Results State - Enhanced */}
+              {currentShops.length === 0 && filteredShops.length === 0 && (
+                <div className="col-span-full flex flex-col items-center justify-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
+                  <div className="w-24 h-24 bg-[#F5F0EF] rounded-full flex items-center justify-center mb-6">
+                    <svg className="w-12 h-12 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">No services found</h3>
+                  <p className="text-gray-600 text-center max-w-md mb-6">
+                    We couldn't find any services matching your current filters. Try adjusting your search criteria.
+                  </p>
+                  <button 
+                    onClick={clearFilters}
+                    className="bg-[#E89B8B] text-white px-8 py-3 rounded-xl font-semibold hover:bg-[#D4876F] transition-colors duration-200 shadow-md"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {filteredShops.length > 0 && totalPages > 1 && (
+                <div className="col-span-full flex justify-center mt-12">
+                  <div className="flex items-center space-x-2">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        currentPage === 1
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-white text-gray-700 hover:bg-[#F5F0EF] border border-gray-200'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Page Numbers */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Show first page, last page, current page, and pages around current
+                      const showPage = 
+                        page === 1 || 
+                        page === totalPages || 
+                        (page >= currentPage - 1 && page <= currentPage + 1);
+                      
+                      if (!showPage) {
+                        // Show dots for gaps
+                        if (page === currentPage - 2 || page === currentPage + 2) {
+                          return (
+                            <span key={page} className="px-2 py-2 text-gray-400">
+                              ...
+                            </span>
+                          );
+                        }
+                        return null;
+                      }
+
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            currentPage === page
+                              ? 'bg-[#E89B8B] text-white'
+                              : 'bg-white text-gray-700 hover:bg-[#F5F0EF] border border-gray-200'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        currentPage === totalPages
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-white text-gray-700 hover:bg-[#F5F0EF] border border-gray-200'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  {/* Results Info */}
+                  <div className="mt-4 text-center text-sm text-gray-600">
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredShops.length)} of {filteredShops.length} services
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </section>
+      </div>
+
+      <Footer />
     </div>
   );
 }
+
+export default ServicesPage;

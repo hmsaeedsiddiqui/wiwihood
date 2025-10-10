@@ -1,10 +1,6 @@
-"use client"
-
 import React from 'react'
-import { useRouter } from 'next/navigation'
 
 function OurChoice() {
-  const router = useRouter();
   const services = [
     {
       id: 1,
@@ -108,10 +104,7 @@ function OurChoice() {
         {/* Header */}
         <div className="flex items-center justify-between mb-12">
           <h2 className="text-4xl font-light text-gray-800">Our Choice for you</h2>
-          <button 
-            onClick={() => router.push('/services?filter=choice')}
-            className="bg-[#D4A574] text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-[#C19660] transition-colors"
-          >
+          <button className="bg-[#D4A574] text-white px-6 py-2 rounded-lg text-sm font-medium hover:bg-[#C19660] transition-colors">
             View all
           </button>
         </div>

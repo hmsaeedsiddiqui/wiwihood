@@ -1,184 +1,170 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React from "react";
 import { useParams, useRouter } from "next/navigation";
-import { apiService, Service } from "@/lib/api";
-import { useServiceStore } from '@/store/serviceStore';
-import { CloudinaryImage } from "@/components/cloudinary/CloudinaryImage";
+import Navbar from "@/app/components/navbar";
+import Footer from "@/app/components/footer";
+import AboutServices from "./about-services";
+import Services from "./services";
+import Review from "./review";
+import SelectTime from "./select-time";
 
-// Demo/mock data commented out to prevent bugs
-/*
-const demoServices: Service[] = [
-  // Facials
-  ...Array.from({ length: 20 }).map((_, i) => ({
-    id: `FAC-${(i+1).toString().padStart(3, '0')}`,
-    name: [
-      'Glow Facial', 'Hydra Facial', 'Anti-Aging Facial', 'Acne Treatment', 'Collagen Boost', 'Vitamin C Facial', 'Microdermabrasion', 'Oxygen Facial', 'Peel Treatment', 'Sensitive Skin Facial',
-      'Brightening Facial', 'Firming Facial', 'Detox Facial', 'Gold Facial', 'Charcoal Facial', 'Men’s Facial', 'Teen Facial', 'Classic Facial', 'Express Facial', 'Luxury Facial'
-    ][i % 20],
-    description: [
-      'Brightening facial for radiant skin.', 'Deep hydration and cleansing.', 'Reduces wrinkles and fine lines.', 'Acne reduction and healing.', 'Boosts collagen production.',
-      'Vitamin C for glowing skin.', 'Exfoliation and renewal.', 'Oxygen infusion for freshness.', 'Chemical peel for clarity.', 'Gentle care for sensitive skin.',
-      'Brightens dull skin.', 'Firms and tightens.', 'Detoxifies pores.', 'Gold particles for luxury.', 'Charcoal for deep clean.',
-      'Tailored for men.', 'Teen skin care.', 'Classic facial treatment.', 'Quick express facial.', 'Ultimate luxury experience.'
-    ][i % 20],
-    basePrice: 40 + (i % 10) * 5,
-    duration: 60,
-    imageUrl: [
-      'https://images.pexels.com/photos/3993446/pexels-photo-3993446.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993445/pexels-photo-3993445.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993447/pexels-photo-3993447.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993448/pexels-photo-3993448.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993449/pexels-photo-3993449.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993450/pexels-photo-3993450.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993451/pexels-photo-3993451.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993452/pexels-photo-3993452.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993453/pexels-photo-3993453.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993454/pexels-photo-3993454.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993455/pexels-photo-3993455.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993456/pexels-photo-3993456.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993457/pexels-photo-3993457.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993458/pexels-photo-3993458.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993459/pexels-photo-3993459.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993460/pexels-photo-3993460.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993461/pexels-photo-3993461.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993462/pexels-photo-3993462.jpeg?auto=compress&w=400&h=300',
-      'https://images.pexels.com/photos/3993463/pexels-photo-3993463.jpeg?auto=compress&w=400&h=300'
-    ][i % 20],
-    category: { id: 'facials', name: 'Facials', description: '', slug: 'facials', sortOrder: 1, isActive: true, isFeatured: false, createdAt: '', updatedAt: '' },
-    provider: { id: '1', businessName: [
-      'Glow Studio', 'Beauty Bliss', 'Fresh Face', 'Acne Clinic', 'Collagen Lab', 'Vitamin Spa', 'Microderm Center', 'Oxygen Bar', 'Peel Place', 'Sensitive Care',
-      'Brighten Spa', 'Firming Studio', 'Detox Den', 'Gold Lounge', 'Charcoal House', 'Men’s Spa', 'Teen Studio', 'Classic Spa', 'Express Spa', 'Luxury Lounge'
-    ][i % 20], averageRating: 4.5, totalReviews: 50, businessAddress: '123 Main St' }
-  })),
-  // Add similar demo data for haircuts, massages, etc. as needed
-];
-*/
-import Link from "next/link";
-import { useCart } from "@/components/cartContext";
-
-export default function ServiceDetailPage() {
+function ServiceDetailPage() {
   const params = useParams();
-  const { id } = params as { id: string };
-  const [service, setService] = useState<Service | null>(null);
-  const [loading, setLoading] = useState(true);
-  const selectedService = useServiceStore(state => state.selectedService);
+  const router = useRouter();
+  const serviceId = params?.id as string;
 
-  useEffect(() => {
-    if (selectedService && selectedService.id === id) {
-      setService(selectedService);
-      setLoading(false);
-      return;
-    }
-
-    async function fetchService() {
-      setLoading(true);
-      try {
-        // Try API only - no fallback to demo data
-        const result = await apiService.getServices();
-        let found = (result.data || []).find((s: Service) => s.id === id);
-        setService(found ?? null);
-      } catch (e) {
-        // On error, set service to null
-        setService(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-    if (id) fetchService();
-  }, [id, selectedService]);
-
-  if (loading) {
-    return <div style={{ textAlign: 'center', marginTop: 60 }}>Loading service...</div>;
-  }
-  if (!service) {
-    return <div style={{ textAlign: 'center', marginTop: 60, color: '#ef4444' }}>Service not found.</div>;
-  }
+  const handleBookNow = () => {
+    router.push(`/services/book-now?serviceId=${serviceId}`);
+  };
 
   return (
-    <div style={{ background: '#f8fafc', minHeight: '100vh', fontFamily: 'Manrope, sans-serif', padding: '60px 0' }}>
-      <div style={{ maxWidth: 800, margin: '0 auto', padding: '0 24px' }}>
-        <Link href="/shop" style={{ color: '#10b981', fontWeight: 600, fontSize: 16, textDecoration: 'none', marginBottom: 24, display: 'inline-block' }}>&larr; Back to Shop</Link>
-        <div style={{ background: '#fff', borderRadius: 16, boxShadow: '0 8px 32px rgba(0,0,0,0.10)', padding: 40, display: 'flex', gap: 32, flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: 260 }}>
-            <div style={{ height: 240, width: '100%', borderRadius: 12, marginBottom: 24, overflow: 'hidden', background: '#f3f4f6', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {service.images && service.images.length > 0 ? (
-                <CloudinaryImage
-                  src={service.images[0]}
-                  alt={service.name}
-                  width={400}
-                  height={240}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : service.imageUrl ? (
-                <img src={service.imageUrl} alt={service.name} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-              ) : (
-                <div style={{ fontSize: '3rem', fontWeight: 'bold', color: '#d1d5db' }}>
-                  {service.category?.name?.charAt(0) || service.name.charAt(0)}
-                </div>
-              )}
-            </div>
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      
+      {/* Hero Image Section */}
+      <div className="bg-white pt-20">
+        <div className="max-w-7xl mx-auto px-4 py-6">
+          {/* Breadcrumb Navigation */}
+          <div className="mb-6">
+            <nav className="flex items-center space-x-2 text-sm text-gray-600">
+              <a href="/" className="hover:text-gray-900 transition-colors">
+                Home
+              </a>
+              <span className="text-gray-400">/</span>
+              <a href="/services" className="hover:text-gray-900 transition-colors">
+                Bestseller
+              </a>
+              <span className="text-gray-400">/</span>
+              <span className="text-gray-900 font-medium">
+                Al Shanab Gents Salon
+              </span>
+            </nav>
           </div>
-          <div style={{ flex: 2, minWidth: 260 }}>
-            <h1 style={{ fontSize: 32, fontWeight: 800, color: '#222', marginBottom: 16 }}>{service.name}</h1>
-            <div style={{ color: '#6b7280', fontSize: 18, marginBottom: 16 }}>{service.description}</div>
-            <div style={{ color: '#10b981', fontWeight: 700, fontSize: 22, marginBottom: 16 }}>${service.basePrice}</div>
-            <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Category: {service.category?.name}</div>
-            <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 8 }}>Provider: {service.provider?.businessName}</div>
-            <div style={{ color: '#6b7280', fontSize: 16, marginBottom: 24 }}>Duration: {service.duration} min</div>
-            {/* AddToCartButton hidden - keeping code intact for future use */}
-            {/* <AddToCartButton service={service} /> */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Left Side - Images */}
+            <div className="space-y-4">
+              {/* Main Image */}
+              <div className="relative h-96 rounded-xl overflow-hidden">
+                <img
+                  src="/service1.png"
+                  alt="Al Shanab Gents Salon"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              {/* Thumbnail Images */}
+              <div className="flex space-x-2">
+                {["/service1.png", "/service2.jpg", "/service3.jpg", "/service1.png", "/service2.jpg"].map((image, index) => (
+                  <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden border-2 border-transparent hover:border-[#E89B8B] cursor-pointer">
+                    <img
+                      src={image}
+                      alt={`Gallery ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Right Side - Service Info */}
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-3">Al Shanab Gents Salon</h1>
+              
+              <div className="flex items-center space-x-4 mb-4">
+                <span className="flex items-center text-sm">
+                  <svg className="w-4 h-4 text-yellow-400 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                  </svg>
+                  4.8 (127 reviews)
+                </span>
+                <span className="text-sm text-gray-600">2.3 km away</span>
+                <span className="bg-green-100 text-green-800 px-2 py-1 rounded-full text-xs">Verified</span>
+              </div>
+
+              {/* Price */}
+              <div className="mb-6">
+                <div className="text-3xl font-bold text-[#E89B8B]">$399.00 - $429.00</div>
+                <p className="text-gray-600 text-sm">Price starts from lowest service</p>
+              </div>
+
+              {/* Location */}
+              <div className="flex items-start space-x-2 mb-6">
+                <svg className="w-5 h-5 text-gray-400 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <div>
+                  <p className="text-sm text-gray-800">Shop New York Hair Salon</p>
+                  <p className="text-sm text-gray-600">Get directions</p>
+                </div>
+              </div>
+
+              {/* Book Now Button */}
+              <button 
+                onClick={handleBookNow}
+                className="w-full bg-[#E89B8B] text-white py-4 rounded-lg font-semibold text-lg hover:bg-[#D4876F] transition-colors mb-4"
+              >
+                Book Now
+              </button>
+
+              {/* Service Hours */}
+              <div className="space-y-2">
+                <h3 className="font-semibold text-gray-900">Today's Hours</h3>
+                <div className="flex justify-between items-center text-sm">
+                  <span>Monday</span>
+                  <span>11:00am - 9:00pm</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span>Tuesday</span>
+                  <span>11:00am - 9:00pm</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span>Wednesday</span>
+                  <span>11:00am - 9:00pm</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span>Thursday</span>
+                  <span>11:00am - 9:00pm</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span>Friday</span>
+                  <span>11:00am - 9:00pm</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span>Saturday</span>
+                  <span>11:00am - 9:00pm</span>
+                </div>
+                <div className="flex justify-between items-center text-sm">
+                  <span>Sunday</span>
+                  <span>10:00am - 8:00pm</span>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
+
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="space-y-8">
+          {/* Time Selection */}
+          <SelectTime />
+          
+          {/* About Services */}
+          <AboutServices />
+          
+          {/* Reviews */}
+          <Review />
+          
+          {/* Related Services */}
+          <Services />
+        </div>
+      </div>
+
+      <Footer />
     </div>
   );
 }
 
-
-// AddToCartButton component
-function AddToCartButton({ service }: { service: Service }) {
-  const { addToCart } = useCart();
-  const router = useRouter();
-  const [added, setAdded] = React.useState(false);
-
-  const handleAdd = () => {
-    addToCart({
-      id: service.id,
-      name: service.name,
-      provider: service.provider?.businessName || 'Unknown Provider',
-      price: service.basePrice,
-      imageUrl: service.images?.[0] || service.imageUrl || '/blog1.jpg',
-      quantity: 1
-    });
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
-  };
-
-  const handleBookNow = () => {
-    // Store service in localStorage for booking flow
-    localStorage.setItem('selectedServiceForBooking', JSON.stringify(service));
-    router.push(`/book-service?serviceId=${service.id}&providerId=${service.provider?.id || 'unknown'}`);
-  };
-
-  return (
-    <div className="space-y-3">
-      {/* Primary Book Now Button */}
-      <button
-        onClick={handleBookNow}
-        className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 shadow-md hover:shadow-lg"
-      >
-        Book Now - €{service.basePrice}
-      </button>
-      
-      {/* Secondary Add to Cart Button */}
-      <button
-        onClick={handleAdd}
-        disabled={added}
-        className="w-full bg-white text-indigo-600 py-3 px-6 rounded-lg font-semibold border-2 border-indigo-600 hover:bg-indigo-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-all duration-200 disabled:opacity-50"
-      >
-        {added ? '✓ Added to Cart' : 'Add to Cart'}
-      </button>
-    </div>
-  );
-}
+export default ServiceDetailPage;

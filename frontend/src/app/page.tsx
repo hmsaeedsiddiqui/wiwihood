@@ -1,6 +1,7 @@
 import Image from "next/image";
 import Navbar from "./components/navbar";
 import Hero from "./components/hero";
+import FeaturedSections from "./components/FeaturedSections";
 import HotProduct from "./components/hot-product";
 import Video from "./components/video";
 import OurChoice from "./components/our-choice";
@@ -13,6 +14,7 @@ export default function Home() {
     <>
       <Navbar />
       <Hero />
+      <FeaturedSections />
       <HotProduct />
       <Video />
       <OurChoice />
