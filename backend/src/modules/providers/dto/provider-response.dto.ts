@@ -60,6 +60,13 @@ export class ProviderResponseDto {
   postalCode: string;
 
   @ApiProperty({
+    description: 'Business timezone',
+    example: 'America/New_York',
+    required: false,
+  })
+  timezone?: string;
+
+  @ApiProperty({
     description: 'Business latitude for mapping',
     example: 40.7128,
     required: false,
@@ -108,11 +115,25 @@ export class ProviderResponseDto {
   logo?: string;
 
   @ApiProperty({
+    description: 'Business logo public ID in Cloudinary',
+    example: 'providers/logos/uuid-logo',
+    required: false,
+  })
+  logoPublicId?: string;
+
+  @ApiProperty({
     description: 'Business cover image URL',
     example: 'https://example.com/cover.jpg',
     required: false,
   })
   coverImage?: string;
+
+  @ApiProperty({
+    description: 'Business cover image public ID in Cloudinary',
+    example: 'providers/covers/uuid-cover',
+    required: false,
+  })
+  coverImagePublicId?: string;
 
   @ApiProperty({
     description: 'Provider status',

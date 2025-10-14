@@ -251,7 +251,39 @@ export class QRTIntegration {
         durationMinutes: 120,
         isActive: true,
         status: 'active',
-        images: [],
+        images: ['/service1.png', '/service2.jpg'],
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '4',
+        name: 'Men\'s Haircut',
+        description: 'Classic and modern haircuts for men with professional styling',
+        shortDescription: 'Professional men\'s haircut',
+        categoryId: 'hair-services',
+        category: { id: 'hair-services', name: 'Hair Services', slug: 'hair-services' },
+        serviceType: 'appointment',
+        pricingType: 'fixed',
+        basePrice: 75,
+        durationMinutes: 45,
+        isActive: true,
+        status: 'active',
+        images: ['/service3.jpg'],
+        createdAt: new Date().toISOString()
+      },
+      {
+        id: '5',
+        name: 'Hair Wash & Blowdry',
+        description: 'Professional hair washing and blow-drying service',
+        shortDescription: 'Hair wash and styling',
+        categoryId: 'hair-services',
+        category: { id: 'hair-services', name: 'Hair Services', slug: 'hair-services' },
+        serviceType: 'appointment',
+        pricingType: 'fixed',
+        basePrice: 50,
+        durationMinutes: 30,
+        isActive: true,
+        status: 'active',
+        images: ['/service1.png'],
         createdAt: new Date().toISOString()
       }
     ]);
@@ -520,6 +552,87 @@ export class QRTIntegration {
         isActive: true
       }
     ]);
+  }
+
+  // Service Management QRT Methods
+  static async createService(serviceData: any) {
+    try {
+      const token = localStorage.getItem('providerToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await axios.post(`${API_BASE}/services`, serviceData, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
+      
+      console.log('✅ QRT: Service created successfully');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ QRT: Service creation failed:', error?.response?.data || error?.message);
+      throw error;
+    }
+  }
+
+  static async updateService(serviceId: string, serviceData: any) {
+    try {
+      const token = localStorage.getItem('providerToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await axios.patch(`${API_BASE}/services/${serviceId}`, serviceData, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
+      
+      console.log('✅ QRT: Service updated successfully');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ QRT: Service update failed:', error?.response?.data || error?.message);
+      throw error;
+    }
+  }
+
+  static async deleteService(serviceId: string) {
+    try {
+      const token = localStorage.getItem('providerToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await axios.delete(`${API_BASE}/services/${serviceId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
+      
+      console.log('✅ QRT: Service deleted successfully');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ QRT: Service deletion failed:', error?.response?.data || error?.message);
+      throw error;
+    }
+  }
+
+  static async toggleServiceStatus(serviceId: string) {
+    try {
+      const token = localStorage.getItem('providerToken');
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+      
+      const response = await axios.patch(`${API_BASE}/services/${serviceId}/toggle-active`, {}, {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      });
+      
+      console.log('✅ QRT: Service status toggled successfully');
+      return response.data;
+    } catch (error: any) {
+      console.error('❌ QRT: Service status toggle failed:', error?.response?.data || error?.message);
+      throw error;
+    }
   }
 }
 

@@ -58,8 +58,8 @@ export default registerAs(
     host: process.env.DATABASE_HOST || 'localhost',
     port: parseInt(process.env.DATABASE_PORT) || 5432,
     username: process.env.DATABASE_USERNAME || 'postgres',
-    password: process.env.DATABASE_PASSWORD || 'ansar123',
-    database: process.env.DATABASE_NAME || 'reservista',
+    password: process.env.DATABASE_PASSWORD || 'root',
+    database: process.env.DATABASE_NAME || 'wiwihood_db',
     entities: [
       User, Provider, Service, Booking, Payment, Refund, Review, Category,
       ProviderWorkingHours, ProviderTimeOff, Favorite, Role, Permission, 
@@ -72,8 +72,9 @@ export default registerAs(
       StaffAvailability, ExternalCalendarIntegration
     ],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
-    synchronize: false, // Disable auto schema sync to avoid index conflicts
-    logging: false, // Disabled for cleaner output
+    synchronize: true, // Re-enable for clean database
+    dropSchema: false, // Don't drop existing schema
+    logging: true, // Enable logging to see what's happening
     ssl: process.env.DATABASE_SSL === 'true' ? { 
       rejectUnauthorized: false,
       // Allow connections from any IP

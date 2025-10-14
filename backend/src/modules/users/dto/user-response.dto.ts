@@ -52,6 +52,48 @@ export class UserResponseDto {
   profilePicture?: string;
 
   @ApiProperty({
+    description: 'User date of birth',
+    example: '1990-01-01',
+    required: false,
+  })
+  dateOfBirth?: Date;
+
+  @ApiProperty({
+    description: 'User address',
+    example: '123 Main Street',
+    required: false,
+  })
+  address?: string;
+
+  @ApiProperty({
+    description: 'User city',
+    example: 'New York',
+    required: false,
+  })
+  city?: string;
+
+  @ApiProperty({
+    description: 'User country',
+    example: 'United States',
+    required: false,
+  })
+  country?: string;
+
+  @ApiProperty({
+    description: 'User postal code',
+    example: '10001',
+    required: false,
+  })
+  postalCode?: string;
+
+  @ApiProperty({
+    description: 'User timezone',
+    example: 'America/New_York',
+    required: false,
+  })
+  timezone?: string;
+
+  @ApiProperty({
     description: 'Email verification status',
     example: true,
   })

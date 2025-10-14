@@ -25,13 +25,13 @@ export class DatabaseSetupService implements OnModuleInit {
             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
             name VARCHAR(255) NOT NULL,
             description TEXT NOT NULL,
-            "pointsRequired" INTEGER NOT NULL,
-            "discountPercentage" DECIMAL(5,2),
-            "discountAmount" DECIMAL(10,2),
-            "minimumTier" VARCHAR(20) DEFAULT 'bronze',
-            "isActive" BOOLEAN DEFAULT true,
-            "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            points_required INTEGER NOT NULL,
+            reward_type VARCHAR(50) DEFAULT 'discount',
+            reward_value DECIMAL(10,2) DEFAULT 0,
+            tier_required VARCHAR(20) DEFAULT 'bronze',
+            is_active BOOLEAN DEFAULT true,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
           );
         `);
 
@@ -39,12 +39,12 @@ export class DatabaseSetupService implements OnModuleInit {
         const count = await this.loyaltyRewardRepository.count();
         if (count === 0) {
           await queryRunner.query(`
-            INSERT INTO loyalty_rewards (name, description, "pointsRequired", "discountPercentage", "minimumTier") VALUES
-            ('5% Discount', '5% off your next booking', 100, 5.00, 'bronze'),
-            ('10% Discount', '10% off your next booking', 250, 10.00, 'silver'),
-            ('15% Discount', '15% off your next booking', 500, 15.00, 'gold'),
-            ('Free Service Add-on', 'Free add-on service worth $20', 300, NULL, 'silver'),
-            ('Priority Booking', 'Skip the queue with priority booking', 750, NULL, 'gold');
+            INSERT INTO loyalty_rewards (name, description, points_required, reward_type, reward_value, tier_required) VALUES
+            ('5% Discount', '5% off your next booking', 100, 'percentage', 5.00, 'bronze'),
+            ('10% Discount', '10% off your next booking', 250, 'percentage', 10.00, 'silver'),
+            ('15% Discount', '15% off your next booking', 500, 'percentage', 15.00, 'gold'),
+            ('Free Service Add-on', 'Free add-on service worth $20', 300, 'amount', 20.00, 'silver'),
+            ('Priority Booking', 'Skip the queue with priority booking', 750, 'special', 0, 'gold');
           `);
           console.log('Sample loyalty rewards created');
         }

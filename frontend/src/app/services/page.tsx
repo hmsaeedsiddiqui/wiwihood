@@ -7,6 +7,28 @@ import { useSearchParams } from "next/navigation";
 import Footer from "../components/footer";
 import Navbar from "../components/navbar";
 import ServiceHero from "../services/service-hero";
+import { QRTIntegration } from "@/utils/qrtIntegration";
+
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+  shortDescription: string;
+  categoryId: string;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  serviceType: string;
+  pricingType: string;
+  basePrice: number;
+  durationMinutes: number;
+  isActive: boolean;
+  status: string;
+  images: string[];
+  createdAt: string;
+}
 
 interface Shop {
   id: number;
@@ -25,6 +47,9 @@ interface Shop {
 
 function ServicesPage() {
   const searchParams = useSearchParams();
+  const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
   const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
   const [selectedService, setSelectedService] = useState('');
   const [selectedLocation, setSelectedLocation] = useState('');
@@ -35,10 +60,88 @@ function ServicesPage() {
   const [maxDistance, setMaxDistance] = useState(50);
   const [showServiceDropdown, setShowServiceDropdown] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [breadcrumb, setBreadcrumb] = useState('All Services');
   
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9; // 3x3 grid
+
+  // Load services and categories on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [servicesData, categoriesData] = await Promise.all([
+          QRTIntegration.getServices(),
+          QRTIntegration.getCategories()
+        ]);
+        
+        setServices(servicesData || []);
+        setCategories(categoriesData || []);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Handle URL category parameter
+  useEffect(() => {
+    const categoryParam = searchParams?.get('category');
+    if (categoryParam) {
+      setCategoryFilter(categoryParam);
+      const category = categories.find(cat => cat.slug === categoryParam);
+      setBreadcrumb(category ? category.name : 'Services');
+    } else {
+      setCategoryFilter('');
+      setBreadcrumb('All Services');
+    }
+  }, [searchParams, categories]);
+
+  // Filter services based on category
+  useEffect(() => {
+    let filtered = services;
+    
+    if (categoryFilter) {
+      filtered = services.filter(service => 
+        service.category?.slug === categoryFilter || 
+        service.categoryId.includes(categoryFilter)
+      );
+    }
+
+    // Convert services to shop format for compatibility
+    const shopData = filtered.map(service => ({
+      id: parseInt(service.id) || Math.random() * 1000,
+      category: service.category?.name || 'Service',
+      name: service.name,
+      image: service.images?.[0] || '/service1.png',
+      description: service.description,
+      rating: 4.5 + Math.random() * 0.5,
+      reviews: Math.floor(Math.random() * 50) + 10,
+      verified: true,
+      priceFrom: service.basePrice,
+      distance: Math.round(Math.random() * 10 + 1),
+      availableSlots: ['10:00 AM', '2:00 PM', '5:00 PM'],
+      tags: service.isActive ? ['active'] : []
+    }));
+
+    setFilteredShops(shopData);
+  }, [services, categoryFilter]);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedService('');
+    setSelectedLocation('');
+    setPriceRange([0, 500]);
+    setMinRating(0);
+    setMaxDistance(50);
+    setCategoryFilter('');
+    setBreadcrumb('All Services');
+  };
 
   // Service options with wiwihood theme icons
   // Click outside handler to close dropdowns
@@ -495,17 +598,6 @@ function ServicesPage() {
     setSelectedDate(today);
   }, []);
 
-  // Clear filters
-  const clearFilters = () => {
-    setSelectedService('');
-    setSelectedLocation('');
-    setSelectedDate('');
-    setSelectedTime('');
-    setPriceRange([0, 500]);
-    setMinRating(0);
-    setMaxDistance(50);
-  };
-
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -808,9 +900,45 @@ function ServicesPage() {
 
             {/* Services Grid - Home Page Style Cards */}
             <div className="lg:col-span-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                {currentShops.map((shop) => (
-                  <Link key={shop.id} href={`/services/${shop.id}`} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
+              {/* Breadcrumb */}
+              <div className="mb-6">
+                <nav className="flex items-center text-sm text-gray-600">
+                  <Link href="/" className="hover:text-[#E89B8B] transition-colors">
+                    Home
+                  </Link>
+                  <svg className="mx-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span className="text-[#E89B8B] font-medium">{breadcrumb}</span>
+                </nav>
+                <h1 className="text-2xl font-bold text-gray-900 mt-2">{breadcrumb}</h1>
+                <p className="text-gray-600 mt-1">
+                  {loading ? 'Loading services...' : `${filteredShops.length} services available`}
+                </p>
+              </div>
+
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#E89B8B]"></div>
+                  <p className="mt-4 text-gray-600">Loading services...</p>
+                </div>
+              ) : filteredShops.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M34 14a14 14 0 00-28 0m28 0L20 28m14-14l-6 6" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No services found</h3>
+                  <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or browse all services.</p>
+                  <div className="mt-6">
+                    <Link href="/services" className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#E89B8B] hover:bg-[#D4876F]">
+                      Browse All Services
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {currentShops.map((shop) => (
+                    <Link key={shop.id} href={`/services/${shop.id}`} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
                     
                     {/* Image Container */}
                     <div className="relative h-48 overflow-hidden">
@@ -883,8 +1011,9 @@ function ServicesPage() {
                       </button>
                     </div>
                   </Link>
-                ))}
-              </div>
+                  ))}
+                </div>
+              )}
 
               {/* No Results State - Enhanced */}
               {currentShops.length === 0 && filteredShops.length === 0 && (

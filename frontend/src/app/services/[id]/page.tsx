@@ -1,18 +1,84 @@
 "use client";
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
+import Link from "next/link";
 import Navbar from "@/app/components/navbar";
 import Footer from "@/app/components/footer";
 import AboutServices from "./about-services";
 import Services from "./services";
 import Review from "./review";
 import SelectTime from "./select-time";
+import { QRTIntegration } from "@/utils/qrtIntegration";
+
+interface Service {
+  id: string;
+  name: string;
+  description: string;
+  shortDescription: string;
+  categoryId: string;
+  category: {
+    id: string;
+    name: string;
+    slug: string;
+  };
+  serviceType: string;
+  pricingType: string;
+  basePrice: number;
+  durationMinutes: number;
+  isActive: boolean;
+  status: string;
+  images: string[];
+  createdAt: string;
+}
 
 function ServiceDetailPage() {
   const params = useParams();
   const router = useRouter();
   const serviceId = params?.id as string;
+  
+  const [service, setService] = useState<Service | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadService = async () => {
+      try {
+        setLoading(true);
+        const services = await QRTIntegration.getServices();
+        const foundService = services.find((s: Service) => s.id === serviceId);
+        
+        if (foundService) {
+          setService(foundService);
+        } else {
+          // Fallback service for demo
+          setService({
+            id: serviceId,
+            name: 'Hair Cut & Style',
+            description: 'Professional hair cutting and styling service with modern techniques',
+            shortDescription: 'Professional hair cutting and styling',
+            categoryId: 'hair-services',
+            category: { id: 'hair-services', name: 'Hair Services', slug: 'hair-services' },
+            serviceType: 'appointment',
+            pricingType: 'fixed',
+            basePrice: 120,
+            durationMinutes: 60,
+            isActive: true,
+            status: 'active',
+            images: ['/service1.png', '/service2.jpg'],
+            createdAt: new Date().toISOString()
+          });
+        }
+      } catch (error) {
+        console.error('Error loading service:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (serviceId) {
+      loadService();
+    }
+  }, [serviceId]);
 
   const handleBookNow = () => {
     router.push(`/services/book-now?serviceId=${serviceId}`);
@@ -28,17 +94,21 @@ function ServiceDetailPage() {
           {/* Breadcrumb Navigation */}
           <div className="mb-6">
             <nav className="flex items-center space-x-2 text-sm text-gray-600">
-              <a href="/" className="hover:text-gray-900 transition-colors">
+              <Link href="/" className="hover:text-gray-900 transition-colors">
                 Home
-              </a>
+              </Link>
               <span className="text-gray-400">/</span>
-              <a href="/services" className="hover:text-gray-900 transition-colors">
-                Bestseller
-              </a>
-              <span className="text-gray-400">/</span>
-              <span className="text-gray-900 font-medium">
-                Al Shanab Gents Salon
-              </span>
+              {service && (
+                <>
+                  <Link href={`/services?category=${service.category.slug}`} className="hover:text-gray-900 transition-colors">
+                    {service.category.name}
+                  </Link>
+                  <span className="text-gray-400">/</span>
+                  <span className="text-gray-900 font-medium">
+                    {service.name}
+                  </span>
+                </>
+              )}
             </nav>
           </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">

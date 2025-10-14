@@ -31,6 +31,8 @@ export enum RefundReason {
 
 @Entity('refunds')
 @Index(['paymentId'])
+@Index(['status'])
+@Index(['reason'])
 export class Refund {
   @ApiProperty({ description: 'Unique identifier for the refund' })
   @PrimaryGeneratedColumn('uuid')
@@ -50,7 +52,6 @@ export class Refund {
     enum: RefundStatus,
     default: RefundStatus.PENDING,
   })
-  @Index()
   status: RefundStatus;
 
   @ApiProperty({ description: 'Refund reason', enum: RefundReason })
@@ -59,7 +60,6 @@ export class Refund {
     enum: RefundReason,
     default: RefundReason.CUSTOMER_REQUEST,
   })
-  @Index()
   reason: RefundReason;
 
   @ApiProperty({ description: 'Detailed refund reason', required: false })

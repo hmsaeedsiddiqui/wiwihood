@@ -2,13 +2,13 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/store/authStore';
-import LoginForm from '../../../components/auth/LoginForm';
+import { useAuthStatus } from '@/hooks/useAuth';
+import RoleBasedLoginForm from '@/components/auth/RoleBasedLoginForm';
 import Footer from '@/components/Footer';
 
 export default function LoginPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { isAuthenticated, isLoading } = useAuthStatus();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -16,11 +16,6 @@ export default function LoginPage() {
       router.push('/');
     }
   }, [isAuthenticated, isLoading, router]);
-
-  const handleLoginSuccess = () => {
-    // Redirect to home page after successful login
-    router.push('/');
-  };
 
   // Show loading while checking auth status
   if (isLoading) {
@@ -41,14 +36,12 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="py-20 flex items-center justify-center w-[95%] mx-auto max-w-[500px]">
-        <div className="w-full">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back</h1>
-            <p className="text-gray-600">Sign in to your account to continue</p>
-          </div>
-          <LoginForm onSuccess={handleLoginSuccess} />
-        </div>
+      <div className="py-20 flex items-center justify-center w-[95%] mx-auto max-w-[600px]">
+        <RoleBasedLoginForm
+          role="customer"
+          title="Welcome back"
+          subtitle="Sign in to your account to continue"
+        />
       </div>
       <Footer />
     </div>

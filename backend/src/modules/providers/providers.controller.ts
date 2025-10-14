@@ -10,6 +10,9 @@ import {
   Request,
   Query,
   ParseUUIDPipe,
+  UseInterceptors,
+  UploadedFile,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -18,11 +21,15 @@ import {
   ApiBearerAuth,
   ApiParam,
   ApiQuery,
+  ApiConsumes,
+  ApiBody,
 } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { ProvidersService } from './providers.service';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../users/guards/roles.guard';
 import { Roles } from '../users/decorators/roles.decorator';
+import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { CreateProviderDto } from './dto/create-provider.dto';
 import { UpdateProviderDto } from './dto/update-provider.dto';
 import { ProviderResponseDto } from './dto/provider-response.dto';
@@ -33,7 +40,10 @@ import { ProviderStatus } from '../../entities/provider.entity';
 @ApiTags('Providers')
 @Controller('providers')
 export class ProvidersController {
-  constructor(private readonly providersService: ProvidersService) {}
+  constructor(
+    private readonly providersService: ProvidersService,
+    private readonly cloudinaryService: CloudinaryService,
+  ) {}
 
   @Post()
   @UseGuards(JwtAuthGuard)
@@ -216,5 +226,213 @@ export class ProvidersController {
   })
   async updateMyAvailability(@Request() req, @Body() availabilityData: any): Promise<any> {
     return this.providersService.updateAvailability(req.user.sub, availabilityData);
+  }
+
+  @Post('me/upload-logo')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Upload provider business logo' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Logo uploaded and provider updated successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - invalid file or provider not found',
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadProviderLogo(
+    @Request() req,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (!file.mimetype.startsWith('image/')) {
+      throw new BadRequestException('File must be an image');
+    }
+
+    try {
+      // Get current provider to get providerId for folder structure
+      const provider = await this.providersService.findByUserId(req.user.id);
+      
+      // Upload to Cloudinary
+      const result = await this.cloudinaryService.uploadImage(
+        file,
+        `reservista/providers/${provider.id}/logo`,
+        this.cloudinaryService.getShopLogoTransformation()
+      );
+
+      // Update provider with new logo URL and public ID
+      const updatedProvider = await this.providersService.update(provider.id, {
+        logo: result.secure_url,
+        logoPublicId: result.public_id,
+      });
+
+      return {
+        success: true,
+        message: 'Logo uploaded successfully',
+        data: {
+          url: result.secure_url,
+          publicId: result.public_id,
+          format: result.format,
+          width: result.width,
+          height: result.height,
+        },
+        provider: updatedProvider,
+      };
+    } catch (error) {
+      throw new BadRequestException(`Upload failed: ${error.message}`);
+    }
+  }
+
+  @Post('me/upload-cover')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Upload provider cover image' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        file: {
+          type: 'string',
+          format: 'binary',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'Cover image uploaded and provider updated successfully',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Bad request - invalid file or provider not found',
+  })
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadProviderCover(
+    @Request() req,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    if (!file) {
+      throw new BadRequestException('No file uploaded');
+    }
+
+    if (!file.mimetype.startsWith('image/')) {
+      throw new BadRequestException('File must be an image');
+    }
+
+    try {
+      // Get current provider to get providerId for folder structure
+      const provider = await this.providersService.findByUserId(req.user.id);
+      
+      // Upload to Cloudinary
+      const result = await this.cloudinaryService.uploadImage(
+        file,
+        `reservista/providers/${provider.id}/cover`,
+        this.cloudinaryService.getShopCoverTransformation()
+      );
+
+      // Update provider with new cover image URL and public ID
+      const updatedProvider = await this.providersService.update(provider.id, {
+        coverImage: result.secure_url,
+        coverImagePublicId: result.public_id,
+      });
+
+      return {
+        success: true,
+        message: 'Cover image uploaded successfully',
+        data: {
+          url: result.secure_url,
+          publicId: result.public_id,
+          format: result.format,
+          width: result.width,
+          height: result.height,
+        },
+        provider: updatedProvider,
+      };
+    } catch (error) {
+      throw new BadRequestException(`Upload failed: ${error.message}`);
+    }
+  }
+
+  @Delete('me/logo')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove provider logo' })
+  @ApiResponse({
+    status: 200,
+    description: 'Logo removed successfully',
+  })
+  async removeProviderLogo(@Request() req) {
+    try {
+      const provider = await this.providersService.findByUserId(req.user.id);
+      
+      // Delete from Cloudinary if public ID exists
+      if (provider.logoPublicId) {
+        await this.cloudinaryService.deleteImage(provider.logoPublicId);
+      }
+
+      // Update provider to remove logo
+      const updatedProvider = await this.providersService.update(provider.id, {
+        logo: null,
+        logoPublicId: null,
+      });
+
+      return {
+        success: true,
+        message: 'Logo removed successfully',
+        provider: updatedProvider,
+      };
+    } catch (error) {
+      throw new BadRequestException(`Remove failed: ${error.message}`);
+    }
+  }
+
+  @Delete('me/cover')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Remove provider cover image' })
+  @ApiResponse({
+    status: 200,
+    description: 'Cover image removed successfully',
+  })
+  async removeProviderCover(@Request() req) {
+    try {
+      const provider = await this.providersService.findByUserId(req.user.id);
+      
+      // Delete from Cloudinary if public ID exists
+      if (provider.coverImagePublicId) {
+        await this.cloudinaryService.deleteImage(provider.coverImagePublicId);
+      }
+
+      // Update provider to remove cover image
+      const updatedProvider = await this.providersService.update(provider.id, {
+        coverImage: null,
+        coverImagePublicId: null,
+      });
+
+      return {
+        success: true,
+        message: 'Cover image removed successfully',
+        provider: updatedProvider,
+      };
+    } catch (error) {
+      throw new BadRequestException(`Remove failed: ${error.message}`);
+    }
   }
 }

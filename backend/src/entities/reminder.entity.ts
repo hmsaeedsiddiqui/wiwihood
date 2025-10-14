@@ -12,7 +12,6 @@ export class Reminder {
   id: string;
 
   @Column({ type: 'uuid' })
-  @Index()
   userId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
@@ -20,7 +19,6 @@ export class Reminder {
   user: User;
 
   @Column({ type: 'uuid', nullable: true })
-  @Index()
   bookingId?: string;
 
   @ManyToOne(() => Booking, { onDelete: 'CASCADE' })

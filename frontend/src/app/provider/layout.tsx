@@ -211,6 +211,7 @@ export default function ProviderLayout({
     } finally {
       localStorage.removeItem('providerToken');
       localStorage.removeItem('provider');
+      // Keep providerWasRegistered flag so user sees login page next time
       router.push('/auth/provider/login');
     }
   };

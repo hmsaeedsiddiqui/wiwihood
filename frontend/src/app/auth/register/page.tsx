@@ -2,13 +2,13 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '../../../components/AuthProvider';
-import SignupForm from '../../../components/auth/SignupForm';
+import { useAuthStatus } from '@/hooks/useAuth';
+import RoleBasedSignupForm from '@/components/auth/RoleBasedSignupForm';
 import Footer from '@/components/Footer';
 
 export default function RegisterPage() {
   const router = useRouter();
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading } = useAuthStatus();
 
   // Redirect if already logged in
   useEffect(() => {
@@ -16,13 +16,6 @@ export default function RegisterPage() {
       router.push('/');
     }
   }, [isAuthenticated, isLoading, router]);
-
-  const handleSignupSuccess = () => {
-    // Redirect to home page after successful signup
-    router.push('/');
-    // Force page refresh to update header state
-    window.location.href = '/';
-  };
 
   // Show loading while checking auth status
   if (isLoading) {
@@ -44,13 +37,11 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="py-20 flex items-center justify-center w-[95%] mx-auto max-w-[600px]">
-        <div className="w-full">
-          <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Create your account</h1>
-            <p className="text-gray-600">Join Wiwihood to book amazing services</p>
-          </div>
-          <SignupForm onSuccess={handleSignupSuccess} />
-        </div>
+        <RoleBasedSignupForm
+          role="customer"
+          title="Create your account"
+          subtitle="Join Wiwihood to book amazing services"
+        />
       </div>
       <Footer />
     </div>

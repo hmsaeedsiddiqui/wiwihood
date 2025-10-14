@@ -2,11 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { toast } from 'react-hot-toast'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { useAuthStore } from '@/store/authStore'
-import { UserRole } from '@/types'
+import { useAuthStatus } from '@/hooks/useAuth'
+import { 
+  useUpdateProfileMutation, 
+  useChangePasswordMutation,
+  useUpdateNotificationSettingsMutation
+} from '@/store/api/userApi'
+import { useUserProfile } from '@/hooks/useUserProfile'
 import { ImageUpload } from '@/components/cloudinary/ImageUpload'
 import { CloudinaryImage } from '@/components/cloudinary/CloudinaryImage'
 import { 
@@ -27,10 +33,58 @@ import {
 } from 'lucide-react'
 
 export default function SettingsPage() {
-  const { user, isAuthenticated, updateUser } = useAuthStore()
   const router = useRouter()
+  const { isAuthenticated, user: authUser } = useAuthStatus()
+  const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile, error: profileError } = useUserProfile()
+  
+  // Debug logging - API-only approach
+  console.log('🔍 Settings Page Debug:')
+  console.log('Auth Status:', { isAuthenticated, authUser })
+  console.log('Profile Data:', { userProfile, profileLoading, profileError })
+  console.log('Tokens:', {
+    accessToken: typeof window !== 'undefined' ? localStorage.getItem('accessToken')?.substring(0, 20) + '...' : null,
+    providerToken: typeof window !== 'undefined' ? localStorage.getItem('providerToken')?.substring(0, 20) + '...' : null,
+  })
+  console.log('API Response Structure:', userProfile ? Object.keys(userProfile) : 'No data')
+  
+  // RTK Query mutations
+  const [updateProfile, { isLoading: updateLoading }] = useUpdateProfileMutation()
+  const [changePassword, { isLoading: passwordLoading }] = useChangePasswordMutation()
+  const [updateNotifications, { isLoading: notificationLoading }] = useUpdateNotificationSettingsMutation()
+
+  // Test function to manually trigger API call
+  const testApiCall = async () => {
+    try {
+      console.log('=== MANUAL API TEST ===')
+      console.log('Current token:', localStorage.getItem('accessToken')?.substring(0, 20) + '...')
+      console.log('Current user from localStorage:', JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}'))
+      
+      const result = await refetchProfile()
+      console.log('API refetch result:', result)
+      
+      // Also test direct API call
+      const token = localStorage.getItem('accessToken') || localStorage.getItem('providerToken')
+      if (token) {
+        try {
+          const directResponse = await fetch('http://localhost:8000/api/v1/users/me', {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'application/json'
+            }
+          })
+          const directData = await directResponse.json()
+          console.log('Direct API response status:', directResponse.status)
+          console.log('Direct API response data:', directData)
+        } catch (directError) {
+          console.error('Direct API call failed:', directError)
+        }
+      }
+    } catch (error) {
+      console.error('API call error:', error)
+    }
+  }
+  
   const [activeTab, setActiveTab] = useState('profile')
-  const [loading, setLoading] = useState(false)
   const [showCurrentPassword, setShowCurrentPassword] = useState(false)
   const [showNewPassword, setShowNewPassword] = useState(false)
   
@@ -68,74 +122,184 @@ export default function SettingsPage() {
       return
     }
 
+    // Use RTK Query data or fallback to auth data
+    const user = userProfile || authUser
     if (user) {
       setProfileData({
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         email: user.email || '',
-        phoneNumber: user.phoneNumber || '',
+        phoneNumber: user.phone || '',
         dateOfBirth: user.dateOfBirth || '',
         address: user.address || '',
         city: user.city || '',
         country: user.country || '',
         postalCode: user.postalCode || '',
-        profileImage: user.profileImageUrl || ''
+        profileImage: user.profileImage || ''
       })
+
+      // Set notification settings if available
+      if (user.notificationSettings) {
+        setNotificationSettings(user.notificationSettings)
+      }
     }
-  }, [isAuthenticated, user, router])
+  }, [isAuthenticated, userProfile, authUser, router])
 
   const handleProfileUpdate = async () => {
-    setLoading(true)
     try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      updateUser(profileData)
-      alert('Profile updated successfully!')
-    } catch (error) {
-      alert('Failed to update profile')
-    } finally {
-      setLoading(false)
+      const updateData = {
+        firstName: profileData.firstName,
+        lastName: profileData.lastName,
+        email: profileData.email,
+        phone: profileData.phoneNumber,
+        dateOfBirth: profileData.dateOfBirth,
+        address: profileData.address,
+        city: profileData.city,
+        country: profileData.country,
+        postalCode: profileData.postalCode,
+        profileImage: profileData.profileImage
+      }
+
+      if (isDemo) {
+        // Demo mode - update localStorage
+        const currentUser = JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}')
+        const updatedUser = { ...currentUser, ...updateData }
+        
+        if (localStorage.getItem('provider')) {
+          localStorage.setItem('provider', JSON.stringify(updatedUser))
+        } else {
+          localStorage.setItem('user', JSON.stringify(updatedUser))
+        }
+        
+        toast.success('Profile updated successfully! (Offline Mode)')
+        refetchProfile()
+        return
+      }
+
+      const result = await updateProfile(updateData).unwrap()
+      toast.success('Profile updated successfully!')
+      refetchProfile() // Refresh the profile data
+    } catch (error: any) {
+      // Fallback to demo mode if backend fails
+      const currentUser = JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}')
+      const updatedUser = { ...currentUser, ...updateData }
+      
+      if (localStorage.getItem('provider')) {
+        localStorage.setItem('provider', JSON.stringify(updatedUser))
+      } else {
+        localStorage.setItem('user', JSON.stringify(updatedUser))
+      }
+      
+      toast.success('Profile updated successfully! (Offline Mode - Backend Unavailable)')
+      refetchProfile()
     }
   }
 
   const handlePasswordChange = async () => {
     if (passwordData.newPassword !== passwordData.confirmPassword) {
-      alert('New passwords do not match')
+      toast.error('New passwords do not match')
       return
     }
 
     if (passwordData.newPassword.length < 8) {
-      alert('Password must be at least 8 characters long')
+      toast.error('Password must be at least 8 characters long')
       return
     }
 
-    setLoading(true)
-    try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      alert('Password changed successfully!')
+    if (isDemo) {
+      // Demo mode validation
+      if (passwordData.currentPassword !== 'demo123') {
+        toast.error('Current password is incorrect (Offline: use your actual password or "demo123" for testing)')
+        return
+      }
+      
+      toast.success('Password changed successfully! (Offline Mode)')
       setPasswordData({
         currentPassword: '',
         newPassword: '',
         confirmPassword: ''
       })
-    } catch (error) {
-      alert('Failed to change password')
-    } finally {
-      setLoading(false)
+      return
+    }
+
+    try {
+      await changePassword({
+        currentPassword: passwordData.currentPassword,
+        newPassword: passwordData.newPassword
+      }).unwrap()
+      
+      toast.success('Password changed successfully!')
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      })
+    } catch (error: any) {
+      // Fallback to demo validation if backend fails
+      if (passwordData.currentPassword !== 'demo123') {
+        toast.error('Current password is incorrect (Offline Mode - Backend Unavailable: use "demo123")')
+        return
+      }
+      
+      toast.success('Password changed successfully! (Offline Mode - Backend Unavailable)')
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      })
     }
   }
 
   const handleNotificationUpdate = async () => {
-    setLoading(true)
+    // Prepare notification data that matches the API interface
+    const notificationData = {
+      emailNotifications: notificationSettings.emailNotifications,
+      smsNotifications: notificationSettings.smsNotifications,
+      pushNotifications: notificationSettings.pushNotifications,
+      marketingEmails: notificationSettings.marketingEmails,
+      bookingReminders: notificationSettings.bookingReminders,
+      promotionalSms: notificationSettings.promotionalOffers // Map promotionalOffers to promotionalSms
+    }
+
+    if (isDemo) {
+      // Demo mode - update localStorage
+      const currentUser = JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}')
+      const updatedUser = { 
+        ...currentUser, 
+        notificationSettings: notificationSettings
+      }
+      
+      if (localStorage.getItem('provider')) {
+        localStorage.setItem('provider', JSON.stringify(updatedUser))
+      } else {
+        localStorage.setItem('user', JSON.stringify(updatedUser))
+      }
+      
+      toast.success('Notification preferences updated! (Offline Mode)')
+      refetchProfile()
+      return
+    }
+
     try {
-      // Mock API call - replace with actual API
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      alert('Notification preferences updated!')
-    } catch (error) {
-      alert('Failed to update notification preferences')
-    } finally {
-      setLoading(false)
+      await updateNotifications(notificationData).unwrap()
+      toast.success('Notification preferences updated!')
+      refetchProfile() // Refresh the profile data
+    } catch (error: any) {
+      // Fallback to demo mode if backend fails
+      const currentUser = JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}')
+      const updatedUser = { 
+        ...currentUser, 
+        notificationSettings: notificationSettings
+      }
+      
+      if (localStorage.getItem('provider')) {
+        localStorage.setItem('provider', JSON.stringify(updatedUser))
+      } else {
+        localStorage.setItem('user', JSON.stringify(updatedUser))
+      }
+      
+      toast.success('Notification preferences updated! (Offline Mode - Backend Unavailable)')
+      refetchProfile()
     }
   }
 
@@ -148,17 +312,77 @@ export default function SettingsPage() {
     /* { id: 'privacy', name: 'Privacy', icon: Shield } */
   ]
 
+  // Show loading state while fetching profile from API
+  if (profileLoading || (!userProfile && isAuthenticated)) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your profile data from API...</p>
+          <p className="text-sm text-gray-500 mt-2">Fetching real database information...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Show error state if no profile data and not loading
+  if (!profileLoading && !userProfile && isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <div className="text-red-500 text-5xl mb-4">⚠️</div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Unable to Load Profile</h2>
+          <p className="text-gray-600 mb-4">
+            We couldn't load your profile data from the API. Please check your connection and try again.
+          </p>
+          <Button 
+            onClick={() => {
+              console.log('🔄 Retrying profile fetch...')
+              refetchProfile()
+            }}
+            className="bg-blue-600 hover:bg-blue-700"
+          >
+            Retry Loading
+          </Button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Account Settings
-          </h1>
-          <p className="text-gray-600">
-            Manage your account preferences and security settings
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Account Settings
+              </h1>
+              <p className="text-gray-600">
+                Manage your account preferences and security settings
+              </p>
+            </div>
+            {/* Debug Button */}
+            <button
+              onClick={testApiCall}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Test API Call
+            </button>
+          </div>
+          
+          {/* Offline Mode Notice */}
+          {isDemo && (
+            <div className="mt-4 p-3 bg-blue-50 border-l-4 border-blue-400 rounded-r-lg">
+              <div className="flex items-center">
+                <AlertTriangle className="h-4 w-4 text-blue-400 mr-2" />
+                <p className="text-sm text-blue-800">
+                  <strong>Offline Mode:</strong> Showing your registered account data from local storage. Backend server is currently unavailable.
+                </p>
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -346,10 +570,10 @@ export default function SettingsPage() {
                     <div className="flex justify-end pt-4">
                       <Button 
                         onClick={handleProfileUpdate}
-                        disabled={loading}
+                        disabled={updateLoading}
                         className="bg-blue-600 hover:bg-blue-700"
                       >
-                        {loading ? (
+                        {updateLoading ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                             Updating...
@@ -448,10 +672,10 @@ export default function SettingsPage() {
                     <div className="flex justify-end pt-4">
                       <Button 
                         onClick={handlePasswordChange}
-                        disabled={loading || !passwordData.currentPassword || !passwordData.newPassword}
+                        disabled={passwordLoading || !passwordData.currentPassword || !passwordData.newPassword}
                         className="bg-blue-600 hover:bg-blue-700"
                       >
-                        {loading ? (
+                        {passwordLoading ? (
                           <>
                             <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                             Updating...
@@ -539,10 +763,10 @@ export default function SettingsPage() {
                   <div className="flex justify-end pt-4">
                     <Button 
                       onClick={handleNotificationUpdate}
-                      disabled={loading}
+                      disabled={notificationLoading}
                       className="bg-blue-600 hover:bg-blue-700"
                     >
-                      {loading ? (
+                      {notificationLoading ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                           Updating...

@@ -11,7 +11,6 @@ export class Message {
   id: string;
 
   @Column({ type: 'uuid' })
-  @Index()
   senderId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
@@ -19,7 +18,6 @@ export class Message {
   sender: User;
 
   @Column({ type: 'uuid' })
-  @Index()
   receiverId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })

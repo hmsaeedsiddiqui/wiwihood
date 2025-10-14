@@ -8,6 +8,7 @@ const PopularServices = () => {
   const services = [
     { 
       name: 'Hair Cut', 
+      slug: 'hair-services',
       icon: (
         <svg className="w-12 h-12 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9M21 9H9M21 13H9M21 17H9" />
@@ -87,6 +88,13 @@ const PopularServices = () => {
           {services.map((service, index) => (
             <div 
               key={index}
+              onClick={() => {
+                if (service.slug) {
+                  router.push(`/services?category=${service.slug}`);
+                } else {
+                  router.push('/services');
+                }
+              }}
               className={`${service.color} border-2 rounded-2xl p-6 cursor-pointer transition-all duration-300 hover:shadow-lg hover:scale-105 text-center group`}
             >
               <div className="mb-4 flex justify-center group-hover:scale-110 transition-transform duration-300">

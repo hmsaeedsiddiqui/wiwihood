@@ -20,12 +20,10 @@ export class RolePermission {
 
   @ApiProperty({ description: 'Role ID' })
   @Column({ type: 'uuid' })
-  @Index()
   roleId: string;
 
   @ApiProperty({ description: 'Permission ID' })
   @Column({ type: 'uuid' })
-  @Index()
   permissionId: string;
 
   @ApiProperty({ description: 'Assignment creation timestamp' })

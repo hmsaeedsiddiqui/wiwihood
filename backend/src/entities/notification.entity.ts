@@ -10,7 +10,6 @@ export class Notification {
   id: string;
 
   @Column({ type: 'uuid' })
-  @Index()
   userId: string;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })

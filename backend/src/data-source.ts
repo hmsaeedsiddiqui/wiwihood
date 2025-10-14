@@ -13,8 +13,8 @@ export const AppDataSource = new DataSource({
   password: process.env.DATABASE_PASSWORD || "",
   database: process.env.DATABASE_NAME || "postgres",
   ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
-  synchronize: false, // Disable to avoid index conflicts
-  logging: false,
+  synchronize: true, // Enable for auto table generation in development
+  logging: true,
   entities: Object.values(entities),
   migrations: ["src/migrations/**/*.ts"],
   subscribers: ["src/subscribers/**/*.ts"],

@@ -24,6 +24,7 @@ export enum DayOfWeek {
 @Entity('provider_working_hours')
 @Index(['dayOfWeek'])
 @Index(['isActive'])
+@Index(['providerId'])
 export class ProviderWorkingHours {
   @ApiProperty({ description: 'Unique identifier for working hours' })
   @PrimaryGeneratedColumn('uuid')
@@ -75,7 +76,6 @@ export class ProviderWorkingHours {
   // Foreign keys
   @ApiProperty({ description: 'Provider ID' })
   @Column({ type: 'uuid' })
-  @Index()
   providerId: string;
 
   // Relationships

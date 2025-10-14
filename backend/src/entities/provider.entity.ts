@@ -79,6 +79,10 @@ export class Provider {
   @Column({ length: 20 })
   postalCode: string;
 
+  @ApiProperty({ description: 'Business timezone', required: false })
+  @Column({ nullable: true, length: 50 })
+  timezone?: string;
+
   @ApiProperty({ description: 'Business latitude for mapping', required: false })
   @Column({ nullable: true, type: 'decimal', precision: 10, scale: 8 })
   latitude?: number;

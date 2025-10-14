@@ -87,6 +87,17 @@ export class CreateProviderDto {
   postalCode: string;
 
   @ApiProperty({
+    description: 'Business timezone',
+    example: 'America/New_York',
+    required: false,
+    maxLength: 50,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(50)
+  timezone?: string;
+
+  @ApiProperty({
     description: 'Business latitude for mapping',
     example: 40.7128,
     required: false,
@@ -158,6 +169,17 @@ export class CreateProviderDto {
   logo?: string;
 
   @ApiProperty({
+    description: 'Business logo Cloudinary public ID',
+    example: 'reservista/providers/123/logo/abc123',
+    required: false,
+    maxLength: 200,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  logoPublicId?: string;
+
+  @ApiProperty({
     description: 'Business cover image URL or Cloudinary public ID',
     example: 'https://example.com/cover.jpg',
     required: false,
@@ -167,6 +189,17 @@ export class CreateProviderDto {
   @IsString()
   @MaxLength(500)
   coverImage?: string;
+
+  @ApiProperty({
+    description: 'Business cover image Cloudinary public ID',
+    example: 'reservista/providers/123/cover/xyz789',
+    required: false,
+    maxLength: 200,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(200)
+  coverImagePublicId?: string;
 
   @ApiProperty({
     description: 'Provider accepts online payments',
