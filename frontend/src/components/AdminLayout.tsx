@@ -44,6 +44,7 @@ const adminNavItems = [
     items: [
       { name: 'Users', href: '/admin/users', icon: Users },
       { name: 'Providers', href: '/admin/providers', icon: Building2 },
+      { name: 'Services', href: '/admin/services', icon: FileText },
       { name: 'Bookings', href: '/admin/bookings', icon: Calendar },
       { name: 'Categories', href: '/admin/categories', icon: Tags },
     ]

@@ -7,7 +7,7 @@ export class CloudinaryService {
 
   async uploadImage(
     file: Express.Multer.File,
-    folder: string = 'reservista',
+    folder: string = 'general',
     transformation?: any
   ): Promise<UploadApiResponse> {
     return new Promise((resolve, reject) => {
@@ -37,7 +37,7 @@ export class CloudinaryService {
 
   async uploadImageFromUrl(
     imageUrl: string,
-    folder: string = 'reservista',
+    folder: string = 'general',
     transformation?: any
   ): Promise<UploadApiResponse> {
     const uploadOptions: any = {

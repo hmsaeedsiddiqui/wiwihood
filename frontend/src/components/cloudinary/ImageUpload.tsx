@@ -45,11 +45,20 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
         method: 'POST',
         body: formData,
         credentials: 'include',
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('accessToken') || ''}`
+        }
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Upload failed');
+        let errorMessage = 'Upload failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch {
+          errorMessage = `Upload failed with status: ${response.status}`;
+        }
+        throw new Error(errorMessage);
       }
 
       const data = await response.json();
@@ -58,8 +67,14 @@ export const ImageUpload: React.FC<ImageUploadProps> = ({
       // Reset input
       event.target.value = '';
     } catch (error) {
-      console.error('Upload error:', error);
-      setUploadError(error instanceof Error ? error.message : 'Upload failed');
+      let errorMessage = 'Upload failed';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      }
+      if (process.env.NODE_ENV === 'development') {
+        console.warn('Upload error:', error);
+      }
+      setUploadError(errorMessage);
     } finally {
       setIsUploading(false);
     }

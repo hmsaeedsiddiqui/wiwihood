@@ -8,6 +8,7 @@ import Footer from "../components/footer";
 import Navbar from "../components/navbar";
 import ServiceHero from "../services/service-hero";
 import { QRTIntegration } from "@/utils/qrtIntegration";
+import { generateServiceOptions, type Category } from "@/utils/serviceOptions";
 
 interface Service {
   id: string;
@@ -177,159 +178,87 @@ function ServicesPage() {
   }, []);
 
   // Generate service options dynamically from categories
-  const generateServiceOptions = (categories: any[]) => {
-    // Default options with icons
-    const defaultOptions = [
-      { 
-        value: '', 
-        label: 'All Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        )
-      }
-    ];
-
-    // If categories are loaded, create options from them
-    if (categories && categories.length > 0) {
-      const categoryOptions = categories.map(category => ({
-        value: category.slug,
-        label: category.name,
-        icon: getIconForCategory(category.name)
-      }));
-      return [...defaultOptions, ...categoryOptions];
-    }
-
-    // Fallback static options if categories aren't loaded yet
-    const fallbackOptions = [
-      { 
-        value: 'hair', 
-        label: 'Hair Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9M21 9H9M21 13H9M21 17H9" />
-          </svg>
-        )
-      },
-      { 
-        value: 'nails', 
-        label: 'Nail Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21l4-4h6l-4 4M3 17l4-4V7a4 4 0 118 0v6l4 4" />
-          </svg>
-        )
-      },
-      { 
-        value: 'spa', 
-        label: 'Spa Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-          </svg>
-        )
-      },
-      { 
-        value: 'makeup', 
-        label: 'Makeup Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-            <circle cx="9" cy="9" r="1.5" fill="currentColor" />
-            <circle cx="15" cy="9" r="1.5" fill="currentColor" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 13s1.5 2 4 2 4-2 4-2" />
-          </svg>
-        )
-      },
-      { 
-        value: 'massage', 
-        label: 'Massage Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2M7 4h10M7 4l-2 16h14L17 4M12 8v8M9 12h6" />
-          </svg>
-        )
-      },
-      { 
-        value: 'facial', 
-        label: 'Facial Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-            <circle cx="9" cy="9" r="1.5" fill="currentColor" />
-            <circle cx="15" cy="9" r="1.5" fill="currentColor" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 13s1.5 2 4 2 4-2 4-2" />
-          </svg>
-        )
-      },
-      { 
-        value: 'wellness', 
-        label: 'Wellness Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-        )
-      }
-    ];
-
-    return [...defaultOptions, ...fallbackOptions];
-  };
-
-  // Helper function to get icon for category
-  const getIconForCategory = (categoryName: string) => {
-    const iconMap: { [key: string]: React.ReactElement } = {
-      'Hair Services': (
-        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9M21 9H9M21 13H9M21 17H9" />
-        </svg>
-      ),
-      'Nail Services': (
+  const serviceOptions = generateServiceOptions(categories);
+    { 
+      value: 'nails', 
+      label: 'Nails',
+      icon: (
         <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21l4-4h6l-4 4M3 17l4-4V7a4 4 0 118 0v6l4 4" />
         </svg>
-      ),
-      'Massage Services': (
+      )
+    },
+    { 
+      value: 'hair', 
+      label: 'Hair Cut',
+      icon: (
         <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2M7 4h10M7 4l-2 16h14L17 4M12 8v8M9 12h6" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9M21 9H9M21 13H9M21 17H9" />
         </svg>
-      ),
-      'Facial Services': (
+      )
+    },
+    { 
+      value: 'spa', 
+      label: 'Spa',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+        </svg>
+      )
+    },
+    { 
+      value: 'makeup', 
+      label: 'Makeup',
+      icon: (
         <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
           <circle cx="9" cy="9" r="1.5" fill="currentColor" />
           <circle cx="15" cy="9" r="1.5" fill="currentColor" />
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 13s1.5 2 4 2 4-2 4-2" />
         </svg>
-      ),
-      'Beauty Services': (
-        <svg className="w-5 h-5 text-[#E89B8B]" fill="currentColor" viewBox="0 0 24 24">
-          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
-        </svg>
-      ),
-      'Wellness Services': (
+      )
+    },
+    { 
+      value: 'massage', 
+      label: 'Massage',
+      icon: (
         <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-        </svg>
-      ),
-      'Spa Services': (
-        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2M7 4h10M7 4l-2 16h14L17 4M12 8v8M9 12h6" />
         </svg>
       )
-    };
-    
-    return iconMap[categoryName] || (
-      <svg className="w-5 h-5 text-[#E89B8B]" fill="currentColor" viewBox="0 0 24 24">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
-      </svg>
-    );
-  };
-
-  // Get service options (dynamically generated from categories)
-  const serviceOptions = generateServiceOptions(categories);
+    },
+    { 
+      value: 'facial', 
+      label: 'Facial',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+          <circle cx="9" cy="9" r="1.5" fill="currentColor" />
+          <circle cx="15" cy="9" r="1.5" fill="currentColor" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 13s1.5 2 4 2 4-2 4-2" />
+        </svg>
+      )
+    },
+    { 
+      value: 'eyebrows', 
+      label: 'Eyebrows',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+        </svg>
+      )
+    },
+    { 
+      value: 'waxing', 
+      label: 'Waxing',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      )
+    }
+  ];
 
   // Location options with wiwihood theme icons
   const locationOptions = [
@@ -399,43 +328,274 @@ function ServicesPage() {
     }
   ];
 
+  const shops: Shop[] = [
+    {
+      id: 1,
+      category: "nails",
+      name: "Lumi Nail Studio",
+      image: "/service1.png",
+      description: "Double Tree by Hilton M-Square AWR Properties. Al Masihood",
+      rating: 4.5,
+      reviews: 12,
+      verified: true,
+      priceFrom: 89,
+      distance: 2.3,
+      availableSlots: ["10:00 AM", "2:00 PM", "4:30 PM"],
+      tags: ["top-rated", "popular"]
+    },
+    {
+      id: 2,
+      category: "hair",
+      name: "Elite Hair Salon",
+      image: "/service2.jpg",
+      description: "Professional hair styling and treatment services",
+      rating: 4.8,
+      reviews: 28,
+      verified: true,
+      priceFrom: 120,
+      distance: 1.8,
+      availableSlots: ["9:00 AM", "1:00 PM", "5:00 PM"],
+      tags: ["top-rated", "deals"]
+    },
+    {
+      id: 3,
+      category: "spa",
+      name: "Serenity Spa",
+      image: "/service3.jpg",
+      description: "Relaxing spa treatments and wellness services",
+      rating: 4.9,
+      reviews: 45,
+      verified: true,
+      priceFrom: 200,
+      distance: 3.1,
+      availableSlots: ["11:00 AM", "3:00 PM", "6:00 PM"],
+      tags: ["popular", "new"]
+    },
+    {
+      id: 4,
+      category: "makeup",
+      name: "Glamour Studio",
+      image: "/service1.png",
+      description: "Professional makeup and beauty services",
+      rating: 4.6,
+      reviews: 18,
+      verified: true,
+      priceFrom: 150,
+      distance: 2.7,
+      availableSlots: ["10:30 AM", "2:30 PM", "7:00 PM"],
+      tags: ["deals", "choice"]
+    },
+    {
+      id: 5,
+      category: "massage",
+      name: "Wellness Center",
+      image: "/service2.jpg",
+      description: "Therapeutic massage and wellness treatments",
+      rating: 4.7,
+      reviews: 32,
+      verified: true,
+      priceFrom: 180,
+      distance: 1.5,
+      availableSlots: ["9:30 AM", "1:30 PM", "5:30 PM"],
+      tags: ["top-rated", "choice"]
+    },
+    {
+      id: 6,
+      category: "facial",
+      name: "Beauty Hub",
+      image: "/service3.jpg",
+      description: "Advanced facial treatments and skincare",
+      rating: 4.4,
+      reviews: 22,
+      verified: true,
+      priceFrom: 95,
+      distance: 4.2,
+      availableSlots: ["11:30 AM", "3:30 PM", "6:30 PM"],
+      tags: ["new", "popular"]
+    },
+    {
+      id: 7,
+      category: "eyebrows",
+      name: "Brow Studio",
+      image: "/service1.png",
+      description: "Expert eyebrow shaping and threading",
+      rating: 4.8,
+      reviews: 15,
+      verified: true,
+      priceFrom: 45,
+      distance: 1.2,
+      availableSlots: ["10:00 AM", "2:00 PM", "5:00 PM"],
+      tags: ["deals", "new"]
+    },
+    {
+      id: 8,
+      category: "waxing",
+      name: "Smooth Skin Salon",
+      image: "/service2.jpg",
+      description: "Professional waxing services for all areas",
+      rating: 4.3,
+      reviews: 19,
+      verified: true,
+      priceFrom: 65,
+      distance: 3.8,
+      availableSlots: ["9:00 AM", "1:00 PM", "4:00 PM"],
+      tags: ["choice", "popular"]
+    },
+    // Additional shops for pagination testing
+    {
+      id: 9,
+      category: "hair",
+      name: "Royal Hair Studio",
+      image: "/service1.png",
+      description: "Luxury hair cutting and styling services",
+      rating: 4.6,
+      reviews: 45,
+      verified: true,
+      priceFrom: 120,
+      distance: 1.5,
+      availableSlots: ["11:00 AM", "3:00 PM", "5:30 PM"],
+      tags: ["top-rated", "new"]
+    },
+    {
+      id: 10,
+      category: "nails",
+      name: "Crystal Nails",
+      image: "/service2.jpg",
+      description: "Premium nail art and manicure services",
+      rating: 4.7,
+      reviews: 38,
+      verified: true,
+      priceFrom: 95,
+      distance: 2.1,
+      availableSlots: ["10:30 AM", "2:30 PM", "4:00 PM"],
+      tags: ["popular", "deals"]
+    },
+    {
+      id: 11,
+      category: "spa",
+      name: "Wellness Spa Center",
+      image: "/service1.png",
+      description: "Full body spa and relaxation treatments",
+      rating: 4.9,
+      reviews: 67,
+      verified: true,
+      priceFrom: 180,
+      distance: 4.2,
+      availableSlots: ["9:30 AM", "1:30 PM", "3:30 PM"],
+      tags: ["top-rated", "choice"]
+    },
+    {
+      id: 12,
+      category: "makeup",
+      name: "Glamour Beauty",
+      image: "/service2.jpg",
+      description: "Professional makeup for all occasions",
+      rating: 4.4,
+      reviews: 29,
+      verified: true,
+      priceFrom: 110,
+      distance: 3.1,
+      availableSlots: ["12:00 PM", "4:00 PM", "6:00 PM"],
+      tags: ["new", "popular"]
+    },
+    {
+      id: 13,
+      category: "facial",
+      name: "Glow Facial Studio",
+      image: "/service1.png",
+      description: "Advanced facial treatments and skincare",
+      rating: 4.8,
+      reviews: 52,
+      verified: true,
+      priceFrom: 85,
+      distance: 2.8,
+      availableSlots: ["10:00 AM", "2:00 PM", "5:00 PM"],
+      tags: ["top-rated", "deals"]
+    },
+    {
+      id: 14,
+      category: "eyebrows",
+      name: "Perfect Brow Bar",
+      image: "/service2.jpg",
+      description: "Expert eyebrow shaping and threading",
+      rating: 4.5,
+      reviews: 34,
+      verified: true,
+      priceFrom: 45,
+      distance: 1.8,
+      availableSlots: ["11:30 AM", "3:30 PM", "5:30 PM"],
+      tags: ["choice", "new"]
+    },
+    {
+      id: 15,
+      category: "massage",
+      name: "Relax Massage Center",
+      image: "/service1.png",
+      description: "Therapeutic and relaxation massage services",
+      rating: 4.6,
+      reviews: 41,
+      verified: true,
+      priceFrom: 130,
+      distance: 3.5,
+      availableSlots: ["9:00 AM", "1:00 PM", "4:30 PM"],
+      tags: ["popular", "top-rated"]
+    }
+  ];
+
   // Filter based on URL parameters and user selections
   useEffect(() => {
-    // Use real services data instead of dummy shops
-    let filtered = services;
-
     const filterType = searchParams?.get('filter');
     const category = searchParams?.get('category');
     
-    // Apply category filter
-    if (category) {
-      filtered = filtered.filter(service => 
-        service.category?.slug === category || 
-        service.categoryId.includes(category)
-      );
+    let filtered = shops;
+
+    // Apply URL parameter filters
+    if (filterType) {
+      switch (filterType) {
+        case 'top-rated':
+          filtered = filtered.filter(shop => shop.tags?.includes('top-rated'));
+          break;
+        case 'deals':
+          filtered = filtered.filter(shop => shop.tags?.includes('deals'));
+          break;
+        case 'popular':
+          filtered = filtered.filter(shop => shop.tags?.includes('popular'));
+          break;
+        case 'new':
+          filtered = filtered.filter(shop => shop.tags?.includes('new'));
+          break;
+        case 'choice':
+          filtered = filtered.filter(shop => shop.tags?.includes('choice'));
+          break;
+      }
     }
 
-    // Convert services to shop format for compatibility with existing UI
-    const shopData = filtered.map(service => ({
-      id: parseInt(service.id) || Math.random() * 1000,
-      category: service.category?.slug || service.categoryId,
-      name: service.name,
-      image: service.images?.[0] || '/service1.png',
-      description: service.description,
-      rating: 4.5 + Math.random() * 0.5,
-      reviews: Math.floor(Math.random() * 50) + 10,
-      verified: true,
-      priceFrom: service.basePrice,
-      distance: Math.round(Math.random() * 10 + 1),
-      availableSlots: ['10:00 AM', '2:00 PM', '5:00 PM'],
-      tags: service.isActive ? ['active'] : []
-    }));
+    if (category) {
+      filtered = filtered.filter(shop => shop.category.toLowerCase() === category.toLowerCase());
+    }
 
-    setFilteredShops(shopData);
+    // Apply user selections
+    if (selectedService) {
+      filtered = filtered.filter(shop => shop.category === selectedService);
+    }
+
+    if (priceRange[1] < 500) {
+      filtered = filtered.filter(shop => shop.priceFrom <= priceRange[1]);
+    }
+
+    if (minRating > 0) {
+      filtered = filtered.filter(shop => shop.rating >= minRating);
+    }
+
+    if (maxDistance < 50) {
+      filtered = filtered.filter(shop => shop.distance <= maxDistance);
+    }
+
+    setFilteredShops(filtered);
     
     // Reset to first page when filters change
     setCurrentPage(1);
-  }, [searchParams, selectedService, priceRange, minRating, maxDistance, services]);
+  }, [searchParams, selectedService, priceRange, minRating, maxDistance]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredShops.length / itemsPerPage);

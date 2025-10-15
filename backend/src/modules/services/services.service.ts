@@ -99,79 +99,60 @@ export class ServicesService {
       imagesPublicIds: processedImagesPublicIds,
       serviceType: serviceData.serviceType as ServiceType || ServiceType.APPOINTMENT,
       pricingType: serviceData.pricingType as PricingType || PricingType.FIXED,
-      status: serviceData.status as ServiceStatus || ServiceStatus.ACTIVE,
+      status: serviceData.status as ServiceStatus || ServiceStatus.PENDING_APPROVAL,
+      isApproved: false, // New services require admin approval
+      isActive: false, // Inactive until approved
     });
 
     return this.transformServiceForFrontend(await this.serviceRepository.save(service));
   }
 
   async findAll(filters?: ServiceFilterDto): Promise<Service[]> {
-    const where: FindOptionsWhere<Service> = {};
-
-    if (filters) {
-      if (filters.categoryId) {
-        where.categoryId = filters.categoryId;
-      }
-      if (filters.providerId) {
-        where.providerId = filters.providerId;
-      }
-      if (filters.isActive !== undefined) {
-        where.isActive = filters.isActive;
-      }
-      if (filters.status) {
-        where.status = filters.status as ServiceStatus;
-      }
-      if (filters.search) {
-        where.name = Like(`%${filters.search}%`);
-      }
-      if (filters.minPrice !== undefined) {
-        where.basePrice = MoreThanOrEqual(filters.minPrice);
-      }
-      if (filters.maxPrice !== undefined) {
-        where.basePrice = LessThanOrEqual(filters.maxPrice);
-      }
-      if (filters.minPrice !== undefined && filters.maxPrice !== undefined) {
-        // For range queries, use Between
-        where.basePrice = MoreThanOrEqual(filters.minPrice);
-        // Create a separate query for complex price filtering
-      }
-    }
-
     const queryBuilder = this.serviceRepository.createQueryBuilder('service')
       .leftJoinAndSelect('service.category', 'category')
       .leftJoinAndSelect('service.provider', 'provider')
       .leftJoinAndSelect('provider.user', 'user');
 
-    // Apply where conditions
-    if (filters?.categoryId) {
-      queryBuilder.andWhere('service.categoryId = :categoryId', { categoryId: filters.categoryId });
+    // Only show approved services for public queries (unless specifically filtering)
+    if (!filters?.status && filters?.isApproved === undefined) {
+      queryBuilder.andWhere('service.isApproved = :isApproved', { isApproved: true });
+      queryBuilder.andWhere('service.isActive = :isActive', { isActive: true });
     }
-    if (filters?.providerId) {
-      queryBuilder.andWhere('service.providerId = :providerId', { providerId: filters.providerId });
-    }
-    if (filters?.isActive !== undefined) {
-      queryBuilder.andWhere('service.isActive = :isActive', { isActive: filters.isActive });
-    }
-    if (filters?.status) {
-      queryBuilder.andWhere('service.status = :status', { status: filters.status });
-    }
-    if (filters?.search) {
-      queryBuilder.andWhere(
-        '(LOWER(service.name) LIKE LOWER(:search) OR LOWER(service.description) LIKE LOWER(:search))',
-        { search: `%${filters.search}%` }
-      );
-    }
-    if (filters?.minPrice !== undefined) {
-      queryBuilder.andWhere('service.basePrice >= :minPrice', { minPrice: filters.minPrice });
-    }
-    if (filters?.maxPrice !== undefined) {
-      queryBuilder.andWhere('service.basePrice <= :maxPrice', { maxPrice: filters.maxPrice });
+
+    // Apply filters
+    if (filters) {
+      if (filters.categoryId) {
+        queryBuilder.andWhere('service.categoryId = :categoryId', { categoryId: filters.categoryId });
+      }
+      if (filters.providerId) {
+        queryBuilder.andWhere('service.providerId = :providerId', { providerId: filters.providerId });
+      }
+      if (filters.isActive !== undefined) {
+        queryBuilder.andWhere('service.isActive = :isActive', { isActive: filters.isActive });
+      }
+      if (filters.status) {
+        queryBuilder.andWhere('service.status = :status', { status: filters.status });
+      }
+      if (filters.search) {
+        queryBuilder.andWhere(
+          '(service.name ILIKE :search OR service.description ILIKE :search OR service.shortDescription ILIKE :search)',
+          { search: `%${filters.search}%` }
+        );
+      }
+      if (filters.minPrice !== undefined) {
+        queryBuilder.andWhere('service.basePrice >= :minPrice', { minPrice: filters.minPrice });
+      }
+      if (filters.maxPrice !== undefined) {
+        queryBuilder.andWhere('service.basePrice <= :maxPrice', { maxPrice: filters.maxPrice });
+      }
     }
 
     const services = await queryBuilder
       .orderBy('service.createdAt', 'DESC')
       .getMany();
-      
+
+    return services.map(service => this.transformServiceForFrontend(service));
+  }
     return this.transformServicesForFrontend(services);
   }
 
@@ -194,7 +175,7 @@ export class ServicesService {
     return this.transformServicesForFrontend(services);
   }
 
-  async findByCategory(categoryId: string): Promise<Service[]> {
+  async findByCategory(categoryId: string, filters?: any): Promise<Service[]> {
     const category = await this.categoryRepository.findOne({
       where: { id: categoryId }
     });
@@ -202,8 +183,33 @@ export class ServicesService {
       throw new NotFoundException('Category not found');
     }
 
+    // Build where conditions
+    const whereConditions: any = { categoryId };
+    
+    // Apply filters if provided
+    if (filters?.isApproved !== undefined) {
+      whereConditions.isApproved = filters.isApproved === 'true' || filters.isApproved === true;
+    } else {
+      // Default to approved services only
+      whereConditions.isApproved = true;
+    }
+    
+    if (filters?.isActive !== undefined) {
+      whereConditions.isActive = filters.isActive === 'true' || filters.isActive === true;
+    } else {
+      // Default to active services only
+      whereConditions.isActive = true;
+    }
+    
+    if (filters?.approvalStatus) {
+      whereConditions.approvalStatus = filters.approvalStatus;
+    } else {
+      // Default to approved status only
+      whereConditions.approvalStatus = 'APPROVED';
+    }
+
     const services = await this.serviceRepository.find({
-      where: { categoryId, isActive: true },
+      where: whereConditions,
       relations: ['category', 'provider', 'provider.user'],
       order: {
         createdAt: 'DESC'

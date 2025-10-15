@@ -170,7 +170,7 @@ export class CreateProviderDto {
 
   @ApiProperty({
     description: 'Business logo Cloudinary public ID',
-    example: 'reservista/providers/123/logo/abc123',
+    example: 'providers/123/logo/abc123',
     required: false,
     maxLength: 200,
   })
@@ -192,7 +192,7 @@ export class CreateProviderDto {
 
   @ApiProperty({
     description: 'Business cover image Cloudinary public ID',
-    example: 'reservista/providers/123/cover/xyz789',
+    example: 'providers/123/cover/xyz789',
     required: false,
     maxLength: 200,
   })

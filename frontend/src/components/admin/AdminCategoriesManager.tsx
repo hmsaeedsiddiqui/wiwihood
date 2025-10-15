@@ -29,6 +29,20 @@ import type {
 } from '../../store/api/adminCategoriesApi';
 
 export const AdminCategoriesManager: React.FC = () => {
+  // Default wiwihood categories
+  const defaultCategories: Category[] = [
+    { id: 'nails', name: 'Nails', slug: 'nails', description: 'Nail care and art services', isActive: true, isFeatured: false, sortOrder: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'lashes', name: 'Lashes', slug: 'lashes', description: 'Eyelash extensions and treatments', isActive: true, isFeatured: false, sortOrder: 2, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'brows', name: 'Brows', slug: 'brows', description: 'Eyebrow shaping and styling', isActive: true, isFeatured: false, sortOrder: 3, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'facials', name: 'Facials', slug: 'facials', description: 'Facial treatments and skincare', isActive: true, isFeatured: true, sortOrder: 4, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'facial-hair', name: 'Facial Hair', slug: 'facial-hair', description: 'Facial hair grooming services', isActive: true, isFeatured: false, sortOrder: 5, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'massage', name: 'Massage', slug: 'massage', description: 'Relaxing massage treatments', isActive: true, isFeatured: true, sortOrder: 6, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'lip', name: 'Lip', slug: 'lip', description: 'Lip care and enhancement services', isActive: true, isFeatured: false, sortOrder: 7, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'ear', name: 'Ear', slug: 'ear', description: 'Ear care and piercing services', isActive: true, isFeatured: false, sortOrder: 8, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'hair-remove', name: 'Hair Remove', slug: 'hair-remove', description: 'Hair removal treatments', isActive: true, isFeatured: false, sortOrder: 9, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
+    { id: 'yoga-pilates', name: 'Yoga / Pilates', slug: 'yoga-pilates', description: 'Yoga and Pilates fitness sessions', isActive: true, isFeatured: false, sortOrder: 10, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
+  ];
+
   // Check authentication tokens
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -103,21 +117,20 @@ export const AdminCategoriesManager: React.FC = () => {
 
   // Handle local filtering when backend is not available
   useEffect(() => {
-    if (categories && Array.isArray(categories)) {
-      let filtered = categories
-      
-      if (searchQuery) {
-        const query = searchQuery.toLowerCase()
-        filtered = categories.filter(category => 
-          category.name.toLowerCase().includes(query) ||
-          category.description?.toLowerCase().includes(query) ||
-          category.slug.toLowerCase().includes(query)
-        )
-      }
-      
-      setFilteredCategories(filtered)
+    const categoriesData = categories && Array.isArray(categories) && categories.length > 0 ? categories : defaultCategories
+    let filtered = categoriesData
+    
+    if (searchQuery) {
+      const query = searchQuery.toLowerCase()
+      filtered = categoriesData.filter(category => 
+        category.name.toLowerCase().includes(query) ||
+        category.description?.toLowerCase().includes(query) ||
+        category.slug.toLowerCase().includes(query)
+      )
     }
-  }, [categories, searchQuery])
+    
+    setFilteredCategories(filtered)
+  }, [categories, searchQuery, defaultCategories])
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -261,21 +274,49 @@ export const AdminCategoriesManager: React.FC = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Category Name *
                 </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => {
-                    const name = e.target.value
-                    setFormData(prev => ({ 
-                      ...prev, 
-                      name,
-                      slug: generateSlug(name)
-                    }))
-                  }}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="Enter category name"
-                />
+                {isEdit ? (
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => {
+                      const name = e.target.value
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        name,
+                        slug: generateSlug(name)
+                      }))
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Enter category name"
+                  />
+                ) : (
+                  <select
+                    required
+                    value={formData.name}
+                    onChange={(e) => {
+                      const name = e.target.value
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        name,
+                        slug: generateSlug(name)
+                      }))
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select a category...</option>
+                    <option value="Nails">Nails</option>
+                    <option value="Lashes">Lashes</option>
+                    <option value="Brows">Brows</option>
+                    <option value="Facials">Facials</option>
+                    <option value="Facial Hair">Facial Hair</option>
+                    <option value="Massage">Massage</option>
+                    <option value="Lip">Lip</option>
+                    <option value="Ear">Ear</option>
+                    <option value="Hair Remove">Hair Remove</option>
+                    <option value="Yoga / Pilates">Yoga / Pilates</option>
+                  </select>
+                )}
               </div>
 
               <div>
@@ -614,7 +655,7 @@ export const AdminCategoriesManager: React.FC = () => {
     return <LoginModal />
   }
 
-  const displayCategories = filteredCategories.length > 0 ? filteredCategories : categories || []
+  const displayCategories = filteredCategories.length > 0 ? filteredCategories : categories || defaultCategories
 
   return (
     <div className="min-h-screen bg-gray-50">

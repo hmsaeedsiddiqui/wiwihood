@@ -3,6 +3,7 @@ import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { QRTIntegration } from '@/utils/qrtIntegration'
 import { checkProviderAuth } from '@/utils/providerAuth'
+import { useServicesQuery } from '@/store/api/servicesApi'
 
 interface Category {
   id: string
@@ -12,11 +13,37 @@ interface Category {
   isActive?: boolean
 }
 
+interface ApprovedService {
+  id: string
+  name: string
+  shortDescription: string
+  categoryId: string
+  isActive: boolean
+  isApproved: boolean
+  approvalStatus: string
+  category?: Category
+}
+
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const menuRef = useRef<HTMLDivElement>(null)
+
+  // Fetch approved services
+  const { 
+    data: servicesData,
+    isLoading: servicesLoading,
+    error: servicesError
+  } = useServicesQuery({
+    filters: {
+      isApproved: true,
+      isActive: true,
+      approvalStatus: 'APPROVED'
+    }
+  });
+
+  const approvedServices = servicesData?.services || [];
 
   // Fetch categories from backend
   useEffect(() => {
@@ -151,26 +178,87 @@ function Navbar() {
                   <span className="font-medium">All Services</span>
                 </Link>
 
-                {/* Dynamic Categories */}
-                {loading ? (
+                {/* Dynamic Categories with Approved Services */}
+                {loading || servicesLoading ? (
                   <div className="px-4 py-3 text-sm text-gray-500">Loading categories...</div>
                 ) : (
-                  categories.map((category) => (
-                    <Link 
-                      key={category.id}
-                      href={`/services?category=${category.slug}`}
-                      className="flex items-center px-4 py-3 text-sm text-gray-700 hover:bg-[#E89B8B] hover:text-white transition-all duration-150 border-b border-gray-100 last:border-b-0"
-                      onClick={(e) => {
-                        e.stopPropagation()
-                        setIsMenuOpen(false)
-                      }}
-                    >
-                      <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9M21 9H9M21 13H9M21 17H9" />
-                      </svg>
-                      <span className="font-medium">{category.name}</span>
-                    </Link>
-                  ))
+                  <>
+                    {/* Show categories that have approved services */}
+                    {categories.map((category) => {
+                      const categoryServices = approvedServices.filter(service => 
+                        service.categoryId === category.id || 
+                        service.category?.id === category.id
+                      );
+                      
+                      // Only show category if it has approved services
+                      if (categoryServices.length === 0) return null;
+
+                      return (
+                        <div key={category.id} className="border-b border-gray-100">
+                          {/* Category Header */}
+                          <Link 
+                            href={`/services?category=${category.slug}`}
+                            className="flex items-center px-4 py-3 text-sm font-semibold text-gray-800 hover:bg-[#E89B8B]/10 transition-all duration-150 bg-gray-50"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setIsMenuOpen(false)
+                            }}
+                          >
+                            <svg className="w-5 h-5 mr-3 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9M21 9H9M21 13H9M21 17H9" />
+                            </svg>
+                            <span>{category.name}</span>
+                            <span className="ml-auto text-xs bg-[#E89B8B] text-white px-2 py-1 rounded-full">
+                              {categoryServices.length}
+                            </span>
+                          </Link>
+                          
+                          {/* Category Services */}
+                          {categoryServices.slice(0, 5).map((service) => (
+                            <Link
+                              key={service.id}
+                              href={`/services/${service.id}`}
+                              className="flex items-center pl-8 pr-4 py-2 text-sm text-gray-600 hover:bg-[#E89B8B]/5 hover:text-[#E89B8B] transition-all duration-150"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setIsMenuOpen(false)
+                              }}
+                            >
+                              <svg className="w-4 h-4 mr-2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                              </svg>
+                              <span className="truncate">{service.name}</span>
+                            </Link>
+                          ))}
+                          
+                          {/* Show more services link if there are more than 5 */}
+                          {categoryServices.length > 5 && (
+                            <Link
+                              href={`/services?category=${category.slug}`}
+                              className="flex items-center pl-8 pr-4 py-2 text-sm text-[#E89B8B] hover:bg-[#E89B8B]/5 transition-all duration-150 font-medium"
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setIsMenuOpen(false)
+                              }}
+                            >
+                              <span>View all {categoryServices.length} services →</span>
+                            </Link>
+                          )}
+                        </div>
+                      );
+                    })}
+                    
+                    {/* Show message if no approved services found */}
+                    {approvedServices.length === 0 && (
+                      <div className="px-4 py-6 text-center text-gray-500">
+                        <svg className="w-12 h-12 mx-auto mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                        <p className="text-sm">No approved services available</p>
+                        <p className="text-xs text-gray-400 mt-1">Services will appear here after admin approval</p>
+                      </div>
+                    )}
+                  </>
                 )}
                 
                 <Link 

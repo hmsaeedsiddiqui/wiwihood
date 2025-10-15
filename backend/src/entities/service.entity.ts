@@ -19,6 +19,9 @@ export enum ServiceStatus {
   ACTIVE = 'active',
   INACTIVE = 'inactive',
   DRAFT = 'draft',
+  PENDING_APPROVAL = 'pending_approval',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
 }
 
 export enum ServiceType {
@@ -171,6 +174,100 @@ export class Service {
   @Column({ nullable: true, length: 500 })
   metaDescription?: string;
 
+  // Frontend Display Fields
+  @ApiProperty({ description: 'Display location for service cards', required: false })
+  @Column({ nullable: true, length: 300 })
+  displayLocation?: string;
+
+  @ApiProperty({ description: 'Provider business name for display', required: false })
+  @Column({ nullable: true, length: 200 })
+  providerBusinessName?: string;
+
+  @ApiProperty({ description: 'Highlight badge text', required: false })
+  @Column({ nullable: true, length: 100 })
+  highlightBadge?: string;
+
+  @ApiProperty({ description: 'Featured image URL', required: false })
+  @Column({ nullable: true })
+  featuredImage?: string;
+
+  @ApiProperty({ description: 'Available time slots (JSON array)', required: false })
+  @Column({ nullable: true, type: 'json' })
+  availableSlots?: string[];
+
+  @ApiProperty({ description: 'Promotion text', required: false })
+  @Column({ nullable: true, length: 150 })
+  promotionText?: string;
+
+  @ApiProperty({ description: 'Service difficulty level', required: false })
+  @Column({ nullable: true, enum: ['beginner', 'intermediate', 'advanced'], default: 'intermediate' })
+  difficultyLevel?: string;
+
+  @ApiProperty({ description: 'Special requirements or notes', required: false })
+  @Column({ nullable: true, length: 500 })
+  specialRequirements?: string;
+
+  @ApiProperty({ description: 'What service includes (JSON array)', required: false })
+  @Column({ nullable: true, type: 'json' })
+  includes?: string[];
+
+  @ApiProperty({ description: 'What service excludes (JSON array)', required: false })
+  @Column({ nullable: true, type: 'json' })
+  excludes?: string[];
+
+  @ApiProperty({ description: 'Age restrictions', required: false })
+  @Column({ nullable: true, length: 50 })
+  ageRestriction?: string;
+
+  @ApiProperty({ description: 'Gender preference for service', required: false })
+  @Column({ nullable: true, enum: ['any', 'male', 'female'], default: 'any' })
+  genderPreference?: string;
+
+  // Promotional and Deal Fields
+  @ApiProperty({ description: 'Is this service part of a promotional deal', required: false })
+  @Column({ default: false })
+  isPromotional?: boolean;
+
+  @ApiProperty({ description: 'Discount percentage for promotional deals', required: false })
+  @Column({ nullable: true, length: 20 })
+  discountPercentage?: string;
+
+  @ApiProperty({ description: 'Promotional code for the deal', required: false })
+  @Column({ nullable: true, length: 50 })
+  promoCode?: string;
+
+  @ApiProperty({ description: 'Deal validity end date', required: false })
+  @Column({ nullable: true, type: 'date' })
+  dealValidUntil?: string;
+
+  @ApiProperty({ description: 'Deal category/type', required: false })
+  @Column({ nullable: true, length: 100 })
+  dealCategory?: string;
+
+  @ApiProperty({ description: 'Deal title (different from service name)', required: false })
+  @Column({ nullable: true, length: 200 })
+  dealTitle?: string;
+
+  @ApiProperty({ description: 'Deal specific description', required: false })
+  @Column({ nullable: true, length: 500 })
+  dealDescription?: string;
+
+  @ApiProperty({ description: 'Original price before discount', required: false })
+  @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
+  originalPrice?: number;
+
+  @ApiProperty({ description: 'Minimum booking amount for deal to apply', required: false })
+  @Column({ nullable: true, type: 'decimal', precision: 10, scale: 2 })
+  minBookingAmount?: number;
+
+  @ApiProperty({ description: 'Maximum number of times this deal can be used per customer', required: false })
+  @Column({ nullable: true, type: 'int' })
+  usageLimit?: number;
+
+  @ApiProperty({ description: 'Deal terms and conditions', required: false })
+  @Column({ nullable: true, length: 1000 })
+  dealTerms?: string;
+
   @ApiProperty({ description: 'Service creation timestamp' })
   @CreateDateColumn({ type: 'timestamp' })
   createdAt: Date;
@@ -178,6 +275,35 @@ export class Service {
   @ApiProperty({ description: 'Last update timestamp' })
   @UpdateDateColumn({ type: 'timestamp' })
   updatedAt: Date;
+
+  // Admin approval fields
+  @ApiProperty({ description: 'Service approval status' })
+  @Column({ default: false })
+  isApproved: boolean;
+
+  @ApiProperty({ description: 'Admin who approved/rejected the service', required: false })
+  @Column({ nullable: true, type: 'uuid' })
+  approvedByAdminId?: string;
+
+  @ApiProperty({ description: 'Date when service was approved/rejected', required: false })
+  @Column({ nullable: true })
+  approvalDate?: Date;
+
+  @ApiProperty({ description: 'Admin comments for approval/rejection', required: false })
+  @Column({ nullable: true, type: 'text' })
+  adminComments?: string;
+
+  @ApiProperty({ description: 'Badge assigned by admin', required: false })
+  @Column({ nullable: true, length: 100 })
+  adminAssignedBadge?: string;
+
+  @ApiProperty({ description: 'Service approval status', enum: ServiceStatus })
+  @Column({
+    type: 'enum',
+    enum: ServiceStatus,
+    default: ServiceStatus.PENDING_APPROVAL,
+  })
+  approvalStatus: ServiceStatus;
 
   // Foreign keys
   @ApiProperty({ description: 'Provider ID' })

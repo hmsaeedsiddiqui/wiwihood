@@ -205,7 +205,7 @@ export class QRTIntegration {
 
   // Services QRT
   static async getServices() {
-    return this.qrtCall('/services', [
+    return this.qrtCall('/services?isActive=true', [
       {
         id: '1',
         name: 'Hair Cut & Style',
@@ -515,7 +515,7 @@ export class QRTIntegration {
 
   // Categories QRT
   static async getCategories() {
-    return this.qrtCall('/categories', [
+    return this.qrtCall('/categories?isActive=true', [
       {
         id: 'hair-services',
         name: 'Hair Services',
@@ -551,6 +551,13 @@ export class QRTIntegration {
         description: 'Personal training and fitness services',
         isActive: true
       }
+    ]);
+  }
+
+  // Get services by category QRT - only approved and active services
+  static async getServicesByCategory(categoryId: string) {
+    return this.qrtCall(`/services/category/${categoryId}?isApproved=true&isActive=true&approvalStatus=APPROVED`, [
+      // Fallback mock data filtered by category would be added here
     ]);
   }
 

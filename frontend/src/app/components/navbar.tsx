@@ -13,38 +13,59 @@ function Navbar() {
   const fetchCategories = async () => {
     try {
       setLoadingCategories(true)
-      // Replace with your actual backend API endpoint
-      const response = await fetch('/api/categories')
+      // Use the real backend API endpoint
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/categories?isActive=true`)
       
       if (response.ok) {
         const data = await response.json()
-        setCategories(data.categories || [])
+        // Transform backend data to match navbar format
+        const transformedCategories = data.map((category: any) => ({
+          id: category.id,
+          name: category.name,
+          slug: category.slug,
+          icon: getIconForCategory(category.name), // Helper function for icons
+          description: category.description
+        }))
+        setCategories(transformedCategories)
       } else {
         // Fallback to default categories if API fails
-        setCategories([
-          { id: 1, name: 'Hair Services', slug: 'hair', icon: '✂️' },
-          { id: 2, name: 'Nail Services', slug: 'nail', icon: '💅' },
-          { id: 3, name: 'Massage Services', slug: 'massage', icon: '💆‍♀️' },
-          { id: 4, name: 'Facial Services', slug: 'facial', icon: '✨' },
-          { id: 5, name: 'Beauty Services', slug: 'beauty', icon: '💄' },
-          { id: 6, name: 'Wellness Services', slug: 'wellness', icon: '🧘‍♀️' }
-        ])
+        setCategories(getDefaultCategories())
       }
     } catch (error) {
       console.error('Error fetching categories:', error)
       // Fallback to default categories
-      setCategories([
-        { id: 1, name: 'Hair Services', slug: 'hair', icon: '✂️' },
-        { id: 2, name: 'Nail Services', slug: 'nail', icon: '💅' },
-        { id: 3, name: 'Massage Services', slug: 'massage', icon: '💆‍♀️' },
-        { id: 4, name: 'Facial Services', slug: 'facial', icon: '✨' },
-        { id: 5, name: 'Beauty Services', slug: 'beauty', icon: '💄' },
-        { id: 6, name: 'Wellness Services', slug: 'wellness', icon: '🧘‍♀️' }
-      ])
+      setCategories(getDefaultCategories())
     } finally {
       setLoadingCategories(false)
     }
   }
+
+  // Helper function to get icon based on category name
+  const getIconForCategory = (categoryName: string) => {
+    const iconMap: { [key: string]: string } = {
+      'Hair Services': '✂️',
+      'Nail Services': '💅',
+      'Massage Services': '💆‍♀️',
+      'Facial Services': '✨',
+      'Beauty Services': '💄',
+      'Wellness Services': '🧘‍♀️',
+      'Spa Services': '🛁',
+      'Makeup Services': '💄',
+      'Eyebrow Services': '👁️',
+      'Waxing Services': '🕯️'
+    }
+    return iconMap[categoryName] || '🌟'
+  }
+
+  // Fallback categories
+  const getDefaultCategories = () => [
+    { id: 1, name: 'Hair Services', slug: 'hair', icon: '✂️' },
+    { id: 2, name: 'Nail Services', slug: 'nail', icon: '💅' },
+    { id: 3, name: 'Massage Services', slug: 'massage', icon: '💆‍♀️' },
+    { id: 4, name: 'Facial Services', slug: 'facial', icon: '✨' },
+    { id: 5, name: 'Beauty Services', slug: 'beauty', icon: '💄' },
+    { id: 6, name: 'Wellness Services', slug: 'wellness', icon: '🧘‍♀️' }
+  ]
 
   // Load categories when component mounts or when categories menu is opened for first time
   useEffect(() => {
@@ -213,7 +234,7 @@ function Navbar() {
                         categories.map((category) => (
                           <Link 
                             key={category.id}
-                            href={`/category/${category.slug}`} 
+                            href={`/services?category=${category.slug}`} 
                             className="flex items-center px-4 py-2 text-sm text-gray-600 hover:bg-[#E89B8B] hover:text-white transition-all duration-150"
                             onClick={(e) => {
                               e.stopPropagation()

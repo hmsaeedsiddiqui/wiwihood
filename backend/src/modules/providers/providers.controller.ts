@@ -272,7 +272,7 @@ export class ProvidersController {
       // Upload to Cloudinary
       const result = await this.cloudinaryService.uploadImage(
         file,
-        `reservista/providers/${provider.id}/logo`,
+        `providers/${provider.id}/logo`,
         this.cloudinaryService.getShopLogoTransformation()
       );
 
@@ -343,7 +343,7 @@ export class ProvidersController {
       // Upload to Cloudinary
       const result = await this.cloudinaryService.uploadImage(
         file,
-        `reservista/providers/${provider.id}/cover`,
+        `providers/${provider.id}/cover`,
         this.cloudinaryService.getShopCoverTransformation()
       );
 

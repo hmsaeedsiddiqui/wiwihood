@@ -5,6 +5,7 @@ import { User } from '../../entities/user.entity';
 import { Provider, ProviderStatus } from '../../entities/provider.entity';
 import { Booking, BookingStatus } from '../../entities/booking.entity';
 import { Category } from '../../entities/category.entity';
+import { Service, ServiceStatus } from '../../entities/service.entity';
 import { SupportTicket } from '../../entities/support-ticket.entity';
 import { SystemSetting } from '../../entities/system-setting.entity';
 import { Analytics } from '../../entities/analytics.entity';
@@ -12,6 +13,7 @@ import { DashboardStatsDto } from './dto/dashboard-stats.dto';
 import { AdminUsersQueryDto } from './dto/admin-users-query.dto';
 import { AdminBookingsQueryDto } from './dto/admin-bookings-query.dto';
 import { AdminProvidersQueryDto } from './dto/admin-providers-query.dto';
+import { ApproveServiceDto, AdminServiceQueryDto, BulkServiceActionDto } from './dto/admin-service-approval.dto';
 
 @Injectable()
 export class AdminService {
@@ -24,6 +26,8 @@ export class AdminService {
     private bookingsRepository: Repository<Booking>,
     @InjectRepository(Category)
     private categoriesRepository: Repository<Category>,
+    @InjectRepository(Service)
+    private servicesRepository: Repository<Service>,
     @InjectRepository(SupportTicket)
     private supportTicketsRepository: Repository<SupportTicket>,
     @InjectRepository(SystemSetting)
@@ -754,6 +758,201 @@ export class AdminService {
     // This would integrate with file storage system
     return {
       url: `/reports/${id}.pdf`,
+      filename: `report_${id}.pdf`,
+    };
+  }
+
+  // ==== ADMIN SERVICE MANAGEMENT METHODS ====
+
+  async getAllServices(query: AdminServiceQueryDto) {
+    const {
+      isApproved,
+      status,
+      search,
+      providerId,
+      categoryId,
+      page = 1,
+      limit = 20,
+      sortBy = 'createdAt',
+      sortOrder = 'DESC'
+    } = query;
+
+    const queryBuilder = this.servicesRepository
+      .createQueryBuilder('service')
+      .leftJoinAndSelect('service.provider', 'provider')
+      .leftJoinAndSelect('service.category', 'category');
+
+    // Apply filters
+    if (isApproved !== undefined) {
+      queryBuilder.andWhere('service.isApproved = :isApproved', { isApproved });
+    }
+
+    if (status) {
+      queryBuilder.andWhere('service.status = :status', { status });
+    }
+
+    if (search) {
+      queryBuilder.andWhere(
+        '(service.name ILIKE :search OR service.description ILIKE :search OR provider.businessName ILIKE :search)',
+        { search: `%${search}%` }
+      );
+    }
+
+    if (providerId) {
+      queryBuilder.andWhere('service.providerId = :providerId', { providerId });
+    }
+
+    if (categoryId) {
+      queryBuilder.andWhere('service.categoryId = :categoryId', { categoryId });
+    }
+
+    // Apply sorting
+    queryBuilder.orderBy(`service.${sortBy}`, sortOrder);
+
+    // Apply pagination
+    const offset = (page - 1) * limit;
+    queryBuilder.skip(offset).take(limit);
+
+    const [services, total] = await queryBuilder.getManyAndCount();
+
+    return {
+      services,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
+  async getServiceById(id: string): Promise<Service> {
+    const service = await this.servicesRepository
+      .createQueryBuilder('service')
+      .leftJoinAndSelect('service.provider', 'provider')
+      .leftJoinAndSelect('service.category', 'category')
+      .where('service.id = :id', { id })
+      .getOne();
+
+    if (!service) {
+      throw new NotFoundException('Service not found');
+    }
+
+    return service;
+  }
+
+  async approveService(id: string, approveDto: ApproveServiceDto, adminId: string): Promise<Service> {
+    const service = await this.getServiceById(id);
+
+    service.isApproved = approveDto.isApproved;
+    service.approvedByAdminId = adminId;
+    service.approvalDate = new Date();
+    service.adminComments = approveDto.adminComments;
+    service.adminAssignedBadge = approveDto.adminAssignedBadge;
+    service.adminQualityRating = approveDto.adminQualityRating;
+
+    // Update service status based on approval
+    if (approveDto.isApproved) {
+      service.status = ServiceStatus.APPROVED;
+      // Auto-activate approved services
+      service.isActive = true;
+    } else {
+      service.status = ServiceStatus.REJECTED;
+      service.isActive = false;
+    }
+
+    return await this.servicesRepository.save(service);
+  }
+
+  async assignBadgeToService(id: string, badge: string, adminId: string): Promise<Service> {
+    const service = await this.getServiceById(id);
+
+    service.adminAssignedBadge = badge;
+    service.approvedByAdminId = adminId;
+    service.approvalDate = new Date();
+
+    return await this.servicesRepository.save(service);
+  }
+
+  async deleteService(id: string): Promise<void> {
+    const service = await this.getServiceById(id);
+    await this.servicesRepository.remove(service);
+  }
+
+  async bulkServiceAction(bulkActionDto: BulkServiceActionDto, adminId: string) {
+    const { serviceIds, action, adminComments } = bulkActionDto;
+
+    const services = await this.servicesRepository
+      .createQueryBuilder('service')
+      .where('service.id IN (:...ids)', { ids: serviceIds })
+      .getMany();
+
+    if (services.length !== serviceIds.length) {
+      throw new BadRequestException('Some services not found');
+    }
+
+    const updatePromises = services.map(async (service) => {
+      switch (action) {
+        case 'approve':
+          service.isApproved = true;
+          service.status = ServiceStatus.APPROVED;
+          service.isActive = true;
+          break;
+        case 'reject':
+          service.isApproved = false;
+          service.status = ServiceStatus.REJECTED;
+          service.isActive = false;
+          break;
+        case 'delete':
+          return this.servicesRepository.remove(service);
+        case 'feature':
+          service.isFeatured = true;
+          break;
+        case 'unfeature':
+          service.isFeatured = false;
+          break;
+      }
+
+      service.approvedByAdminId = adminId;
+      service.approvalDate = new Date();
+      service.adminComments = adminComments;
+
+      return this.servicesRepository.save(service);
+    });
+
+    await Promise.all(updatePromises);
+
+    return {
+      message: `Bulk ${action} completed for ${serviceIds.length} services`,
+      affectedServices: serviceIds.length,
+    };
+  }
+
+  async getServiceStats() {
+    const [
+      totalServices,
+      approvedServices,
+      pendingServices,
+      rejectedServices,
+      featuredServices,
+      activeServices,
+    ] = await Promise.all([
+      this.servicesRepository.count(),
+      this.servicesRepository.count({ where: { isApproved: true } }),
+      this.servicesRepository.count({ where: { status: ServiceStatus.PENDING_APPROVAL } }),
+      this.servicesRepository.count({ where: { status: ServiceStatus.REJECTED } }),
+      this.servicesRepository.count({ where: { isFeatured: true } }),
+      this.servicesRepository.count({ where: { isActive: true } }),
+    ]);
+
+    return {
+      totalServices,
+      approvedServices,
+      pendingServices,
+      rejectedServices,
+      featuredServices,
+      activeServices,
+      approvalRate: totalServices > 0 ? (approvedServices / totalServices) * 100 : 0,
+    };
+  }
       filename: `report_${id}.pdf`,
     };
   }

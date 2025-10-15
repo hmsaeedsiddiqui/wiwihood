@@ -27,6 +27,7 @@ import { AdminBookingsQueryDto } from './dto/admin-bookings-query.dto';
 import { AdminProvidersQueryDto } from './dto/admin-providers-query.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { UpdateBookingStatusDto } from './dto/update-booking-status.dto';
+import { ApproveServiceDto, AdminServiceQueryDto, BulkServiceActionDto } from './dto/admin-service-approval.dto';
 
 @ApiTags('Admin')
 @Controller('admin')
@@ -335,5 +336,69 @@ export class AdminController {
   @ApiOperation({ summary: 'Download report' })
   async downloadReport(@Param('id') id: string) {
     return this.adminService.downloadReport(id);
+  }
+
+  // ==== ADMIN SERVICE MANAGEMENT ENDPOINTS ====
+
+  @Get('services')
+  @ApiOperation({ summary: 'Get all services with admin filters' })
+  @ApiQuery({ name: 'isApproved', required: false, type: Boolean })
+  @ApiQuery({ name: 'status', required: false, type: String })
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'providerId', required: false, type: String })
+  @ApiQuery({ name: 'categoryId', required: false, type: String })
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'sortBy', required: false, type: String })
+  @ApiQuery({ name: 'sortOrder', required: false, enum: ['ASC', 'DESC'] })
+  async getAllServices(@Query() query: AdminServiceQueryDto) {
+    return this.adminService.getAllServices(query);
+  }
+
+  @Get('services/stats')
+  @ApiOperation({ summary: 'Get service statistics' })
+  async getServiceStats() {
+    return this.adminService.getServiceStats();
+  }
+
+  @Get('services/:id')
+  @ApiOperation({ summary: 'Get service by ID' })
+  async getServiceById(@Param('id') id: string) {
+    return this.adminService.getServiceById(id);
+  }
+
+  @Post('services/:id/approve')
+  @ApiOperation({ summary: 'Approve or reject a service' })
+  async approveService(
+    @Param('id') id: string,
+    @Body() approveDto: ApproveServiceDto,
+    @Req() req: any,
+  ) {
+    return this.adminService.approveService(id, approveDto, req.user.id);
+  }
+
+  @Patch('services/:id/badge')
+  @ApiOperation({ summary: 'Assign badge to service' })
+  async assignBadge(
+    @Param('id') id: string,
+    @Body() badgeDto: { badge: string },
+    @Req() req: any,
+  ) {
+    return this.adminService.assignBadgeToService(id, badgeDto.badge, req.user.id);
+  }
+
+  @Delete('services/:id')
+  @ApiOperation({ summary: 'Delete service' })
+  async deleteService(@Param('id') id: string) {
+    return this.adminService.deleteService(id);
+  }
+
+  @Post('services/bulk-action')
+  @ApiOperation({ summary: 'Perform bulk action on services' })
+  async bulkServiceAction(
+    @Body() bulkActionDto: BulkServiceActionDto,
+    @Req() req: any,
+  ) {
+    return this.adminService.bulkServiceAction(bulkActionDto, req.user.id);
   }
 }

@@ -93,10 +93,34 @@ export interface ImageUploadResponse {
   provider: Provider
 }
 
+export interface Category {
+  id: string
+  name: string
+  description?: string
+  slug: string
+  icon?: string
+  image?: string
+  bannerImage?: string
+  color?: string
+  isActive: boolean
+  isFeatured?: boolean
+  parentId?: string
+  sortOrder: number
+  metaTitle?: string
+  metaDescription?: string
+  metaKeywords?: string
+  createdAt: string
+  updatedAt: string
+  parent?: Category
+  children?: Category[]
+  services?: any[]
+  servicesCount?: number
+}
+
 export const providersApi = createApi({
   reducerPath: 'providersApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${BASE_URL}/providers`,
+    baseUrl: `${BASE_URL}`,
     prepareHeaders: (headers) => {
       // Try to get token from either localStorage location
       const token = typeof window !== 'undefined' 
@@ -110,18 +134,18 @@ export const providersApi = createApi({
       return headers
     },
   }),
-  tagTypes: ['Provider'],
+  tagTypes: ['Provider', 'Category'],
   endpoints: (builder) => ({
     // Get current provider profile
     getCurrentProvider: builder.query<Provider, void>({
-      query: () => 'me',
+      query: () => 'providers/me',
       providesTags: ['Provider'],
     }),
 
     // Create provider profile
     createProvider: builder.mutation<Provider, CreateProviderRequest>({
       query: (data) => ({
-        url: '',
+        url: 'providers',
         method: 'POST',
         body: data,
       }),
@@ -131,7 +155,7 @@ export const providersApi = createApi({
     // Update provider profile
     updateProvider: builder.mutation<Provider, UpdateProviderRequest>({
       query: (data) => ({
-        url: 'me',
+        url: 'providers/me',
         method: 'PATCH',
         body: data,
       }),
@@ -145,7 +169,7 @@ export const providersApi = createApi({
         formData.append('file', file)
         
         return {
-          url: 'me/upload-logo',
+          url: 'providers/me/upload-logo',
           method: 'POST',
           body: formData,
         }
@@ -160,7 +184,7 @@ export const providersApi = createApi({
         formData.append('file', file)
         
         return {
-          url: 'me/upload-cover',
+          url: 'providers/me/upload-cover',
           method: 'POST',
           body: formData,
         }
@@ -171,7 +195,7 @@ export const providersApi = createApi({
     // Remove provider logo
     removeProviderLogo: builder.mutation<{ success: boolean; message: string; provider: Provider }, void>({
       query: () => ({
-        url: 'me/logo',
+        url: 'providers/me/logo',
         method: 'DELETE',
       }),
       invalidatesTags: ['Provider'],
@@ -180,7 +204,7 @@ export const providersApi = createApi({
     // Remove provider cover image
     removeProviderCover: builder.mutation<{ success: boolean; message: string; provider: Provider }, void>({
       query: () => ({
-        url: 'me/cover',
+        url: 'providers/me/cover',
         method: 'DELETE',
       }),
       invalidatesTags: ['Provider'],
@@ -204,6 +228,33 @@ export const providersApi = createApi({
     getProviderDashboard: builder.query<any, void>({
       query: () => 'dashboard',
     }),
+
+    // Get all categories (public endpoint for providers to select from)
+    getCategories: builder.query<Category[], { isActive?: boolean }>({
+      query: (params = {}) => {
+        const queryParams = new URLSearchParams()
+        
+        // Only add isActive if it's explicitly set
+        if (params.isActive !== undefined) {
+          queryParams.append('isActive', params.isActive.toString())
+        }
+        
+        return {
+          url: `categories${queryParams.toString() ? `?${queryParams.toString()}` : ''}`,
+          method: 'GET',
+        }
+      },
+      transformResponse: (response: Category[]) => {
+        // Filter only active categories for provider use
+        return response.filter(category => category.isActive)
+      },
+    }),
+
+    // Get featured categories
+    getFeaturedCategories: builder.query<Category[], void>({
+      query: () => 'categories/featured',
+      providesTags: ['Category'],
+    }),
   }),
 })
 
@@ -219,4 +270,6 @@ export const {
   useGetProviderAvailabilityQuery,
   useUpdateProviderAvailabilityMutation,
   useGetProviderDashboardQuery,
+  useGetCategoriesQuery,
+  useGetFeaturedCategoriesQuery,
 } = providersApi

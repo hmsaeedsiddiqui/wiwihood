@@ -51,7 +51,7 @@ export class UploadController {
     try {
       const result = await this.cloudinaryService.uploadImage(
         file,
-        `reservista/profiles/${userId}`,
+        `profiles/${userId}`,
         this.cloudinaryService.getProfileImageTransformation()
       );
 
@@ -107,7 +107,7 @@ export class UploadController {
     try {
       const result = await this.cloudinaryService.uploadImage(
         file,
-        `reservista/services/${providerId}`,
+        'services',
         this.cloudinaryService.getServiceImageTransformation()
       );
 
@@ -155,7 +155,7 @@ export class UploadController {
     try {
       const result = await this.cloudinaryService.uploadImage(
         file,
-        'reservista/services',
+        'services',
         this.cloudinaryService.getServiceImageTransformation()
       );
 
@@ -205,7 +205,7 @@ export class UploadController {
     try {
       const result = await this.cloudinaryService.uploadImage(
         file,
-        `reservista/shops/${providerId}/logo`,
+        `shops/${providerId}/logo`,
         this.cloudinaryService.getShopLogoTransformation()
       );
 
@@ -261,7 +261,7 @@ export class UploadController {
     try {
       const result = await this.cloudinaryService.uploadImage(
         file,
-        `reservista/staff/${providerId}/${staffId}`,
+        `staff/${providerId}/${staffId}`,
         this.cloudinaryService.getProfileImageTransformation()
       );
 
@@ -313,7 +313,7 @@ export class UploadController {
     try {
       const result = await this.cloudinaryService.uploadImage(
         file,
-        `reservista/shops/${providerId}/cover`,
+        `shops/${providerId}/cover`,
         this.cloudinaryService.getShopCoverTransformation()
       );
 
@@ -361,7 +361,7 @@ export class UploadController {
     try {
       const result = await this.cloudinaryService.uploadImage(
         file,
-        'reservista/shops/general',
+        'shops/general',
         this.cloudinaryService.getServiceImageTransformation()
       );
 
@@ -402,7 +402,7 @@ export class UploadController {
   })
   async uploadFromUrl(
     @Body('imageUrl') imageUrl: string,
-    @Body('folder') folder: string = 'reservista',
+    @Body('folder') folder: string = 'general',
     @Body('type') type: 'profile' | 'service' | 'shop-logo' | 'shop-cover' = 'service',
   ) {
     if (!imageUrl) {

@@ -11,6 +11,9 @@ import {
   IsIn,
   Length,
   IsPositive,
+  IsUrl,
+  IsDateString,
+  IsDecimal,
 } from 'class-validator';
 
 export class CreateServiceDto {
@@ -201,4 +204,244 @@ export class CreateServiceDto {
   @IsOptional()
   @IsIn(['active', 'inactive', 'draft'])
   status?: string;
+
+  // Frontend Display Fields
+  
+  @ApiProperty({
+    description: 'Service location/address (for display in cards)',
+    example: 'AWR Properties, Al Mankhood',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 300)
+  displayLocation?: string;
+
+  @ApiProperty({
+    description: 'Service provider business name (for display)',
+    example: 'Lumi Nail Studio',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 200)
+  providerBusinessName?: string;
+
+  @ApiProperty({
+    description: 'Service highlight/badge text',
+    example: 'New on vividhood',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 100)
+  highlightBadge?: string;
+
+  @ApiProperty({
+    description: 'Service feature image URL (main display image)',
+    example: 'https://example.com/main-image.jpg',
+    required: false,
+  })
+  @IsOptional()
+  @IsUrl()
+  featuredImage?: string;
+
+  @ApiProperty({
+    description: 'Available time slots for quick booking',
+    example: ['10:00 AM', '2:00 PM', '5:00 PM'],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  availableSlots?: string[];
+
+  @ApiProperty({
+    description: 'Service promotion text',
+    example: '20% off first booking',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 150)
+  promotionText?: string;
+
+  @ApiProperty({
+    description: 'Is this service featured/highlighted',
+    example: false,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isFeatured?: boolean;
+
+  @ApiProperty({
+    description: 'Service difficulty level',
+    enum: ['beginner', 'intermediate', 'advanced'],
+    example: 'intermediate',
+    required: false,
+  })
+  @IsOptional()
+  @IsIn(['beginner', 'intermediate', 'advanced'])
+  difficultyLevel?: string;
+
+  @ApiProperty({
+    description: 'Special requirements or notes',
+    example: 'Please arrive 15 minutes early',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 500)
+  specialRequirements?: string;
+
+  @ApiProperty({
+    description: 'Service includes (what is provided)',
+    example: ['Hair wash', 'Blow dry', 'Styling'],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  includes?: string[];
+
+  @ApiProperty({
+    description: 'Service excludes (what is not provided)',
+    example: ['Hair products for home use'],
+    required: false,
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  excludes?: string[];
+
+  @ApiProperty({
+    description: 'Age restrictions',
+    example: '18+',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 50)
+  ageRestriction?: string;
+
+  @ApiProperty({
+    description: 'Gender preference for service',
+    enum: ['any', 'male', 'female'],
+    example: 'any',
+    required: false,
+  })
+  @IsOptional()
+  @IsIn(['any', 'male', 'female'])
+  genderPreference?: string;
+
+  // Deals and Promotions Fields
+  
+  @ApiProperty({
+    description: 'Is this service part of a promotional deal',
+    example: false,
+    required: false,
+  })
+  @IsOptional()
+  @IsBoolean()
+  isPromotional?: boolean;
+
+  @ApiProperty({
+    description: 'Discount percentage for promotional deals',
+    example: '25% OFF',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 20)
+  discountPercentage?: string;
+
+  @ApiProperty({
+    description: 'Promotional code for the deal',
+    example: 'FIRST25',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 50)
+  promoCode?: string;
+
+  @ApiProperty({
+    description: 'Deal validity end date',
+    example: '2024-10-31',
+    required: false,
+  })
+  @IsOptional()
+  @IsDateString()
+  dealValidUntil?: string;
+
+  @ApiProperty({
+    description: 'Deal category/type',
+    example: 'New Customer',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 100)
+  dealCategory?: string;
+
+  @ApiProperty({
+    description: 'Deal title (different from service name)',
+    example: 'First Visit Special',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 200)
+  dealTitle?: string;
+
+  @ApiProperty({
+    description: 'Deal specific description',
+    example: '25% OFF on your first appointment',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 500)
+  dealDescription?: string;
+
+  @ApiProperty({
+    description: 'Original price before discount',
+    example: 100.00,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  originalPrice?: number;
+
+  @ApiProperty({
+    description: 'Minimum booking amount for deal to apply',
+    example: 50.00,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  minBookingAmount?: number;
+
+  @ApiProperty({
+    description: 'Maximum number of times this deal can be used per customer',
+    example: 1,
+    required: false,
+  })
+  @IsOptional()
+  @IsNumber()
+  @Min(1)
+  usageLimit?: number;
+
+  @ApiProperty({
+    description: 'Deal terms and conditions',
+    example: 'Valid for new customers only. Cannot be combined with other offers.',
+    required: false,
+  })
+  @IsOptional()
+  @IsString()
+  @Length(1, 1000)
+  dealTerms?: string;
 }

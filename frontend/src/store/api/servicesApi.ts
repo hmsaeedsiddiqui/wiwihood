@@ -25,6 +25,32 @@ export interface CreateServiceRequest {
   preparationInstructions?: string
   isActive?: boolean
   status?: 'active' | 'inactive' | 'draft'
+  // Frontend display fields
+  displayLocation?: string
+  providerBusinessName?: string
+  highlightBadge?: string
+  featuredImage?: string
+  availableSlots?: string[]
+  promotionText?: string
+  isFeatured?: boolean
+  difficultyLevel?: 'beginner' | 'intermediate' | 'advanced'
+  specialRequirements?: string
+  includes?: string[]
+  excludes?: string[]
+  ageRestriction?: string
+  genderPreference?: 'any' | 'male' | 'female'
+  // Deals and promotions fields
+  isPromotional?: boolean
+  discountPercentage?: string
+  promoCode?: string
+  dealValidUntil?: string
+  dealCategory?: string
+  dealTitle?: string
+  dealDescription?: string
+  originalPrice?: number
+  minBookingAmount?: number
+  usageLimit?: number
+  dealTerms?: string
 }
 
 export interface UpdateServiceRequest extends Partial<CreateServiceRequest> {}
@@ -76,6 +102,31 @@ export interface Service {
   metaDescription?: string
   createdAt: string
   updatedAt: string
+  // Frontend display fields
+  displayLocation?: string
+  providerBusinessName?: string
+  highlightBadge?: string
+  featuredImage?: string
+  availableSlots?: string[]
+  promotionText?: string
+  difficultyLevel?: 'beginner' | 'intermediate' | 'advanced'
+  specialRequirements?: string
+  includes?: string[]
+  excludes?: string[]
+  ageRestriction?: string
+  genderPreference?: 'any' | 'male' | 'female'
+  // Deals and promotions fields
+  isPromotional?: boolean
+  discountPercentage?: string
+  promoCode?: string
+  dealValidUntil?: string
+  dealCategory?: string
+  dealTitle?: string
+  dealDescription?: string
+  originalPrice?: number
+  minBookingAmount?: number
+  usageLimit?: number
+  dealTerms?: string
   // Relations
   category?: any
   provider?: any

@@ -25,8 +25,11 @@ export const CloudinaryImage: React.FC<CloudinaryImageProps> = ({
 }) => {
   const cloudName = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
   
+  // Enhanced error handling for missing configuration
   if (!cloudName) {
-    console.warn('Cloudinary cloud name not configured, using fallback');
+    if (process.env.NODE_ENV === 'development') {
+      console.warn('⚠️ Cloudinary cloud name not configured, using fallback');
+    }
     return (
       <div 
         className={`bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center rounded-lg ${className}`}
@@ -64,7 +67,9 @@ export const CloudinaryImage: React.FC<CloudinaryImageProps> = ({
         className={className}
         style={style}
         onError={(e) => {
-          console.error('Failed to load image:', src);
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('Failed to load image:', src);
+          }
           const target = e.target as HTMLImageElement;
           target.src = `data:image/svg+xml;base64,${btoa(`
             <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">
@@ -115,7 +120,14 @@ export const CloudinaryImage: React.FC<CloudinaryImageProps> = ({
       className={className}
       style={style}
       onError={(e) => {
-        console.error('Failed to load Cloudinary image:', src);
+        if (process.env.NODE_ENV === 'development') {
+          console.warn('Failed to load Cloudinary image:', {
+            src,
+            imageUrl,
+            cloudName,
+            transformationString
+          });
+        }
         const target = e.target as HTMLImageElement;
         target.src = `data:image/svg+xml;base64,${btoa(`
           <svg width="${width}" height="${height}" xmlns="http://www.w3.org/2000/svg">

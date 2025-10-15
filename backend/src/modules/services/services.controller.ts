@@ -126,11 +126,15 @@ export class ServicesController {
     type: [Service],
   })
   @ApiParam({ name: 'categoryId', description: 'Category ID' })
+  @ApiQuery({ name: 'isApproved', required: false, description: 'Filter by approval status' })
+  @ApiQuery({ name: 'isActive', required: false, description: 'Filter by active status' })
+  @ApiQuery({ name: 'approvalStatus', required: false, description: 'Filter by approval status' })
   @Get('category/:categoryId')
   async findByCategory(
     @Param('categoryId', ParseUUIDPipe) categoryId: string,
+    @Query() filters?: ServiceFilterDto,
   ): Promise<Service[]> {
-    return await this.servicesService.findByCategory(categoryId);
+    return await this.servicesService.findByCategory(categoryId, filters);
   }
 
   @ApiOperation({ summary: 'Get service by ID' })

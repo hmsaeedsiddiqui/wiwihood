@@ -17,6 +17,7 @@ import { servicesApi } from './api/servicesApi'
 import { userApi } from './api/userApi'
 import { providersApi } from './api/providersApi'
 import { adminCategoriesApi } from './api/adminCategoriesApi'
+import { adminServicesApi } from './api/adminServicesApi'
 
 // Root reducer combining all slices
 const rootReducer = combineReducers({  
@@ -34,6 +35,7 @@ const rootReducer = combineReducers({
   [userApi.reducerPath]: userApi.reducer,
   [providersApi.reducerPath]: providersApi.reducer,
   [adminCategoriesApi.reducerPath]: adminCategoriesApi.reducer,
+  [adminServicesApi.reducerPath]: adminServicesApi.reducer,
 })
 
 // Configure store
@@ -44,7 +46,7 @@ export const store = configureStore({
       serializableCheck: {
         ignoredActions: [],
       },
-    }).concat(authApi.middleware, servicesApi.middleware, userApi.middleware, providersApi.middleware, adminCategoriesApi.middleware),
+    }).concat(authApi.middleware, servicesApi.middleware, userApi.middleware, providersApi.middleware, adminCategoriesApi.middleware, adminServicesApi.middleware),
   devTools: process.env.NODE_ENV !== 'production',
 })
 
