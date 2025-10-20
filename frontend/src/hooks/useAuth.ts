@@ -170,9 +170,9 @@ export const useRoleBasedRegister = () => {
         localStorage.setItem('providerToken', result.accessToken)
         localStorage.setItem('provider', JSON.stringify(result.user))
         markProviderAsRegistered()
-        
         toast.success(`Welcome ${result.user.firstName}! Provider account created successfully.`)
-        router.push('/provider/dashboard')
+        // Redirect to onboarding if provider profile is missing
+        router.push('/provider/onboarding')
       } else if (role === 'customer') {
         // Store customer-specific tokens and data
         localStorage.setItem('accessToken', result.accessToken)

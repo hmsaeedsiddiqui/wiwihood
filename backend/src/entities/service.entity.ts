@@ -78,6 +78,10 @@ export class Service {
   @Column({ type: 'decimal', precision: 10, scale: 2 })
   basePrice: number;
 
+  @ApiProperty({ description: 'Admin quality rating for service', required: false })
+  @Column({ type: 'int', nullable: true })
+  adminQualityRating?: number;
+
   @ApiProperty({ description: 'Service currency code (e.g., EUR, USD)' })
   @Column({ length: 3, default: 'EUR' })
   currency: string;

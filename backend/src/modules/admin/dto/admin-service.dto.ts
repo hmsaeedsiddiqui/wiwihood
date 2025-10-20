@@ -7,7 +7,7 @@ export class AdminServiceFiltersDto {
   search?: string;
 
   @IsOptional()
-  @IsEnum(['PENDING_APPROVAL', 'APPROVED', 'REJECTED', 'ACTIVE', 'INACTIVE'])
+  @IsEnum(['pending_approval', 'approved', 'rejected', 'active', 'inactive'])
   status?: string;
 
   @IsOptional()

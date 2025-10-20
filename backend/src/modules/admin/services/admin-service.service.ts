@@ -1,4 +1,5 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
+import { ServiceStatus } from '../../../entities/service.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Service } from '../../../entities/service.entity';
@@ -28,13 +29,13 @@ export class AdminServiceService {
     if (filters.status) {
       switch (filters.status) {
         case 'PENDING_APPROVAL':
-          queryBuilder.andWhere('service.approvalStatus = :status', { status: 'PENDING_APPROVAL' });
+          queryBuilder.andWhere('service.approvalStatus = :status', { status: 'pending_approval' });
           break;
         case 'APPROVED':
-          queryBuilder.andWhere('service.approvalStatus = :status', { status: 'APPROVED' });
+          queryBuilder.andWhere('service.approvalStatus = :status', { status: 'approved' });
           break;
         case 'REJECTED':
-          queryBuilder.andWhere('service.approvalStatus = :status', { status: 'REJECTED' });
+          queryBuilder.andWhere('service.approvalStatus = :status', { status: 'rejected' });
           break;
         case 'ACTIVE':
           queryBuilder.andWhere('service.isActive = true AND service.isApproved = true');
@@ -117,13 +118,13 @@ export class AdminServiceService {
   async getServiceStatistics() {
     const total = await this.serviceRepository.count();
     const pending = await this.serviceRepository.count({ 
-      where: { approvalStatus: ServiceApprovalStatus.PENDING_APPROVAL } 
+      where: { approvalStatus: ServiceStatus.PENDING_APPROVAL } 
     });
     const approved = await this.serviceRepository.count({ 
-      where: { approvalStatus: ServiceApprovalStatus.APPROVED } 
+      where: { approvalStatus: ServiceStatus.APPROVED } 
     });
     const rejected = await this.serviceRepository.count({ 
-      where: { approvalStatus: ServiceApprovalStatus.REJECTED } 
+      where: { approvalStatus: ServiceStatus.REJECTED } 
     });
     const active = await this.serviceRepository.count({ 
       where: { isActive: true, isApproved: true } 
@@ -152,7 +153,7 @@ export class AdminServiceService {
 
     // Update service approval status
     service.isApproved = approvalData.approved;
-    service.approvalStatus = approvalData.approved ? ServiceApprovalStatus.APPROVED : ServiceApprovalStatus.REJECTED;
+    service.approvalStatus = approvalData.approved ? ServiceStatus.APPROVED : ServiceStatus.REJECTED;
     service.adminComments = approvalData.adminComments || '';
     service.approvedByAdminId = adminId;
     service.approvalDate = new Date();
@@ -274,7 +275,7 @@ export class AdminServiceService {
           ...updateData,
           isApproved: true,
           isActive: true,
-          approvalStatus: ServiceApprovalStatus.APPROVED,
+          approvalStatus: ServiceStatus.APPROVED,
           approvalDate: new Date()
         };
         break;
@@ -283,7 +284,7 @@ export class AdminServiceService {
           ...updateData,
           isApproved: false,
           isActive: false,
-          approvalStatus: ServiceApprovalStatus.REJECTED,
+          approvalStatus: ServiceStatus.REJECTED,
           approvalDate: new Date()
         };
         break;

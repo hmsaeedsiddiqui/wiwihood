@@ -20,50 +20,49 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { 
-  useGetAllServicesQuery, 
-  useGetServiceStatsQuery,
-  useApproveServiceMutation,
-  useAssignBadgeMutation,
-  useDeleteServiceMutation,
-  useBulkServiceActionMutation,
+  useGetAllAdminServicesQuery,
+  useGetAdminServiceStatsQuery,
+  useApproveAdminServiceMutation,
+  useAssignAdminBadgeMutation,
+  useDeleteAdminServiceMutation,
+  useBulkAdminServiceActionMutation,
   type AdminService,
-  type AdminServiceQuery
-} from '@/store/api/adminServicesApi';
+  type AdminServiceFilters
+} from '@/store/api/servicesApi';
 
 export default function AdminServicesPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('');
+  const [statusFilter, setStatusFilter] = useState<AdminServiceFilters['status']>('ALL');
   const [approvalFilter, setApprovalFilter] = useState<string>('');
   const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [currentPage, setCurrentPage] = useState(1);
   const [showApprovalModal, setShowApprovalModal] = useState(false);
   const [selectedService, setSelectedService] = useState<AdminService | null>(null);
   const [approvalData, setApprovalData] = useState({
-    isApproved: true,
+    approved: true,
     adminComments: '',
     adminAssignedBadge: '',
     adminQualityRating: 5
   });
 
   // API queries
-  const queryParams: AdminServiceQuery = {
+  const queryParams: AdminServiceFilters = {
     search: searchTerm || undefined,
-    status: statusFilter || undefined,
-    isApproved: approvalFilter === 'approved' ? true : approvalFilter === 'pending' ? false : undefined,
+    status: statusFilter !== 'ALL' ? statusFilter : undefined,
     page: currentPage,
     limit: 20,
-    sortBy: 'createdAt',
+    sortBy: 'submittedForApproval',
     sortOrder: 'DESC'
   };
 
-  const { data: servicesData, isLoading, refetch } = useGetAllServicesQuery(queryParams);
-  const { data: stats } = useGetServiceStatsQuery();
+  const { data: servicesData, isLoading, refetch } = useGetAllAdminServicesQuery(queryParams);
+  const { data: stats } = useGetAdminServiceStatsQuery();
 
   // API mutations
-  const [approveService] = useApproveServiceMutation();
-  const [assignBadge] = useAssignBadgeMutation();
-  const [deleteService] = useDeleteServiceMutation();
-  const [bulkAction] = useBulkServiceActionMutation();
+  const [approveService] = useApproveAdminServiceMutation();
+  const [assignBadge] = useAssignAdminBadgeMutation();
+  const [deleteService] = useDeleteAdminServiceMutation();
+  const [bulkAction] = useBulkAdminServiceActionMutation();
 
   // Badge options
   const badgeOptions = [
@@ -82,8 +81,8 @@ export default function AdminServicesPage() {
 
     try {
       await approveService({
-        id: selectedService.id,
-        data: approvalData
+        serviceId: selectedService.id,
+        approvalData: approvalData
       }).unwrap();
       
       setShowApprovalModal(false);
@@ -101,7 +100,7 @@ export default function AdminServicesPage() {
       await bulkAction({
         serviceIds: selectedServices,
         action: action as any,
-        adminComments: `Bulk ${action} performed by admin`
+        reason: `Bulk ${action} performed by admin`
       }).unwrap();
       
       setSelectedServices([]);
@@ -146,57 +145,52 @@ export default function AdminServicesPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Services</p>
-                  <p className="text-2xl font-bold text-gray-900">{stats.totalServices}</p>
+                  <p className="text-2xl font-bold text-gray-900">{stats.total}</p>
                 </div>
                 <Package className="h-8 w-8 text-[#E89B8B]" />
               </div>
             </div>
-            
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Approved</p>
-                  <p className="text-2xl font-bold text-green-600">{stats.approvedServices}</p>
+                  <p className="text-2xl font-bold text-green-600">{stats.approved}</p>
                 </div>
                 <CheckCircle className="h-8 w-8 text-green-500" />
               </div>
             </div>
-            
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Pending</p>
-                  <p className="text-2xl font-bold text-yellow-600">{stats.pendingServices}</p>
+                  <p className="text-2xl font-bold text-yellow-600">{stats.pending}</p>
                 </div>
                 <AlertCircle className="h-8 w-8 text-yellow-500" />
               </div>
             </div>
-            
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Featured</p>
-                  <p className="text-2xl font-bold text-purple-600">{stats.featuredServices}</p>
+                  <p className="text-sm font-medium text-gray-600">Rejected</p>
+                  <p className="text-2xl font-bold text-red-600">{stats.rejected}</p>
                 </div>
-                <Star className="h-8 w-8 text-purple-500" />
+                <XCircle className="h-8 w-8 text-red-500" />
               </div>
             </div>
-            
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Active</p>
-                  <p className="text-2xl font-bold text-blue-600">{stats.activeServices}</p>
+                  <p className="text-2xl font-bold text-blue-600">{stats.active}</p>
                 </div>
                 <TrendingUp className="h-8 w-8 text-blue-500" />
               </div>
             </div>
-            
             <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-gray-600">Approval Rate</p>
-                  <p className="text-2xl font-bold text-indigo-600">{stats.approvalRate.toFixed(1)}%</p>
+                  <p className="text-sm font-medium text-gray-600">Inactive</p>
+                  <p className="text-2xl font-bold text-gray-600">{stats.inactive}</p>
                 </div>
                 <Users className="h-8 w-8 text-indigo-500" />
               </div>
@@ -221,16 +215,15 @@ export default function AdminServicesPage() {
               
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                onChange={(e) => setStatusFilter(e.target.value as AdminServiceFilters['status'])}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#E89B8B] focus:border-transparent"
               >
-                <option value="">All Status</option>
-                <option value="active">Active</option>
-                <option value="inactive">Inactive</option>
-                <option value="draft">Draft</option>
-                <option value="pending_approval">Pending Approval</option>
-                <option value="approved">Approved</option>
-                <option value="rejected">Rejected</option>
+                <option value="ALL">All Status</option>
+                <option value="ACTIVE">Active</option>
+                <option value="INACTIVE">Inactive</option>
+                <option value="PENDING_APPROVAL">Pending Approval</option>
+                <option value="APPROVED">Approved</option>
+                <option value="REJECTED">Rejected</option>
               </select>
               
               <select
@@ -361,17 +354,16 @@ export default function AdminServicesPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{service.provider.businessName}</div>
-                        <div className="text-sm text-gray-500">{service.provider.email}</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">
-                          {service.currency} {service.basePrice}
+                          {service.basePrice}
                         </div>
                         <div className="text-sm text-gray-500">{service.durationMinutes}min</div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(service.status)}`}>
-                          {service.status.replace('_', ' ')}
+                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(service.approvalStatus)}`}>
+                          {service.approvalStatus.replace('_', ' ')}
                         </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
@@ -415,8 +407,8 @@ export default function AdminServicesPage() {
                             <button
                               onClick={async () => {
                                 await approveService({
-                                  id: service.id,
-                                  data: { isApproved: true, adminComments: 'Quick approval' }
+                                  serviceId: service.id,
+                                  approvalData: { approved: true, adminComments: 'Quick approval', adminAssignedBadge: '', adminQualityRating: 5 }
                                 });
                                 refetch();
                               }}
@@ -503,7 +495,7 @@ export default function AdminServicesPage() {
                   <div>
                     <h3 className="text-lg font-semibold text-gray-900">{selectedService.name}</h3>
                     <p className="text-gray-600">{selectedService.provider.businessName}</p>
-                    <p className="text-[#E89B8B] font-medium">{selectedService.currency} {selectedService.basePrice}</p>
+                    <p className="text-[#E89B8B] font-medium">{selectedService.basePrice}</p>
                   </div>
                 </div>
                 <p className="text-gray-700 mb-4">{selectedService.description}</p>
@@ -517,12 +509,9 @@ export default function AdminServicesPage() {
                   </div>
                   <div>
                     <span className="font-medium">Current Status:</span> 
-                    <span className={`ml-2 px-2 py-1 rounded-full text-xs ${getStatusColor(selectedService.status)}`}>
-                      {selectedService.status.replace('_', ' ')}
+                    <span className={`ml-2 px-2 py-1 rounded-full text-xs ${getStatusColor(selectedService.approvalStatus)}`}>
+                      {selectedService.approvalStatus.replace('_', ' ')}
                     </span>
-                  </div>
-                  <div>
-                    <span className="font-medium">Featured:</span> {selectedService.isFeatured ? 'Yes' : 'No'}
                   </div>
                 </div>
               </div>
@@ -537,8 +526,8 @@ export default function AdminServicesPage() {
                     <label className="flex items-center">
                       <input
                         type="radio"
-                        checked={approvalData.isApproved}
-                        onChange={() => setApprovalData(prev => ({ ...prev, isApproved: true }))}
+                        checked={approvalData.approved}
+                        onChange={() => setApprovalData(prev => ({ ...prev, approved: true }))}
                         className="mr-2 text-[#E89B8B] focus:ring-[#E89B8B]"
                       />
                       Approve
@@ -546,8 +535,8 @@ export default function AdminServicesPage() {
                     <label className="flex items-center">
                       <input
                         type="radio"
-                        checked={!approvalData.isApproved}
-                        onChange={() => setApprovalData(prev => ({ ...prev, isApproved: false }))}
+                        checked={!approvalData.approved}
+                        onChange={() => setApprovalData(prev => ({ ...prev, approved: false }))}
                         className="mr-2 text-[#E89B8B] focus:ring-[#E89B8B]"
                       />
                       Reject
@@ -568,7 +557,7 @@ export default function AdminServicesPage() {
                   />
                 </div>
 
-                {approvalData.isApproved && (
+                {approvalData.approved && (
                   <>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -608,7 +597,7 @@ export default function AdminServicesPage() {
                     onClick={handleApproveService}
                     className="flex-1 bg-[#E89B8B] text-white py-2 px-4 rounded-lg hover:bg-[#D4876F] transition-colors"
                   >
-                    {approvalData.isApproved ? 'Approve Service' : 'Reject Service'}
+                    {approvalData.approved ? 'Approve Service' : 'Reject Service'}
                   </button>
                   <button
                     onClick={() => setShowApprovalModal(false)}

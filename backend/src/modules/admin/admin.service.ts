@@ -953,7 +953,4 @@ export class AdminService {
       approvalRate: totalServices > 0 ? (approvedServices / totalServices) * 100 : 0,
     };
   }
-      filename: `report_${id}.pdf`,
-    };
-  }
 }

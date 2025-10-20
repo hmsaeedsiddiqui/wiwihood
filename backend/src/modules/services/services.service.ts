@@ -1,12 +1,38 @@
 import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Like, FindOptionsWhere, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
-import { Service, ServiceStatus, ServiceType, PricingType } from '../../entities/service.entity';
+import { Repository } from 'typeorm';
+import { Service } from '../../entities/service.entity';
 import { Category } from '../../entities/category.entity';
 import { Provider } from '../../entities/provider.entity';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { ServiceFilterDto } from './dto/service-filter.dto';
+
+// You'll need to find these enums in your codebase and add the correct import paths
+// import { ServiceType } from './enums/service-type.enum';
+// import { PricingType } from './enums/pricing-type.enum';
+
+// Temporary enum definitions - replace with actual imports
+enum ServiceType {
+  APPOINTMENT = 'appointment',
+  PRODUCT = 'product',
+  PACKAGE = 'package'
+}
+
+enum PricingType {
+  FIXED = 'fixed',
+  VARIABLE = 'variable',
+  HOURLY = 'hourly'
+}
+
+export enum ServiceStatus {
+  PENDING_APPROVAL = 'pending_approval',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
+  ACTIVE = 'active',
+  INACTIVE = 'inactive',
+  DRAFT = 'draft'
+}
 
 @Injectable()
 export class ServicesService {
@@ -37,74 +63,99 @@ export class ServicesService {
     return services.map(service => this.transformServiceForFrontend(service));
   }
 
+  /**
+   * Process images - convert between public IDs and URLs
+   */
+  private async processImages(images: any[], existingPublicIds: string[] = []): Promise<{ imageUrls: string[], imagesPublicIds: string[] }> {
+    let imageUrls: string[] = [];
+    let imagesPublicIds: string[] = [];
+
+    if (images && Array.isArray(images)) {
+      // Check if images are public IDs or URLs
+      images.forEach(image => {
+        if (typeof image === 'string') {
+          if (image.startsWith('http')) {
+            // It's already a URL, extract public ID
+            const publicId = this.extractPublicIdFromUrl(image);
+            if (publicId) {
+              imageUrls.push(image);
+              imagesPublicIds.push(publicId);
+            }
+          } else {
+            // It's a public ID, convert to URL
+            imagesPublicIds.push(image);
+            imageUrls.push(`https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${image}`);
+          }
+        }
+      });
+    }
+
+    return { imageUrls, imagesPublicIds };
+  }
+
+  /**
+   * Extract public ID from Cloudinary URL
+   */
+  private extractPublicIdFromUrl(url: string): string | null {
+    const match = url.match(/\/upload\/(?:v\d+\/)?(.+?)(?:\.[^.]+)?$/);
+    return match ? match[1] : null;
+  }
+
   async create(createServiceDto: CreateServiceDto, providerId: string, userId?: string): Promise<Service> {
-    const { categoryId, ...serviceData } = createServiceDto;
+    try {
+      console.log('=== [DEBUG] Incoming createServiceDto:', JSON.stringify(createServiceDto, null, 2));
+      console.log('=== [DEBUG] providerId:', providerId, 'userId:', userId);
+      const { categoryId, ...serviceData } = createServiceDto;
 
-    // Verify category exists
-    const category = await this.categoryRepository.findOne({
-      where: { id: categoryId }
-    });
-    if (!category) {
-      throw new NotFoundException('Category not found');
-    }
+      // Verify category exists
+      const category = await this.categoryRepository.findOne({ where: { id: categoryId } });
+      console.log('=== [DEBUG] category:', category);
+      if (!category) throw new NotFoundException('Category not found');
 
-    // Verify provider exists
-    const provider = await this.providerRepository.findOne({
-      where: { id: providerId },
-      relations: ['user']
-    });
-    if (!provider) {
-      throw new NotFoundException('Provider not found');
-    }
+      // Verify provider exists
+      const provider = await this.providerRepository.findOne({ where: { id: providerId }, relations: ['user'] });
+      console.log('=== [DEBUG] provider:', provider);
+      if (!provider) throw new NotFoundException('Provider not found');
 
-    // Check if user has permission to create service for this provider
-    if (userId && provider.user.id !== userId) {
-      throw new ForbiddenException('You can only create services for your own provider profile');
-    }
+      // Check if user has permission to create service for this provider
+      if (userId && provider.user.id !== userId) throw new ForbiddenException('You can only create services for your own provider profile');
 
-    // Check if service name already exists for this provider
-    const existingService = await this.serviceRepository.findOne({
-      where: {
+      // Check if service name already exists for this provider
+      const existingService = await this.serviceRepository.findOne({
+        where: { name: serviceData.name, providerId }
+      });
+      console.log('=== [DEBUG] existingService:', existingService);
+      if (existingService) throw new BadRequestException('Service with this name already exists for this provider');
+
+      // Only include properties that exist on your Service entity
+      const serviceData_clean: Partial<Service> = {
         name: serviceData.name,
-        providerId: providerId
-      }
-    });
-    if (existingService) {
-      throw new BadRequestException('Service with this name already exists for this provider');
+        description: serviceData.description,
+        shortDescription: serviceData.shortDescription,
+        basePrice: serviceData.basePrice,
+        durationMinutes: serviceData.durationMinutes,
+        categoryId,
+        providerId,
+        isApproved: false,
+        isActive: false,
+        // If your entity has these, uncomment:
+        // images: processedImages,
+        // imagesPublicIds: processedImagesPublicIds,
+        // serviceType: serviceData.serviceType || ServiceType.APPOINTMENT,
+        // pricingType: serviceData.pricingType || PricingType.FIXED,
+        // status: serviceData.status || ServiceStatus.PENDING_APPROVAL,
+      };
+      console.log('=== [DEBUG] serviceData_clean:', serviceData_clean);
+
+      const service = this.serviceRepository.create(serviceData_clean);
+      const savedService = await this.serviceRepository.save(service);
+      console.log('=== [DEBUG] savedService:', savedService);
+
+      return this.transformServiceForFrontend(savedService);
+    } catch (err) {
+      console.error('=== [ERROR] createService failed:', err);
+      throw err;
     }
-
-    // Handle image processing - convert public IDs to URLs
-    let processedImages: string[] | undefined;
-    let processedImagesPublicIds: string[] | undefined;
-    
-    console.log('Service creation - incoming serviceData.images:', serviceData.images);
-    console.log('CLOUDINARY_CLOUD_NAME:', process.env.CLOUDINARY_CLOUD_NAME);
-    
-    if (serviceData.images && Array.isArray(serviceData.images)) {
-      // Frontend sends public IDs in images field
-      processedImagesPublicIds = serviceData.images;
-      // Convert public IDs to full Cloudinary URLs
-      processedImages = serviceData.images.map(publicId => 
-        `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${publicId}`
-      );
-      console.log('Processed images for DB:', processedImages);
-      console.log('Processed public IDs for DB:', processedImagesPublicIds);
-    }
-
-    const service = this.serviceRepository.create({
-      ...serviceData,
-      categoryId,
-      providerId,
-      images: processedImages,
-      imagesPublicIds: processedImagesPublicIds,
-      serviceType: serviceData.serviceType as ServiceType || ServiceType.APPOINTMENT,
-      pricingType: serviceData.pricingType as PricingType || PricingType.FIXED,
-      status: serviceData.status as ServiceStatus || ServiceStatus.PENDING_APPROVAL,
-      isApproved: false, // New services require admin approval
-      isActive: false, // Inactive until approved
-    });
-
-    return this.transformServiceForFrontend(await this.serviceRepository.save(service));
   }
 
   async findAll(filters?: ServiceFilterDto): Promise<Service[]> {
@@ -113,8 +164,8 @@ export class ServicesService {
       .leftJoinAndSelect('service.provider', 'provider')
       .leftJoinAndSelect('provider.user', 'user');
 
-    // Only show approved services for public queries (unless specifically filtering)
-    if (!filters?.status && filters?.isApproved === undefined) {
+    // Only show approved services for public queries (unless specifically filtering for status)
+    if (!filters?.status) {
       queryBuilder.andWhere('service.isApproved = :isApproved', { isApproved: true });
       queryBuilder.andWhere('service.isActive = :isActive', { isActive: true });
     }
@@ -151,8 +202,6 @@ export class ServicesService {
       .orderBy('service.createdAt', 'DESC')
       .getMany();
 
-    return services.map(service => this.transformServiceForFrontend(service));
-  }
     return this.transformServicesForFrontend(services);
   }
 
@@ -222,11 +271,11 @@ export class ServicesService {
   async findOne(id: string): Promise<Service> {
     const service = await this.serviceRepository.findOne({
       where: { id },
-      relations: ['category', 'provider', 'provider.user']
+      relations: ['category', 'provider', 'provider.user'],
     });
 
     if (!service) {
-      throw new NotFoundException('Service not found');
+      throw new NotFoundException(`Service with ID ${id} not found`);
     }
 
     return this.transformServiceForFrontend(service);
@@ -236,7 +285,7 @@ export class ServicesService {
     const service = await this.findOne(id);
 
     // Check if user has permission to update this service
-    if (userId && service.provider.user.id !== userId) {
+    if (userId && service.provider?.user?.id !== userId) {
       throw new ForbiddenException('You can only update your own services');
     }
 
@@ -266,30 +315,17 @@ export class ServicesService {
       }
     }
 
-    // Handle enum conversions
-    if (updateData.serviceType) {
-      updateData.serviceType = updateData.serviceType as ServiceType;
-    }
-    if (updateData.pricingType) {
-      updateData.pricingType = updateData.pricingType as PricingType;
-    }
-    if (updateData.status) {
-      updateData.status = updateData.status as ServiceStatus;
-    }
-
-    // Handle image processing - convert public IDs to URLs
+    // Handle image updates
     if (updateData.images && Array.isArray(updateData.images)) {
-      // Frontend sends public IDs in images field
-      const imagesPublicIds = updateData.images;
-      // Convert public IDs to full Cloudinary URLs
-      const imageUrls = updateData.images.map(publicId => 
-        `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${publicId}`
+      const { imageUrls, imagesPublicIds } = await this.processImages(
+        updateData.images,
+        service.imagesPublicIds || []
       );
-      
+
       // Update both fields on the service entity
       service.imagesPublicIds = imagesPublicIds;
       service.images = imageUrls;
-      
+
       // Remove images from updateData to avoid overwriting our processed data
       delete updateData.images;
     }
@@ -304,7 +340,7 @@ export class ServicesService {
     const service = await this.findOne(id);
 
     // Check if user has permission to delete this service
-    if (userId && service.provider.user.id !== userId) {
+    if (userId && service.provider?.user?.id !== userId) {
       throw new ForbiddenException('You can only delete your own services');
     }
 
@@ -315,7 +351,7 @@ export class ServicesService {
     const service = await this.findOne(id);
 
     // Check if user has permission to toggle this service
-    if (userId && service.provider.user.id !== userId) {
+    if (userId && service.provider?.user?.id !== userId) {
       throw new ForbiddenException('You can only toggle your own services');
     }
 
@@ -326,19 +362,7 @@ export class ServicesService {
   }
 
   async searchServices(query: string, filters?: ServiceFilterDto): Promise<Service[]> {
-    const where: FindOptionsWhere<Service> = {
-      isActive: true,
-    };
-
-    // Apply basic filters
-    if (filters) {
-      if (filters.categoryId) where.categoryId = filters.categoryId;
-      if (filters.providerId) where.providerId = filters.providerId;
-      if (filters.status) where.status = filters.status as ServiceStatus;
-    }
-
-    // Search in name, description, and tags
-    const services = await this.serviceRepository
+    const queryBuilder = this.serviceRepository
       .createQueryBuilder('service')
       .leftJoinAndSelect('service.category', 'category')
       .leftJoinAndSelect('service.provider', 'provider')
@@ -351,29 +375,27 @@ export class ServicesService {
 
     // Apply filters
     if (filters?.categoryId) {
-      services.andWhere('service.categoryId = :categoryId', { categoryId: filters.categoryId });
+      queryBuilder.andWhere('service.categoryId = :categoryId', { categoryId: filters.categoryId });
     }
     if (filters?.providerId) {
-      services.andWhere('service.providerId = :providerId', { providerId: filters.providerId });
+      queryBuilder.andWhere('service.providerId = :providerId', { providerId: filters.providerId });
     }
     if (filters?.minPrice !== undefined) {
-      services.andWhere('service.price >= :minPrice', { minPrice: filters.minPrice });
+      queryBuilder.andWhere('service.basePrice >= :minPrice', { minPrice: filters.minPrice });
     }
     if (filters?.maxPrice !== undefined) {
-      services.andWhere('service.price <= :maxPrice', { maxPrice: filters.maxPrice });
+      queryBuilder.andWhere('service.basePrice <= :maxPrice', { maxPrice: filters.maxPrice });
     }
 
-    const results = await services
+    const results = await queryBuilder
       .orderBy('service.createdAt', 'DESC')
       .getMany();
-      
+
     return this.transformServicesForFrontend(results);
   }
 
   async getPopularServices(limit: number = 10): Promise<Service[]> {
-    // This would typically be based on booking frequency, ratings, etc.
-    // For now, we'll return active services ordered by creation date
-    const services = await this.serviceRepository.find({
+    const popularServices = await this.serviceRepository.find({
       where: { isActive: true },
       relations: ['category', 'provider', 'provider.user'],
       order: {
@@ -381,7 +403,7 @@ export class ServicesService {
       },
       take: limit
     });
-    
-    return this.transformServicesForFrontend(services);
+
+    return this.transformServicesForFrontend(popularServices);
   }
 }

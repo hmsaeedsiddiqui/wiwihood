@@ -33,13 +33,14 @@ import {
   Sparkles
 } from 'lucide-react';
 import { CloudinaryImage } from '@/components/cloudinary/CloudinaryImage';
-import { 
-  useGetAllServicesQuery, 
-  useApproveServiceMutation, 
-  useBulkServiceActionMutation,
-  useAssignBadgeMutation,
-  AdminServiceFilters 
-} from '@/store/api/adminServicesApi';
+import {
+  useGetAllAdminServicesQuery,
+  useApproveAdminServiceMutation,
+  useBulkAdminServiceActionMutation,
+  useAssignAdminBadgeMutation,
+  useToggleAdminServiceStatusMutation,
+  AdminServiceFilters
+} from '@/store/api/servicesApi';
 
 const availableBadges = [
   { value: 'New on vividhood', label: 'New on vividhood', icon: Sparkles, color: 'text-blue-600' },
@@ -53,11 +54,13 @@ const availableBadges = [
 ];
 
 export default function AdminServicesPage() {
+  // Add toggle status mutation
+  const [toggleAdminServiceStatus] = useToggleAdminServiceStatusMutation();
   // API hooks for real data
   const [filters, setFilters] = useState<AdminServiceFilters>({
     page: 1,
     limit: 10,
-    status: 'ALL'
+    // status intentionally omitted for backend compatibility
   });
   
   const { 
@@ -65,11 +68,11 @@ export default function AdminServicesPage() {
     isLoading: servicesLoading, 
     error: servicesError,
     refetch: refetchServices
-  } = useGetAllServicesQuery(filters);
-  
-  const [approveService] = useApproveServiceMutation();
-  const [bulkServiceAction] = useBulkServiceActionMutation();
-  const [assignBadge] = useAssignBadgeMutation();
+  } = useGetAllAdminServicesQuery(filters);
+
+  const [approveAdminService] = useApproveAdminServiceMutation();
+  const [bulkAdminServiceAction] = useBulkAdminServiceActionMutation();
+  const [assignAdminBadge] = useAssignAdminBadgeMutation();
 
   const services = servicesData?.services || [];
   const totalCount = servicesData?.total || 0;
@@ -91,11 +94,23 @@ export default function AdminServicesPage() {
   const [itemsPerPage] = useState(10);
 
   // Update filters when search or status filter changes
+  // Helper to map frontend status to correct enum casing for AdminServiceFilters
+  const mapStatusToFilterEnum = (status: string): AdminServiceFilters['status'] => {
+    switch (status) {
+  case 'PENDING_APPROVAL': return 'PENDING_APPROVAL';
+  case 'APPROVED': return 'APPROVED';
+  case 'REJECTED': return 'REJECTED';
+  case 'ACTIVE': return 'ACTIVE';
+  case 'INACTIVE': return 'INACTIVE';
+      default: return undefined;
+    }
+  };
+
   useEffect(() => {
     setFilters(prev => ({
       ...prev,
       search: searchTerm || undefined,
-      status: statusFilter !== 'ALL' ? statusFilter as any : undefined,
+      status: statusFilter !== 'ALL' ? mapStatusToFilterEnum(statusFilter) : undefined,
       page: 1
     }));
     setCurrentPage(1);
@@ -117,17 +132,16 @@ export default function AdminServicesPage() {
 
   const handleApproveService = async (service: any, approved: boolean, badge?: string, rating?: number, comments?: string) => {
     try {
-      await approveService({
+      await approveAdminService({
         serviceId: service.id,
-        approved,
-        adminComments: comments,
-        adminAssignedBadge: badge,
-        adminQualityRating: rating
+        approvalData: {
+          approved,
+          adminComments: comments,
+          adminAssignedBadge: badge,
+          adminQualityRating: rating
+        }
       }).unwrap();
-      
-      // Refetch services to get updated data
       refetchServices();
-      
       setShowApprovalModal(false);
       setSelectedService(null);
     } catch (error) {
@@ -139,12 +153,11 @@ export default function AdminServicesPage() {
   const handleDeleteService = async (serviceId: string) => {
     if (confirm('Are you sure you want to delete this service? This action cannot be undone.')) {
       try {
-        await bulkServiceAction({
+        await bulkAdminServiceAction({
           serviceIds: [serviceId],
           action: 'delete',
           reason: 'Admin deletion'
         }).unwrap();
-        
         refetchServices();
       } catch (error) {
         console.error('Failed to delete service:', error);
@@ -173,17 +186,28 @@ export default function AdminServicesPage() {
 
     if (confirm(confirmMessage)) {
       try {
-        await bulkServiceAction({
+        await bulkAdminServiceAction({
           serviceIds: selectedServices,
           action: mappedAction,
           reason: `Bulk ${action} by admin`
         }).unwrap();
-        
         refetchServices();
         setSelectedServices([]);
-      } catch (error) {
-        console.error(`Failed to ${action} services:`, error);
-        alert(`Failed to ${action} services. Please try again.`);
+      } catch (error: any) {
+        // Enhanced error logging for debugging
+        const errorDetails = {
+          error,
+          data: error?.data,
+          message: error?.data?.message || error?.message,
+          status: error?.status,
+          request: {
+            serviceIds: selectedServices,
+            action,
+            reason: `Bulk ${action} by admin`
+          }
+        };
+        console.error(`Failed to ${action} services:`, errorDetails);
+        alert(`Failed to ${action} services.\nStatus: ${error?.status || 'N/A'}\nMessage: ${error?.data?.message || error?.message || 'Unknown error.'}`);
       }
     }
   };
@@ -486,18 +510,40 @@ export default function AdminServicesPage() {
                       {getStatusBadge(service.approvalStatus, service.isActive)}
                     </td>
                     <td className="py-4 px-6">
-                      {service.adminAssignedBadge ? (
-                        <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-purple-100 text-purple-800">
-                          <Star className="w-3 h-3" />
-                          {service.adminAssignedBadge}
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-400">No badge</span>
-                      )}
+                      <div className="flex flex-col gap-1">
+                        {service.adminAssignedBadge ? (
+                          <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-md bg-purple-100 text-purple-800">
+                            <Star className="w-3 h-3" />
+                            {service.adminAssignedBadge}
+                          </span>
+                        ) : (
+                          <span className="text-xs text-gray-400">No badge</span>
+                        )}
+                        <select
+                          value={service.adminAssignedBadge || ''}
+                          onChange={async (e) => {
+                            try {
+                              await assignAdminBadge({
+                                serviceId: service.id,
+                                badgeData: { badge: e.target.value }
+                              }).unwrap();
+                              refetchServices();
+                            } catch (error) {
+                              alert('Failed to assign badge.');
+                            }
+                          }}
+                          className="mt-1 px-2 py-1 border border-gray-300 rounded text-xs"
+                        >
+                          <option value="">Assign badge</option>
+                          {availableBadges.map((badge) => (
+                            <option key={badge.value} value={badge.value}>{badge.label}</option>
+                          ))}
+                        </select>
+                      </div>
                     </td>
                     <td className="py-4 px-6">
                       <p className="text-xs text-gray-500">
-                        {new Date(service.submittedForApproval).toLocaleDateString()}
+                        {service.createdAt ? new Date(service.createdAt).toLocaleDateString() : ''}
                       </p>
                     </td>
                     <td className="py-4 px-6">
@@ -516,6 +562,38 @@ export default function AdminServicesPage() {
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
+                        {/* Activate/Deactivate actions */}
+                        {service.isActive ? (
+                          <button
+                            onClick={async () => {
+                              try {
+                                await toggleAdminServiceStatus(service.id).unwrap();
+                                refetchServices();
+                              } catch (error) {
+                                alert('Failed to deactivate service.');
+                              }
+                            }}
+                            className="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg transition-colors"
+                            title="Deactivate Service"
+                          >
+                            <XCircle className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <button
+                            onClick={async () => {
+                              try {
+                                await toggleAdminServiceStatus(service.id).unwrap();
+                                refetchServices();
+                              } catch (error) {
+                                alert('Failed to activate service.');
+                              }
+                            }}
+                            className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
+                            title="Activate Service"
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -529,7 +607,11 @@ export default function AdminServicesPage() {
             <div className="flex items-center justify-between px-6 py-4 border-t border-gray-200">
               <div className="flex items-center gap-2">
                 <p className="text-sm text-gray-700">
-                  Showing {startIndex + 1} to {Math.min(endIndex, filteredServices.length)} of {filteredServices.length} services
+                  {(() => {
+                    const startIndex = (currentPage - 1) * itemsPerPage;
+                    const endIndex = Math.min(startIndex + services.length, totalCount);
+                    return `Showing ${startIndex + 1} to ${endIndex} of ${totalCount} services`;
+                  })()}
                 </p>
               </div>
               <div className="flex items-center gap-2">

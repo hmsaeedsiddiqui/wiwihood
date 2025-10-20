@@ -11,7 +11,7 @@ import {
   Request,
   BadRequestException 
 } from '@nestjs/common';
-import { AdminServiceService } from './admin-service.service';
+import { AdminServiceService } from '../services/admin-service.service';
 import { 
   AdminServiceFiltersDto, 
   AdminApproveServiceDto, 
@@ -21,11 +21,32 @@ import {
 import { JwtAuthGuard } from '../../auth/guards/jwt-auth.guard';
 import { AdminGuard } from '../guards/admin.guard';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { ExecutionContext, UnauthorizedException, UseInterceptors, CallHandler, NestInterceptor } from '@nestjs/common';
+import { Observable } from 'rxjs';
+import { tap, catchError } from 'rxjs/operators';
+
+// Interceptor to log incoming headers and guard errors
+class LogHeadersInterceptor implements NestInterceptor {
+  intercept(context: ExecutionContext, next: CallHandler): Observable<any> {
+    const req = context.switchToHttp().getRequest<Request>();
+    console.log('--- Incoming Request Headers ---');
+    console.log(req.headers);
+    return next.handle().pipe(
+      catchError((err) => {
+        if (err instanceof UnauthorizedException) {
+          console.error('JwtAuthGuard UnauthorizedException:', err.message);
+        }
+        throw err;
+      })
+    );
+  }
+}
 
 @ApiTags('Admin Services')
 @ApiBearerAuth()
 @Controller('admin/services')
 @UseGuards(JwtAuthGuard, AdminGuard)
+@UseInterceptors(LogHeadersInterceptor)
 export class AdminServiceController {
   constructor(private readonly adminServiceService: AdminServiceService) {}
 
@@ -33,6 +54,7 @@ export class AdminServiceController {
   @ApiOperation({ summary: 'Get all services with admin filters and pagination' })
   @ApiResponse({ status: 200, description: 'Services retrieved successfully' })
   async getAllServices(@Query() filters: AdminServiceFiltersDto) {
+    console.log('[ADMIN API] GET /admin/services', filters);
     return this.adminServiceService.getAllServices(filters);
   }
 
@@ -40,6 +62,7 @@ export class AdminServiceController {
   @ApiOperation({ summary: 'Get service statistics for admin dashboard' })
   @ApiResponse({ status: 200, description: 'Statistics retrieved successfully' })
   async getServiceStatistics() {
+    console.log('[ADMIN API] GET /admin/services/stats');
     return this.adminServiceService.getServiceStatistics();
   }
 
@@ -48,6 +71,7 @@ export class AdminServiceController {
   @ApiResponse({ status: 200, description: 'Service retrieved successfully' })
   @ApiResponse({ status: 404, description: 'Service not found' })
   async getServiceById(@Param('id') serviceId: string) {
+    console.log('[ADMIN API] GET /admin/services/:id', serviceId);
     return this.adminServiceService.getServiceById(serviceId);
   }
 
@@ -61,7 +85,13 @@ export class AdminServiceController {
     @Request() req: any
   ) {
     const adminId = req.user.id;
-    return this.adminServiceService.approveService(serviceId, approvalData, adminId);
+    console.log('[ADMIN API] POST /admin/services/:id/approve', { serviceId, approvalData, adminId });
+    try {
+      return await this.adminServiceService.approveService(serviceId, approvalData, adminId);
+    } catch (err) {
+      console.error('[ADMIN API] ERROR in approveService:', err);
+      throw err;
+    }
   }
 
   @Put(':id/badge')
@@ -74,7 +104,13 @@ export class AdminServiceController {
     @Request() req: any
   ) {
     const adminId = req.user.id;
-    return this.adminServiceService.assignBadgeToService(serviceId, badgeData, adminId);
+    console.log('[ADMIN API] PUT /admin/services/:id/badge', { serviceId, badgeData, adminId });
+    try {
+      return await this.adminServiceService.assignBadgeToService(serviceId, badgeData, adminId);
+    } catch (err) {
+      console.error('[ADMIN API] ERROR in assignBadge:', err);
+      throw err;
+    }
   }
 
   @Put(':id/toggle-status')
@@ -87,7 +123,13 @@ export class AdminServiceController {
     @Request() req: any
   ) {
     const adminId = req.user.id;
-    return this.adminServiceService.toggleServiceStatus(serviceId, adminId);
+    console.log('[ADMIN API] PUT /admin/services/:id/toggle-status', { serviceId, adminId });
+    try {
+      return await this.adminServiceService.toggleServiceStatus(serviceId, adminId);
+    } catch (err) {
+      console.error('[ADMIN API] ERROR in toggleServiceStatus:', err);
+      throw err;
+    }
   }
 
   @Delete(':id')
@@ -99,7 +141,13 @@ export class AdminServiceController {
     @Request() req: any
   ) {
     const adminId = req.user.id;
-    return this.adminServiceService.deleteService(serviceId, adminId);
+    console.log('[ADMIN API] DELETE /admin/services/:id', { serviceId, adminId });
+    try {
+      return await this.adminServiceService.deleteService(serviceId, adminId);
+    } catch (err) {
+      console.error('[ADMIN API] ERROR in deleteService:', err);
+      throw err;
+    }
   }
 
   @Post('bulk-action')
@@ -111,12 +159,17 @@ export class AdminServiceController {
     @Request() req: any
   ) {
     const adminId = req.user.id;
-    
+    console.log('[ADMIN API] POST /admin/services/bulk-action', { bulkData, adminId });
     if (!bulkData.serviceIds || bulkData.serviceIds.length === 0) {
+      console.error('[ADMIN API] ERROR: No service IDs provided for bulk action');
       throw new BadRequestException('No service IDs provided for bulk action');
     }
-
-    return this.adminServiceService.bulkServiceAction(bulkData, adminId);
+    try {
+      return await this.adminServiceService.bulkServiceAction(bulkData, adminId);
+    } catch (err) {
+      console.error('[ADMIN API] ERROR in bulkServiceAction:', err);
+      throw err;
+    }
   }
 
   @Get('badges/available')

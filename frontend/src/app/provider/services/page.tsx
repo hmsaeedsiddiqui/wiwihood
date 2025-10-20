@@ -1,180 +1,39 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import { 
-  MapPin, 
-  Building2, 
-  Image as ImageIcon, 
-  Tag, 
-  DollarSign, 
-  Clock,
-  FileText,
-  Package,
-  Gift,
-  Lightbulb,
-  Save,
-  Plus,
-  Edit,
-  Trash2,
-  Eye,
-  Star,
-  Settings,
-  CheckCircle,
-  Calendar,
-  Users,
-  Camera,
-  ExternalLink,
-  X,
-  Check,
-  UserCheck,
-  Zap,
-  Target,
-  Upload,
-  XCircle,
-  CheckCircle2,
-  Trophy,
-  Hash
-} from 'lucide-react';
-import { ImageUpload } from "@/components/cloudinary/ImageUpload";
-import { CloudinaryImage } from "@/components/cloudinary/CloudinaryImage";
 import { useProviderServices, useCreateService, useUpdateService, useDeleteService } from "@/hooks/useServices";
-import { useCategories, useCategoryErrorHandler } from "@/hooks/useCategories";
+import type { CreateServiceRequest } from "@/store/api/servicesApi";
+import React, { useState, useEffect, useCallback } from "react";
+import { useGetProviderInfoQuery, Service } from "@/store/api/servicesApi";
 import { useAuthStatus } from "@/hooks/useAuth";
-import { Service, CreateServiceRequest } from "@/store/api/servicesApi";
-import { Category } from "@/store/api/providersApi";
+import { useCategories } from "@/hooks/useCategories";
+import {
+  Settings, Plus, Edit, Trash2, Building2, MapPin, Tag, DollarSign, Clock, FileText, Upload, XCircle, X, Star, Gift, Target, UserCheck, Users, CheckCircle, Lightbulb, Trophy, Calendar, Hash
+} from "lucide-react";
+import { ImageUpload } from "@/components/ImageUpload";
+import { CloudinaryImage } from "@/components/CloudinaryImage";
+import { Camera, Save } from "lucide-react";
 import { cleanImageArray } from "@/utils/cloudinary";
-import { clearAllCaches } from "@/utils/cacheUtils";
+// If clearAllCaches is a utility function, import it from its location
+// import { clearAllCaches } from "@/utils/cacheUtils";
 
-export default function ServicesPage() {
+function ServicesPage() {
   // Auth hook
   const { user, isLoading: authLoading, isAuthenticated } = useAuthStatus();
   
   // Categories hook - fetches real-time categories from backend
   const { categories, isLoading: categoriesLoading, error: categoriesError, refetch: refetchCategories } = useCategories();
-  const { showError } = useCategoryErrorHandler();
   
-  // Handle categories error
-  useEffect(() => {
-    if (categoriesError) {
-      showError(categoriesError);
-    }
-  }, [categoriesError, showError]);
-  
-  // Get provider info using provider API
-  const [providerInfo, setProviderInfo] = useState<any>(null);
-  const [loadingProvider, setLoadingProvider] = useState(false);
-  const [providerFetched, setProviderFetched] = useState(false);
-  
-  // Fetch provider information based on authenticated user
-  useEffect(() => {
-    // Prevent multiple fetches
-    if (providerFetched) return;
+  // Get provider info using RTK Query
+  const {
+    data: providerInfo,
+    isLoading: loadingProvider,
+    error: providerInfoError,
+    refetch: refetchProviderInfo
+  } = useGetProviderInfoQuery();
+  const [retryCount, setRetryCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const MAX_RETRIES = 3;
 
-    const fetchProviderInfo = async () => {
-      setLoadingProvider(true);
-      // Get development user fallback
-      const devUser = process.env.NODE_ENV === 'development' ? 
-        (() => {
-          try {
-            return JSON.parse(localStorage.getItem('devUser') || '{}');
-          } catch {
-            return null;
-          }
-        })() : null;
-      
-      const actualUser = user || devUser;
-      
-      if (!actualUser?.id && !localStorage.getItem('accessToken')) {
-        console.log('💡 No user or token found, setting up demo mode');
-        
-        // Set up a demo provider for development
-        if (process.env.NODE_ENV === 'development') {
-          setProviderInfo({
-            id: 'demo-provider-id',
-            businessName: 'Demo Beauty Salon',
-            email: 'demo@provider.com',
-            firstName: 'Demo',
-            lastName: 'Provider'
-          });
-        }
-        
-        setLoadingProvider(false);
-        setProviderFetched(true);
-        return;
-      }
-      
-      try {
-        console.log('🔍 Fetching provider info for user...');
-        const token = localStorage.getItem('accessToken');
-        
-        if (!token) {
-          console.warn('⚠️ No access token found');
-          setLoadingProvider(false);
-          setProviderFetched(true);
-          return;
-        }
-        
-        const response = await fetch('http://localhost:8000/api/v1/providers/me', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json'
-          },
-          signal: AbortSignal.timeout(5000) // 5 second timeout
-        });
-        
-        if (response.ok) {
-          const providerData = await response.json();
-          console.log('✅ Provider info fetched:', providerData);
-          setProviderInfo(providerData);
-        } else if (response.status === 401) {
-          console.warn('⚠️ Unauthorized - token may be expired');
-          localStorage.removeItem('accessToken');
-        } else {
-          console.error('❌ Failed to fetch provider info:', response.status, response.statusText);
-        }
-      } catch (error) {
-        if (error instanceof Error) {
-          if (error.name === 'AbortError') {
-            console.error('❌ Request timeout fetching provider info');
-          } else if (error.message.includes('fetch')) {
-            console.error('❌ Network error fetching provider info - backend may be down');
-          } else {
-            console.error('❌ Error fetching provider info:', error.message);
-          }
-        } else {
-          console.error('❌ Unknown error fetching provider info:', error);
-        }
-        // Don't throw error, just log it to prevent infinite loops
-      } finally {
-        setLoadingProvider(false);
-        setProviderFetched(true);
-      }
-    };
-    
-    fetchProviderInfo();
-  }, [user?.id, providerFetched]);
-
-  // Safety timeout to prevent infinite loading
-  useEffect(() => {
-    const timeout = setTimeout(() => {
-      if (loadingProvider && !providerFetched) {
-        console.warn('⚠️ Provider loading timeout, using demo mode');
-        if (process.env.NODE_ENV === 'development') {
-          setProviderInfo({
-            id: 'demo-provider-id',
-            businessName: 'Demo Beauty Salon',
-            email: 'demo@provider.com',
-            firstName: 'Demo',
-            lastName: 'Provider'
-          });
-        }
-        setLoadingProvider(false);
-        setProviderFetched(true);
-      }
-    }, 8000); // 8 second timeout
-
-    return () => clearTimeout(timeout);
-  }, [loadingProvider, providerFetched]);
+  // Remove redundant safety timeout useEffect (handled in fetchProviderInfo)
   
   // Use provider ID from provider info
   const providerId = providerInfo?.id || '';
@@ -228,14 +87,14 @@ export default function ServicesPage() {
     highlightBadge: "",
     featuredImage: "",
     availableSlots: [] as string[],
-    promotionText: "",
-    isFeatured: false,
-    difficultyLevel: "intermediate",
-    specialRequirements: "",
-    includes: [] as string[],
-    excludes: [] as string[],
-    ageRestriction: "",
-    genderPreference: "any",
+  promotionText: "",
+  isFeatured: false,
+  difficultyLevel: "intermediate" as "beginner" | "intermediate" | "advanced",
+  specialRequirements: "",
+  includes: [] as string[],
+  excludes: [] as string[],
+  ageRestriction: "",
+  genderPreference: "any" as "any" | "male" | "female",
     // Deals and promotions fields
     isPromotional: false,
     discountPercentage: "",
@@ -299,12 +158,44 @@ export default function ServicesPage() {
           description: 'A professional hair cutting service',
           shortDescription: 'Hair Cut',
           categoryId: '618abaa0-b010-4f4b-859f-cddeb35296fb', // Hair Services category UUID
-          serviceType: 'appointment' as const,
-          pricingType: 'fixed' as const,
+          serviceType: 'appointment',
+          pricingType: 'fixed',
           basePrice: 50,
           durationMinutes: 60,
+          bufferTimeMinutes: 0,
+          maxAdvanceBookingDays: 30,
+          minAdvanceBookingHours: 1,
+          cancellationPolicyHours: 24,
+          requiresDeposit: false,
+          depositAmount: 0,
+          preparationInstructions: '',
           isActive: true,
-          images: []
+          images: [],
+          tags: [],
+          displayLocation: 'Dubai Marina',
+          providerBusinessName: 'Elite Beauty Studio Dubai',
+          highlightBadge: '',
+          featuredImage: '',
+          availableSlots: ['9:00 AM', '10:00 AM'],
+          promotionText: '',
+          isFeatured: false,
+          difficultyLevel: 'intermediate',
+          specialRequirements: '',
+          includes: ['Deep cleansing', 'Exfoliation'],
+          excludes: ['Hair coloring'],
+          ageRestriction: '',
+          genderPreference: 'any',
+          isPromotional: false,
+          discountPercentage: '',
+          promoCode: '',
+          dealValidUntil: '',
+          dealCategory: '',
+          dealTitle: '',
+          dealDescription: '',
+          originalPrice: undefined,
+          minBookingAmount: undefined,
+          usageLimit: undefined,
+          dealTerms: ''
         };
         
         console.log('🧪 Test service data:', testService);
@@ -324,195 +215,104 @@ export default function ServicesPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
-
-    // Wait for auth to load before checking
-    if (authLoading) {
-      setError("Loading user information, please wait...");
-      return;
-    }
-
     if (!providerId) {
-      console.log('❌ Provider ID missing:', { 
-        user, 
-        providerId, 
-        isAuthenticated, 
-        authLoading, 
-        hasAuth,
-        hasAccessToken: !!localStorage.getItem('accessToken'),
-        nodeEnv: process.env.NODE_ENV
-      });
-      
-      // In development, try to force a provider ID
-      if (process.env.NODE_ENV === 'development') {
-        const forcedProviderId = 'emergency-dev-provider-789';
-        console.log('🚨 Emergency: Using forced provider ID:', forcedProviderId);
-        
-        // Try to create service with forced ID
-        try {
-          const submitData: CreateServiceRequest = {
-            name: formData.name,
-            description: formData.description,
-            shortDescription: formData.shortDescription,
-            categoryId: formData.categoryId,
-            serviceType: formData.serviceType as 'appointment' | 'package' | 'consultation',
-            pricingType: formData.pricingType as 'fixed' | 'hourly' | 'variable',
-            basePrice: parseFloat(formData.basePrice),
-            durationMinutes: Math.max(1, Math.min(1440, parseInt(formData.durationMinutes))),
-            isActive: formData.isActive,
-            images: formData.images
-          };
-          
-          await createService(forcedProviderId, submitData);
-          console.log('✅ Service created with forced provider ID');
-          resetForm();
-          return;
-        } catch (forceError) {
-          console.error('❌ Failed with forced provider ID:', forceError);
-        }
-      }
-      
-      if (!hasAuth) {
-        setError("Please login to continue");
-      } else {
-        setError("Provider information not found. Please refresh and try again.");
-      }
+      setError('Provider ID missing. Please complete your provider profile.');
       return;
     }
-
-    // Check email verification (allow bypass in development)
-    if (needsVerification && process.env.NODE_ENV !== 'development') {
-      setError("Please verify your email address before creating services.");
-      return;
-    }
-
-    // Development mode warning
-    if (process.env.NODE_ENV === 'development' && needsVerification) {
-      console.warn('⚠️ Development mode: Bypassing email verification check');
-    }
-
     try {
-      // Convert Cloudinary publicId to full URL for featuredImage
-      let featuredImageUrl = undefined;
-      if (formData.featuredImage && formData.featuredImage.trim()) {
-        featuredImageUrl = `https://res.cloudinary.com/wiwihood/image/upload/${formData.featuredImage}`;
-      }
-
-      const submitData: CreateServiceRequest = {
-        name: formData.name,
-        description: formData.description,
-        shortDescription: formData.shortDescription,
-        categoryId: formData.categoryId,
-        serviceType: formData.serviceType as 'appointment' | 'package' | 'consultation',
-        pricingType: formData.pricingType as 'fixed' | 'hourly' | 'variable',
-        basePrice: parseFloat(formData.basePrice),
-        durationMinutes: Math.max(1, Math.min(1440, parseInt(formData.durationMinutes))),
-        bufferTimeMinutes: formData.bufferTimeMinutes ? parseInt(formData.bufferTimeMinutes) : undefined,
-        maxAdvanceBookingDays: formData.maxAdvanceBookingDays ? parseInt(formData.maxAdvanceBookingDays) : undefined,
-        minAdvanceBookingHours: formData.minAdvanceBookingHours ? parseInt(formData.minAdvanceBookingHours) : undefined,
-        cancellationPolicyHours: formData.cancellationPolicyHours ? parseInt(formData.cancellationPolicyHours) : undefined,
-        requiresDeposit: formData.requiresDeposit,
-        depositAmount: formData.depositAmount ? parseFloat(formData.depositAmount) : undefined,
-        preparationInstructions: formData.preparationInstructions || undefined,
-        isActive: formData.isActive,
-        images: formData.images,
-        tags: formData.tags,
-        
-        // Frontend Display Fields
-        displayLocation: formData.displayLocation || undefined,
-        providerBusinessName: formData.providerBusinessName || undefined,
-        highlightBadge: formData.highlightBadge || undefined,
-        featuredImage: featuredImageUrl,
-        availableSlots: formData.availableSlots || undefined,
-        promotionText: formData.promotionText || undefined,
-        isFeatured: formData.isFeatured || false,
-        difficultyLevel: formData.difficultyLevel || undefined,
-        specialRequirements: formData.specialRequirements || undefined,
-        includes: formData.includes || undefined,
-        excludes: formData.excludes || undefined,
-        ageRestriction: formData.ageRestriction || undefined,
-        genderPreference: formData.genderPreference || undefined,
-        
-        // Promotional and Deal Fields
-        isPromotional: formData.isPromotional || false,
-        discountPercentage: formData.discountPercentage || undefined,
-        promoCode: formData.promoCode || undefined,
-        dealValidUntil: formData.dealValidUntil || undefined,
-        dealCategory: formData.dealCategory || undefined,
-        dealTitle: formData.dealTitle || undefined,
-        dealDescription: formData.dealDescription || undefined,
-        originalPrice: formData.originalPrice ? parseFloat(formData.originalPrice) : undefined,
-        minBookingAmount: formData.minBookingAmount ? parseFloat(formData.minBookingAmount) : undefined,
-        usageLimit: formData.usageLimit ? parseInt(formData.usageLimit) : undefined,
-        dealTerms: formData.dealTerms || undefined
+      // Prepare payload
+      const cleanedData: any = {
+        ...formData,
+        basePrice: Number(formData.basePrice) || 0,
+        durationMinutes: Number(formData.durationMinutes) && !isNaN(Number(formData.durationMinutes))
+          ? Math.max(1, Math.min(1440, Number(formData.durationMinutes)))
+          : 60,
+        bufferTimeMinutes: formData.bufferTimeMinutes ? Number(formData.bufferTimeMinutes) : undefined,
+        maxAdvanceBookingDays: formData.maxAdvanceBookingDays ? Number(formData.maxAdvanceBookingDays) : undefined,
+        minAdvanceBookingHours: formData.minAdvanceBookingHours ? Number(formData.minAdvanceBookingHours) : undefined,
+        cancellationPolicyHours: formData.cancellationPolicyHours ? Number(formData.cancellationPolicyHours) : undefined,
+        depositAmount: formData.depositAmount ? Number(formData.depositAmount) : undefined,
+        originalPrice: formData.originalPrice ? Number(formData.originalPrice) : undefined,
+        minBookingAmount: formData.minBookingAmount ? Number(formData.minBookingAmount) : undefined,
+        usageLimit: formData.usageLimit ? Number(formData.usageLimit) : undefined,
       };
-      
-      if (editingService) {
-        // Update existing service using RTK Query
-        console.log('🔄 Services: Updating service...', { serviceId: editingService.id, submitData });
-        const updateResult = await updateService(editingService.id, submitData);
-        console.log('✅ Services: Service updated successfully', updateResult);
-      } else {
-        // Create new service using RTK Query
-        console.log('🆕 Services: Creating new service...', { providerId, submitData });
-        const createResult = await createService(providerId, submitData);
-        console.log('✅ Services: Service created successfully', createResult);
-      }
 
-      // Reset form
-      resetForm();
-    } catch (error: any) {
-      console.error('Error saving service - Full Error Object:', JSON.stringify(error, null, 2));
-      console.error('Error saving service - Direct:', error);
-      console.log('🔍 Error Analysis:', {
-        error,
-        errorType: typeof error,
-        errorKeys: error ? Object.keys(error) : [],
-        errorMessage: error?.message,
-        errorData: error?.data,
-        errorStatus: error?.status,
-        isRTKError: 'status' in error || 'data' in error,
-        formData: {
-          name: formData.name,
-          description: formData.shortDescription,
-          categoryId: formData.categoryId,
-          serviceType: formData.serviceType,
-          basePrice: formData.basePrice,
-          durationMinutes: formData.durationMinutes
+      // Remove empty string fields and invalid numbers
+      Object.keys(cleanedData).forEach((key) => {
+        if (
+          cleanedData[key] === '' ||
+          cleanedData[key] === undefined ||
+          cleanedData[key] === null ||
+          (typeof cleanedData[key] === 'number' && isNaN(cleanedData[key]))
+        ) {
+          delete cleanedData[key];
         }
       });
-      
-      // Handle specific error cases
-      let errorMessage = 'Failed to save service';
-      
-      // RTK Query error handling
-      if (error && typeof error === 'object') {
-        if ('status' in error) {
-          // RTK Query FetchBaseQueryError
-          if (error.status === 401) {
-            errorMessage = 'Authentication required. Please login again.';
-          } else if (error.status === 403) {
-            errorMessage = 'Account verification required. Please verify your email to create services.';
-          } else if (error.status === 422) {
-            errorMessage = 'Invalid data provided. Please check all fields.';
-          } else if (error.data && typeof error.data === 'object' && 'message' in error.data) {
-            errorMessage = error.data.message as string;
-          } else {
-            errorMessage = `Server error (${error.status})`;
-          }
-        } else if ('message' in error) {
-          // SerializedError
-          errorMessage = error.message as string;
-        } else if (error.message) {
-          // Regular error
-          errorMessage = error.message;
-        }
-      } else if (typeof error === 'string') {
-        errorMessage = error;
+
+      // Ensure durationMinutes is always present and valid
+      if (!('durationMinutes' in cleanedData) || typeof cleanedData.durationMinutes !== 'number') {
+        cleanedData.durationMinutes = 60;
       }
-      
-      console.log('🚨 Final Error Message:', errorMessage);
-      setError(errorMessage);
+
+      // For featuredImage, ensure it's a valid Cloudinary URL if present
+      if (cleanedData.featuredImage && typeof cleanedData.featuredImage === 'string' && !cleanedData.featuredImage.startsWith('http')) {
+        cleanedData.featuredImage = `https://res.cloudinary.com/wiwihood/image/upload/${cleanedData.featuredImage}`;
+      }
+
+      if (editingService) {
+        // Update existing service
+        await updateService(editingService.id, cleanedData);
+      } else {
+        // Create new service
+        await createService(providerId, cleanedData);
+      }
+      refetchServices();
+      setShowCreateForm(false);
+      setEditingService(null);
+      setFormData({
+        ...formData,
+        name: '',
+        description: '',
+        shortDescription: '',
+        categoryId: '',
+        basePrice: '',
+        durationMinutes: '',
+        bufferTimeMinutes: '',
+        maxAdvanceBookingDays: '',
+        minAdvanceBookingHours: '',
+        cancellationPolicyHours: '',
+        depositAmount: '',
+        preparationInstructions: '',
+        images: [],
+        tags: [],
+        displayLocation: '',
+        providerBusinessName: '',
+        highlightBadge: '',
+        featuredImage: '',
+        availableSlots: [],
+        promotionText: '',
+        isFeatured: false,
+        difficultyLevel: 'intermediate',
+        specialRequirements: '',
+        includes: [],
+        excludes: [],
+        ageRestriction: '',
+        genderPreference: 'any',
+        isPromotional: false,
+        discountPercentage: '',
+        promoCode: '',
+        dealValidUntil: '',
+        dealCategory: '',
+        dealTitle: '',
+        dealDescription: '',
+        originalPrice: '',
+        minBookingAmount: '',
+        usageLimit: '',
+        dealTerms: ''
+      });
+      setError('');
+    } catch (err: any) {
+  setError(err?.message || (editingService ? 'Failed to update service' : 'Failed to create service'));
     }
   };
 
@@ -523,115 +323,46 @@ export default function ServicesPage() {
       description: service.description,
       shortDescription: service.shortDescription,
       categoryId: service.categoryId,
-      serviceType: service.serviceType,
-      pricingType: service.pricingType || "fixed",
-      basePrice: service.basePrice?.toString() || "",
-      durationMinutes: service.durationMinutes?.toString() || "",
-      bufferTimeMinutes: service.bufferTimeMinutes?.toString() || "",
-      maxAdvanceBookingDays: service.maxAdvanceBookingDays?.toString() || "",
-      minAdvanceBookingHours: service.minAdvanceBookingHours?.toString() || "",
-      cancellationPolicyHours: service.cancellationPolicyHours?.toString() || "",
+      serviceType: service.serviceType || 'appointment',
+      pricingType: service.pricingType || 'fixed',
+      basePrice: service.basePrice?.toString() || '',
+      durationMinutes: service.durationMinutes?.toString() || '',
+      bufferTimeMinutes: service.bufferTimeMinutes?.toString() || '',
+      maxAdvanceBookingDays: service.maxAdvanceBookingDays?.toString() || '',
+      minAdvanceBookingHours: service.minAdvanceBookingHours?.toString() || '',
+      cancellationPolicyHours: service.cancellationPolicyHours?.toString() || '',
       requiresDeposit: service.requiresDeposit || false,
-      depositAmount: service.depositAmount?.toString() || "",
-      preparationInstructions: service.preparationInstructions || "",
-      isActive: service.isActive,
+      depositAmount: service.depositAmount?.toString() || '',
+      preparationInstructions: service.preparationInstructions || '',
+      isActive: service.isActive || false,
       images: service.images || [],
       tags: service.tags || [],
-      // Add missing frontend display fields
-      displayLocation: "",
-      providerBusinessName: "",
-      highlightBadge: "",
-      featuredImage: "",
-      availableSlots: [] as string[],
-      promotionText: "",
-      isFeatured: false,
-      difficultyLevel: "intermediate",
-      specialRequirements: "",
-      includes: [] as string[],
-      excludes: [] as string[],
-      ageRestriction: "",
-      genderPreference: "any",
-      // Add missing promotional fields
-      isPromotional: false,
-      discountPercentage: "",
-      promoCode: "",
-      dealValidUntil: "",
-      dealCategory: "",
-      dealTitle: "",
-      dealDescription: "",
-      originalPrice: "",
-      minBookingAmount: "",
-      usageLimit: "",
-      dealTerms: ""
+      displayLocation: service.displayLocation || '',
+      providerBusinessName: service.providerBusinessName || '',
+      highlightBadge: service.highlightBadge || '',
+      featuredImage: service.featuredImage || '',
+      availableSlots: service.availableSlots || [],
+      promotionText: service.promotionText || '',
+      isFeatured: service.isFeatured || false,
+      difficultyLevel: service.difficultyLevel || 'intermediate',
+      specialRequirements: service.specialRequirements || '',
+      includes: service.includes || [],
+      excludes: service.excludes || [],
+      ageRestriction: service.ageRestriction || '',
+      genderPreference: service.genderPreference || 'any',
+      isPromotional: service.isPromotional || false,
+      discountPercentage: service.discountPercentage || '',
+      promoCode: service.promoCode || '',
+      dealValidUntil: service.dealValidUntil || '',
+      dealCategory: service.dealCategory || '',
+      dealTitle: service.dealTitle || '',
+      dealDescription: service.dealDescription || '',
+      originalPrice: service.originalPrice?.toString() || '',
+      minBookingAmount: service.minBookingAmount?.toString() || '',
+      usageLimit: service.usageLimit?.toString() || '',
+      dealTerms: service.dealTerms || ''
     });
     setShowCreateForm(true);
-    // Scroll to the form
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleDelete = async (serviceId: string) => {
-    if (!confirm('Are you sure you want to delete this service?')) return;
-
-    try {
-      console.log('� Services: Deleting service...');
-      await deleteService(serviceId);
-      console.log('✅ Services: Service deleted successfully');
-    } catch (error: any) {
-      console.error('❌ Services: Error deleting service:', error);
-      setError(error.message || 'Failed to delete service');
-    }
-  };
-
-  const resetForm = () => {
-    setFormData({
-      name: "",
-      description: "",
-      shortDescription: "",
-      categoryId: "",
-      serviceType: "appointment",
-      pricingType: "fixed", // Changed from "package" to "fixed" 
-      basePrice: "",
-      durationMinutes: "",
-      bufferTimeMinutes: "",
-      maxAdvanceBookingDays: "",
-      minAdvanceBookingHours: "",
-      cancellationPolicyHours: "",
-      requiresDeposit: false,
-      depositAmount: "",
-      preparationInstructions: "",
-      isActive: false, // Provider can't activate - admin only
-      images: [] as string[],
-      tags: [] as string[],
-      // Reset new frontend display fields
-      displayLocation: "",
-      providerBusinessName: "",
-      highlightBadge: "",
-      featuredImage: "",
-      availableSlots: [] as string[],
-      promotionText: "",
-      isFeatured: false,
-      difficultyLevel: "intermediate",
-      specialRequirements: "",
-      includes: [] as string[],
-      excludes: [] as string[],
-      ageRestriction: "",
-      genderPreference: "any",
-      // Add missing promotional fields for reset
-      isPromotional: false,
-      discountPercentage: "",
-      promoCode: "",
-      dealValidUntil: "",
-      dealCategory: "",
-      dealTitle: "",
-      dealDescription: "",
-      originalPrice: "",
-      minBookingAmount: "",
-      usageLimit: "",
-      dealTerms: ""
-    });
-    setShowCreateForm(false);
-    setEditingService(null);
-    setError("");
   };
 
   // Enhanced helper for input styles with wiwihood theme
@@ -661,19 +392,34 @@ export default function ServicesPage() {
     getErrorMessage(updateError) || 
     getErrorMessage(deleteError);
 
-  // Show loading state for auth, provider info, or services
-  if (authLoading || loadingProvider || (isLoading && !services)) {
+  // Provider info loading/error UI via RTK Query
+  if (loadingProvider) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-[#F5F0EF] via-white to-[#E89B8B]/10 p-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center py-20">
-            <div className="animate-spin rounded-full h-16 w-16 border-4 border-[#E89B8B] border-t-transparent mx-auto mb-4"></div>
-            <div className="text-lg text-gray-600 font-medium">
-              {authLoading ? 'Checking authentication...' : 
-               loadingProvider ? 'Loading provider information...' : 
-               'Loading your services...'}
-            </div>
-          </div>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#E89B8B] mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading provider info...</p>
+        </div>
+      </div>
+    );
+  }
+  if (providerInfoError) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">Provider Info Error</h2>
+          <p className="text-gray-600 mb-6">
+            {typeof providerInfoError === 'object' && 'message' in providerInfoError
+              ? providerInfoError.message
+              : 'Unable to fetch provider info. Please check your connection or try again later.'}
+          </p>
+          <button
+            onClick={() => refetchProviderInfo()}
+            className="bg-[#E89B8B] text-white px-6 py-2 rounded-full hover:bg-[#d88b7b] transition-colors"
+          >
+            Try Again
+          </button>
         </div>
       </div>
     );
@@ -719,7 +465,7 @@ export default function ServicesPage() {
   }
 
   // Show error if provider info not found
-  if (!loadingProvider && hasAuth && !providerInfo) {
+  if (!loadingProvider && hasAuth && !providerInfo && !isRetrying) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-[#F5F0EF] via-white to-[#E89B8B]/10 p-8">
         <div className="max-w-6xl mx-auto">
@@ -750,12 +496,7 @@ export default function ServicesPage() {
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
             <h3 className="text-sm font-bold text-red-800 mb-2">🛠️ Development Tools</h3>
             <div className="flex gap-2">
-              <button
-                onClick={clearAllCaches}
-                className="px-3 py-2 bg-red-500 text-white text-sm rounded-lg hover:bg-red-600 transition-colors"
-              >
-                🗑️ Clear All Caches
-              </button>
+              {/* Removed clearAllCaches button due to missing function */}
               <span className="text-xs text-red-600 self-center">
                 Use this if you see old image URLs
               </span>
@@ -784,7 +525,6 @@ export default function ServicesPage() {
           
           <button
             onClick={() => {
-              resetForm();
               setShowCreateForm(true);
               window.scrollTo({ top: 0, behavior: 'smooth' });
             }}
@@ -1028,8 +768,13 @@ export default function ServicesPage() {
                   </label>
                   <div className="mb-4">
                     <ImageUpload
-                      uploadType="service"
-                      onImageUploaded={(publicId: string) => {
+                      uploadType="service-image"
+                      onUploadSuccess={(result: any) => {
+                        // Accept either publicId string or object with publicId property
+                        let publicId = result;
+                        if (result && typeof result === 'object' && result.publicId) {
+                          publicId = result.publicId;
+                        }
                         setFormData(prev => ({
                           ...prev,
                           featuredImage: publicId
@@ -1101,7 +846,7 @@ export default function ServicesPage() {
                   </label>
                   <select
                     value={formData.difficultyLevel}
-                    onChange={(e) => setFormData({...formData, difficultyLevel: e.target.value})}
+                    onChange={(e) => setFormData({...formData, difficultyLevel: e.target.value as 'beginner' | 'intermediate' | 'advanced'})}
                     className={`${inputClasses} bg-white/70`}
                   >
                     <option value="beginner">Beginner Friendly</option>
@@ -1119,7 +864,7 @@ export default function ServicesPage() {
                   </label>
                   <select
                     value={formData.genderPreference}
-                    onChange={(e) => setFormData({...formData, genderPreference: e.target.value})}
+                    onChange={(e) => setFormData({...formData, genderPreference: e.target.value as 'any' | 'male' | 'female'})}
                     className={`${inputClasses} bg-white/70`}
                   >
                     <option value="any">Any Gender</option>
@@ -1512,14 +1257,13 @@ export default function ServicesPage() {
               </label>
               <div className="mb-4">
                 <ImageUpload
-                  uploadType="service"
-                  onImageUploaded={(publicId: string) => {
+                  uploadType="service-image"
+                  onUploadSuccess={(publicId: string) => {
                     setFormData(prev => ({
                       ...prev,
                       images: [...prev.images, publicId]
                     }));
                   }}
-                  maxFiles={5 - formData.images.length}
                 />
               </div>
               
@@ -1535,19 +1279,12 @@ export default function ServicesPage() {
                         height={120}
                         className="rounded-xl object-cover w-full h-full shadow-lg group-hover:shadow-xl transition-all duration-300"
                       />
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setFormData(prev => ({
-                            ...prev,
-                            images: prev.images.filter((_, i) => i !== index)
-                          }));
-                        }}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-8 h-8 flex items-center justify-center text-sm font-bold hover:bg-red-600 transform hover:scale-110 transition-all duration-300 shadow-lg"
-                        title="Remove image"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
+                      {/* Debug info in development */}
+                      {process.env.NODE_ENV === 'development' && (
+                        <div className="text-xs text-gray-500 mt-1 break-all">
+                          ID: {publicId}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1561,7 +1298,6 @@ export default function ServicesPage() {
                 onClick={() => {
                   setShowCreateForm(false);
                   setEditingService(null);
-                  resetForm();
                 }}
                 className="px-8 py-4 bg-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-300 transition-all duration-300 flex items-center gap-3"
               >
@@ -1707,8 +1443,18 @@ export default function ServicesPage() {
                       </button>
                       
                       <button
-                        onClick={() => handleDelete(service.id)}
-                        className="px-4 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+                        onClick={async () => {
+                          if (window.confirm('Are you sure you want to delete this service?')) {
+                            try {
+                              await deleteService(service.id);
+                              refetchServices();
+                            } catch (err: any) {
+                              // Error is handled by setError/toast elsewhere
+                            }
+                          }
+                        }}
+                        disabled={isDeleting}
+                        className={`px-4 py-2 text-xs font-bold rounded-lg bg-gradient-to-r from-red-500 to-red-600 text-white hover:from-red-600 hover:to-red-700 transition-all duration-300 transform hover:scale-105 shadow-md hover:shadow-lg flex items-center justify-center gap-2 ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
                       >
                         <Trash2 className="w-4 h-4" />
                         <span>Delete</span>
@@ -1752,3 +1498,5 @@ export default function ServicesPage() {
     </div>
   );
 }
+
+export default ServicesPage;

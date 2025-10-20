@@ -32,7 +32,7 @@ export const CloudinaryImage: React.FC<CloudinaryImageProps> = ({
   // Determine the image URL
   let imageUrl = '';
   
-  if (src) {
+  if (typeof src === 'string' && src) {
     // Check if src is a full URL or a public ID
     if (src.startsWith('http')) {
       // Use provided src directly (for external URLs or full Cloudinary URLs)
@@ -42,7 +42,6 @@ export const CloudinaryImage: React.FC<CloudinaryImageProps> = ({
       const transformConfig = typeof transformation === 'string' 
         ? imageTransformations[transformation] 
         : transformation;
-      
       imageUrl = buildCloudinaryUrl(src, transformConfig);
     }
   } else if (publicId) {
@@ -62,7 +61,16 @@ export const CloudinaryImage: React.FC<CloudinaryImageProps> = ({
   };
 
   const handleImageError = () => {
-    console.error('Failed to load Cloudinary image:', { publicId, src, imageUrl });
+    if (!imageUrl) {
+      console.warn('CloudinaryImage: imageUrl is empty. Falling back to default image.', { publicId, src });
+    }
+    console.error('Failed to load Cloudinary image:', {
+      publicId,
+      src,
+      imageUrl,
+      typeofSrc: typeof src,
+      typeofImageUrl: typeof imageUrl
+    });
     setImageError(true);
     setImageLoading(false);
   };

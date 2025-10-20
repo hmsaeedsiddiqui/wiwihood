@@ -1,9 +1,10 @@
 {
-  "name": "reservista-backend",
+  "name": "vivihood-backend",
   "version": "1.0.0",
-  "description": "Reservista - Full-stack beauty & wellness marketplace backend. Complete NestJS API with Stripe payments, Google Maps, SMS notifications, i18n support, and PWA capabilities. Similar to Fresha.com platform.",
-  "author": "Reservista Team",
+  "description": "Vivihood - Full-stack beauty & wellness marketplace backend. Complete NestJS API with Stripe payments, Google Maps, SMS notifications, i18n support, and PWA capabilities. Similar to Fresha.com platform.",
+  "author": "Vivihood Team",
   "private": true,
+
   "license": "MIT",
   "scripts": {
     "build": "nest build",
