@@ -209,17 +209,20 @@ export default function AdminServicesPage() {
 
     const deriveBaseStatus = (s: any): 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' => {
       const fromApi = normalizeStatus((s?.approvalStatus as string) || '');
+      const cached = cache[(s as any).id as string];
+      // Non-regression: if API says PENDING but we have a durable APPROVED/REJECTED, trust the durable snapshot
+      if (fromApi === 'PENDING_APPROVAL' && cached && (cached.status === 'APPROVED' || cached.status === 'REJECTED')) {
+        return cached.status;
+      }
       if (fromApi) return fromApi as any;
       // Fallback: if API doesn't send approvalStatus but has isApproved boolean
       if (s?.isApproved === true) return 'APPROVED';
       if (s?.isApproved === false) {
         // If API explicitly says not approved, we still avoid assuming REJECTED; however, use cached status if present
-        const cached = cache[(s as any).id as string];
         if (cached && cached.status) return cached.status;
         return 'PENDING_APPROVAL';
       }
       // If completely ambiguous, prefer cached status when available
-      const cached = cache[(s as any).id as string];
       if (cached && cached.status) return cached.status;
       return 'PENDING_APPROVAL';
     };

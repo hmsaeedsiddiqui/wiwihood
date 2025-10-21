@@ -1,13 +1,23 @@
 "use client"
 
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGetServicesQuery, useGetPopularServicesQuery } from '@/store/api/servicesApi'
 
 function HotProduct() {
   const router = useRouter();
   // Fetch all active services for badge-driven selections
-  const { data: activeServices = [], isLoading: loadingActive, isError: errorActive } = useGetServicesQuery({ isActive: true })
+  const [providerId, setProviderId] = useState<string | undefined>(undefined)
+  useEffect(() => {
+    try {
+      const providerStr = typeof window !== 'undefined' ? localStorage.getItem('provider') : null
+      const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null
+      const p = providerStr ? JSON.parse(providerStr) : (userStr ? JSON.parse(userStr) : null)
+      const pid = p?.id || p?.providerId || p?._id
+      if (pid) setProviderId(pid)
+    } catch {}
+  }, [])
+  const { data: activeServices = [], isLoading: loadingActive, isError: errorActive } = useGetServicesQuery({ isActive: true, ...(providerId ? { providerId } : {}) })
   // Also fetch backend popular to use as a fallback when badge-based lists are sparse
   const { data: popularFallback = [], isLoading: loadingPopular, isError: errorPopular } = useGetPopularServicesQuery({ limit: 12 })
 
@@ -51,7 +61,7 @@ function HotProduct() {
     const S = (activeServices as any[])
     const badgeSet = ['popular', 'premium', 'top rated', 'top-rated', 'top rated']
     const withBadges = S.filter(s => badgeSet.includes((s?.adminAssignedBadge || '').toString().toLowerCase()))
-    const base = withBadges.length > 0 ? withBadges.slice(0, 3) : (popularFallback as any[]).slice(0, 3)
+  const base = withBadges.length > 0 ? withBadges.slice(0, 4) : (popularFallback as any[]).slice(0, 4)
     if (!base || base.length === 0) return fallbackServices
     return base.map((s: any, idx: number) => ({
       id: s.id || idx,
@@ -72,8 +82,8 @@ function HotProduct() {
       const b = (s?.adminAssignedBadge || '').toString().toLowerCase()
       return b.includes('new on wiwihood') || b.includes('new on vividhood') || b.includes('new on')
     })
-    const base = withBadges.slice(0, 3)
-    if (!base || base.length === 0) return fallbackServices
+  const base = withBadges.slice(0, 4)
+  if (!base || base.length === 0) return fallbackServices.slice(0, 4)
     return base.map((s: any, idx: number) => ({
       id: s.id || idx,
       title: s.provider?.businessName || 'Featured Provider',
@@ -183,7 +193,7 @@ function HotProduct() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {popularThisWeek.map((service) => (
+            {popularThisWeek.slice(0, 4).map((service) => (
               <ServiceCard key={`popular-${service.id}`} service={service} />
             ))}
           </div>
@@ -202,7 +212,7 @@ function HotProduct() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {newOnVividhood.map((service) => (
+            {newOnVividhood.slice(0, 4).map((service) => (
               <ServiceCard key={`new-${service.id}`} service={service} />
             ))}
           </div>

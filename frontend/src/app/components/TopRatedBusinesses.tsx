@@ -1,14 +1,25 @@
 "use client"
 
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGetServicesQuery } from '@/store/api/servicesApi'
 
 const TopRatedBusinesses = () => {
   const router = useRouter()
 
+  // Optionally scope to current provider if logged in as provider
+  const [providerId, setProviderId] = useState<string | undefined>(undefined)
+  useEffect(() => {
+    try {
+      const providerStr = typeof window !== 'undefined' ? localStorage.getItem('provider') : null
+      const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null
+      const p = providerStr ? JSON.parse(providerStr) : (userStr ? JSON.parse(userStr) : null)
+      const pid = p?.id || p?.providerId || p?._id
+      if (pid) setProviderId(pid)
+    } catch {}
+  }, [])
   // Backend ServiceFilterDto doesn't accept limit/page in public GET; slice client-side instead
-  const { data: services = [], isLoading, isError } = useGetServicesQuery({ isActive: true })
+  const { data: services = [], isLoading, isError } = useGetServicesQuery({ isActive: true, ...(providerId ? { providerId } : {}) })
 
   // Derive top-rated unique providers from services
   const items = useMemo(() => {
@@ -35,7 +46,7 @@ const TopRatedBusinesses = () => {
         })
       }
     }
-    return Array.from(byProvider.values()).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 6)
+    return Array.from(byProvider.values()).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 4)
   }, [services])
 
   const BusinessCard = ({ business }: { business: any }) => (
@@ -105,7 +116,7 @@ const TopRatedBusinesses = () => {
         ) : isError ? (
           <div className="text-center text-gray-500">Failed to load top-rated items.</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {items.map((business: any) => (
               <BusinessCard key={business.id} business={business} />
             ))}

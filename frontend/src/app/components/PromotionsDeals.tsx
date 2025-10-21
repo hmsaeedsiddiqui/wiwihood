@@ -1,13 +1,23 @@
 "use client"
 
-import React, { useMemo } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGetServicesQuery, useGetPopularServicesQuery } from '@/store/api/servicesApi'
 
 const PromotionsDeals = () => {
   const router = useRouter();
+  const [providerId, setProviderId] = useState<string | undefined>(undefined)
+  useEffect(() => {
+    try {
+      const providerStr = typeof window !== 'undefined' ? localStorage.getItem('provider') : null
+      const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null
+      const p = providerStr ? JSON.parse(providerStr) : (userStr ? JSON.parse(userStr) : null)
+      const pid = p?.id || p?.providerId || p?._id
+      if (pid) setProviderId(pid)
+    } catch {}
+  }, [])
   // Avoid unsupported params; limit client-side
-  const { data: services = [], isLoading, isError } = useGetServicesQuery({ isActive: true })
+  const { data: services = [], isLoading, isError } = useGetServicesQuery({ isActive: true, ...(providerId ? { providerId } : {}) })
   // Always fetch popular to have a graceful fallback when no badge/promo items exist
   const { data: popularFallback = [], isLoading: isLoadingFallback, isError: isErrorFallback } = useGetPopularServicesQuery({ limit: 12 })
 
@@ -38,7 +48,7 @@ const PromotionsDeals = () => {
     // 1) Prefer admin badges indicating deals (even if promo fields are not set)
     const badgeFirst = S.filter(hasDealBadge)
     if (badgeFirst.length > 0) {
-      return badgeFirst.slice(0, 6).map(s => ({
+  return badgeFirst.slice(0, 4).map(s => ({
         id: s.id,
         title: s.dealTitle || s.name,
         service: s.dealDescription || s.shortDescription || s.description || 'Special promotion',
@@ -54,7 +64,7 @@ const PromotionsDeals = () => {
     // 2) Otherwise, use items with promo fields
     const promoList = S.filter(s => !!s?.isPromotional || !!s?.discountPercentage || !!s?.promoCode)
     if (promoList.length > 0) {
-      return promoList.slice(0, 6).map(s => ({
+  return promoList.slice(0, 4).map(s => ({
         id: s.id,
         title: s.dealTitle || s.name,
         service: s.dealDescription || s.shortDescription || s.description || 'Special promotion',
@@ -72,7 +82,7 @@ const PromotionsDeals = () => {
     }
 
     // 3) Final fallback to backend popular
-    return P.slice(0, 6).map(s => ({
+  return P.slice(0, 4).map(s => ({
       id: s.id,
       title: s.name,
       service: s.shortDescription || s.description || 'Featured service',
@@ -144,14 +154,14 @@ const PromotionsDeals = () => {
         </div>
         {isLoading || isLoadingFallback ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
+            {Array.from({ length: 4 }).map((_, i) => (
               <div key={i} className="bg-gray-100 rounded-2xl h-72 animate-pulse" />
             ))}
           </div>
         ) : (isError && isErrorFallback && deals.length === 0) ? (
           <div className="text-center text-gray-500">No promotions available right now.</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {deals.map((deal) => (
               <DealCard key={deal.id} deal={deal} />
             ))}
