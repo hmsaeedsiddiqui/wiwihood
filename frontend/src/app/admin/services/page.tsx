@@ -864,13 +864,16 @@ export default function AdminServicesPage() {
                 {!servicesLoading && !servicesError && services.map((service) => {
                   const normalizeStatus = (raw: string) => (raw || '').toString().replace('-', '_').toUpperCase();
                   const apiStatus = normalizeStatus(service.approvalStatus || '');
+                  const cachedLocal = loadStateCache()[(service as any).id as string] || null;
                   const baseStatus: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' = apiStatus
                     ? (apiStatus as any)
-                    : (service.isApproved === true ? 'APPROVED' : 'PENDING_APPROVAL');
+                    : (service.isApproved === true ? 'APPROVED' : (cachedLocal?.status || 'PENDING_APPROVAL'));
                   const effectiveStatus = statusOverrides.get(service.id) || baseStatus;
                   const isApprovedNow = (effectiveStatus === 'APPROVED');
                   // If not approved, force inactive display
-                  const baseActive = activeOverrides.has(service.id) ? (activeOverrides.get(service.id) as boolean) : service.isActive;
+                  const baseActive = activeOverrides.has(service.id)
+                    ? (activeOverrides.get(service.id) as boolean)
+                    : (typeof service.isActive === 'boolean' ? service.isActive : (cachedLocal?.isActive ?? false));
                   const effectiveActive = isApprovedNow ? baseActive : false;
                   return (
                   <tr key={service.id} className="hover:bg-gray-50 transition-colors">
@@ -1011,6 +1014,9 @@ export default function AdminServicesPage() {
                               setTogglingIds(prev => { const s = new Set(prev); s.add(service.id); return s; });
                               try {
                                 const res = await toggleAdminServiceStatus(service.id).unwrap();
+                                // Persist durable active state after success
+                                const newIsActive = !!(res?.service?.isActive);
+                                upsertStateCache(service.id, { isActive: newIsActive });
                                 await refetchServices();
                                 refetchStats();
                                 toast.success(res?.service?.isActive ? 'Service activated' : 'Service deactivated');
