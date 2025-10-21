@@ -152,13 +152,31 @@ export default function AdminServicesPage() {
     const list = services;
 
     const toUpper = (v: any) => (v ?? '').toString().toUpperCase();
+    const normalizeStatus = (raw: string) => {
+      const s = (raw || '').toString().replace('-', '_').toUpperCase();
+      if (s === 'APPROVED' || s === 'REJECTED' || s === 'PENDING_APPROVAL') return s;
+      return '';
+    };
+
+    const deriveBaseStatus = (s: any): 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' => {
+      const fromApi = normalizeStatus((s?.approvalStatus as string) || '');
+      if (fromApi) return fromApi as any;
+      // Fallback: if API doesn't send approvalStatus but has isApproved boolean
+      if (s?.isApproved === true) return 'APPROVED';
+      if (s?.isApproved === false) return 'PENDING_APPROVAL'; // avoid assuming REJECTED without explicit status
+      return 'PENDING_APPROVAL';
+    };
+
+    const getEffectiveStatus = (s: any): 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' => {
+      if (statusOverrides.has(s.id)) return statusOverrides.get(s.id)!;
+      return deriveBaseStatus(s);
+    };
+
     const countsFromList = (applyOverrides: boolean) => {
       let pending = 0, approved = 0, rejected = 0, active = 0, inactive = 0;
       for (const s of list) {
-        const rawStatus = toUpper((s as any).approvalStatus);
-        const effStatus = applyOverrides && statusOverrides.has((s as any).id)
-          ? (statusOverrides.get((s as any).id) as string)
-          : rawStatus;
+        const baseStatus = deriveBaseStatus(s as any);
+        const effStatus = applyOverrides ? getEffectiveStatus(s as any) : baseStatus;
         const isApproved = effStatus === 'APPROVED';
         const rawActive = !!(s as any).isActive;
         const effActive = applyOverrides && activeOverrides.has((s as any).id)
@@ -290,10 +308,12 @@ export default function AdminServicesPage() {
       refetchStats();
       // Clear overrides if backend reflects the change
       try {
-        const expectedBackend = approved ? 'approved' : 'rejected';
+        const expectedBackend = approved ? 'APPROVED' : 'REJECTED';
         const list = (refreshed as any)?.data?.services || servicesData?.services || [];
         const updated = list.find((s: any) => s.id === service.id);
-        if (updated && updated.approvalStatus === expectedBackend) {
+        const norm = (v: string) => (v || '').toString().replace('-', '_').toUpperCase();
+        const updatedStatus = norm(updated?.approvalStatus || (updated?.isApproved === true ? 'APPROVED' : 'PENDING_APPROVAL'));
+        if (updated && updatedStatus === expectedBackend) {
           setStatusOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
           setActiveOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
         } else {
@@ -302,7 +322,8 @@ export default function AdminServicesPage() {
             const retry = await refetchServices();
             const list2 = (retry as any)?.data?.services || servicesData?.services || [];
             const updated2 = list2.find((s: any) => s.id === service.id);
-            if (updated2 && updated2.approvalStatus === expectedBackend) {
+            const updated2Status = norm(updated2?.approvalStatus || (updated2?.isApproved === true ? 'APPROVED' : 'PENDING_APPROVAL'));
+            if (updated2 && updated2Status === expectedBackend) {
               setStatusOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
               setActiveOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
             }
@@ -471,10 +492,12 @@ export default function AdminServicesPage() {
       refetchStats();
       // Only clear overrides if backend reflects the requested status
       try {
-        const expectedBackend = nextStatus === 'APPROVED' ? 'approved' : nextStatus === 'REJECTED' ? 'rejected' : 'pending_approval';
+        const expectedBackend = (nextStatus || '').toString().replace('-', '_').toUpperCase();
         const list = (refreshed as any)?.data?.services || servicesData?.services || [];
         const updated = list.find((s: any) => s.id === service.id);
-        if (updated && updated.approvalStatus === expectedBackend) {
+        const norm = (v: string) => (v || '').toString().replace('-', '_').toUpperCase();
+        const updatedStatus = norm(updated?.approvalStatus || (updated?.isApproved === true ? 'APPROVED' : 'PENDING_APPROVAL'));
+        if (updated && updatedStatus === expectedBackend) {
           setStatusOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
           setActiveOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
         } else {
@@ -489,7 +512,8 @@ export default function AdminServicesPage() {
             const retry = await refetchServices();
             const list2 = (retry as any)?.data?.services || servicesData?.services || [];
             const updated2 = list2.find((s: any) => s.id === service.id);
-            if (updated2 && updated2.approvalStatus === expectedBackend) {
+            const updated2Status = norm(updated2?.approvalStatus || (updated2?.isApproved === true ? 'APPROVED' : 'PENDING_APPROVAL'));
+            if (updated2 && updated2Status === expectedBackend) {
               setStatusOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
               setActiveOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
             }
@@ -758,10 +782,12 @@ export default function AdminServicesPage() {
                   </tr>
                 )}
                 {!servicesLoading && !servicesError && services.map((service) => {
-                  const approvalUpper = (service.approvalStatus || '').toString().toUpperCase();
-                  const overridden = statusOverrides.get(service.id);
-                  const effectiveStatus = overridden || approvalUpper;
-                  // Determine approved strictly from current effective status (no mixing with old server flags)
+                  const normalizeStatus = (raw: string) => (raw || '').toString().replace('-', '_').toUpperCase();
+                  const apiStatus = normalizeStatus(service.approvalStatus || '');
+                  const baseStatus: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' = apiStatus
+                    ? (apiStatus as any)
+                    : (service.isApproved === true ? 'APPROVED' : 'PENDING_APPROVAL');
+                  const effectiveStatus = statusOverrides.get(service.id) || baseStatus;
                   const isApprovedNow = (effectiveStatus === 'APPROVED');
                   // If not approved, force inactive display
                   const baseActive = activeOverrides.has(service.id) ? (activeOverrides.get(service.id) as boolean) : service.isActive;
@@ -866,15 +892,15 @@ export default function AdminServicesPage() {
                       <div className="flex items-center justify-end gap-3">
                         {/* Status select: Pending / Rejected / Approved */}
                         <select
-                          value={statusOverrides.get(service.id) || approvalUpper || 'PENDING_APPROVAL'}
+                          value={effectiveStatus}
                           onChange={(e) => handleChangeServiceStatus(service, e.target.value as any)}
                           disabled={statusChangingIds.has(service.id)}
                           className={`px-2 py-1 border rounded-md text-xs ${statusChangingIds.has(service.id) ? 'opacity-60 cursor-not-allowed' : ''}`}
                           title="Change approval status"
                         >
-                          <option value="PENDING_APPROVAL" disabled={['REJECTED','APPROVED'].includes((statusOverrides.get(service.id) || approvalUpper))} title={['REJECTED','APPROVED'].includes((statusOverrides.get(service.id) || approvalUpper)) ? 'Disabled in current status' : undefined}>Pending</option>
-                          <option value="REJECTED" disabled={['REJECTED','APPROVED'].includes((statusOverrides.get(service.id) || approvalUpper))} title={['REJECTED','APPROVED'].includes((statusOverrides.get(service.id) || approvalUpper)) ? 'Disabled in current status' : undefined}>Rejected</option>
-                          <option value="APPROVED" disabled={(statusOverrides.get(service.id) || approvalUpper) === 'REJECTED'} title={(statusOverrides.get(service.id) || approvalUpper) === 'REJECTED' ? 'Disabled for rejected services' : undefined}>Approved</option>
+                          <option value="PENDING_APPROVAL" disabled={['REJECTED','APPROVED'].includes(effectiveStatus)} title={['REJECTED','APPROVED'].includes(effectiveStatus) ? 'Disabled in current status' : undefined}>Pending</option>
+                          <option value="REJECTED" disabled={['REJECTED','APPROVED'].includes(effectiveStatus)} title={['REJECTED','APPROVED'].includes(effectiveStatus) ? 'Disabled in current status' : undefined}>Rejected</option>
+                          <option value="APPROVED" disabled={effectiveStatus === 'REJECTED'} title={effectiveStatus === 'REJECTED' ? 'Disabled for rejected services' : undefined}>Approved</option>
                         </select>
 
                         {/* Delete button */}
