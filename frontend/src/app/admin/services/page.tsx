@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -187,12 +187,18 @@ export default function AdminServicesPage() {
   // Local active overrides to reflect activation state immediately (e.g., when moving to pending => deactivate)
   const [activeOverrides, setActiveOverrides] = useState<Map<string, boolean>>(new Map());
 
+  // Hoisted durable cache snapshot to avoid repeated localStorage calls during render
+  const stateCacheRef = useRef<Record<string, LocalServiceState>>({});
+  useEffect(() => {
+    stateCacheRef.current = loadStateCache();
+  }, [servicesData, statsData]);
+
   // Derive robust statistics with multiple fallbacks and apply local overrides when present
   const stats = useMemo(() => {
     const api = statsData as any | undefined;
     const listStats = (servicesData as any)?.stats as any | undefined;
     const list = services;
-    const cache = loadStateCache();
+  const cache = stateCacheRef.current;
 
     const toUpper = (v: any) => (v ?? '').toString().toUpperCase();
     const normalizeStatus = (raw: string) => {
@@ -864,7 +870,7 @@ export default function AdminServicesPage() {
                 {!servicesLoading && !servicesError && services.map((service) => {
                   const normalizeStatus = (raw: string) => (raw || '').toString().replace('-', '_').toUpperCase();
                   const apiStatus = normalizeStatus(service.approvalStatus || '');
-                  const cachedLocal = loadStateCache()[(service as any).id as string] || null;
+                  const cachedLocal = stateCacheRef.current[(service as any).id as string] || null;
                   const baseStatus: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' = apiStatus
                     ? (apiStatus as any)
                     : (service.isApproved === true ? 'APPROVED' : (cachedLocal?.status || 'PENDING_APPROVAL'));
