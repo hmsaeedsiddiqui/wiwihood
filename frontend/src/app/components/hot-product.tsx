@@ -1,11 +1,16 @@
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useGetPopularServicesQuery, type Service } from '@/store/api/servicesApi'
 
 function HotProduct() {
   const router = useRouter();
-  const services = [
+  // Fetch popular services (backend already filters to active services)
+  const { data: popularServices = [], isLoading, error } = useGetPopularServicesQuery({ limit: 6 })
+
+  // Graceful fallback demo content when API is loading or errors
+  const fallbackServices = [
     {
       id: 1,
       title: "Lumi Nail Studio",
@@ -37,6 +42,21 @@ function HotProduct() {
       category: "Nails"
     }
   ]
+
+  // Map API services to card model
+  const services = useMemo(() => {
+    if (!popularServices || popularServices.length === 0) return fallbackServices
+    return popularServices.map((s: Service, idx: number) => ({
+      id: s.id || idx,
+      title: s.provider?.businessName || 'Featured Provider',
+      service: s.name,
+      location: s.displayLocation || s.category?.name || '—',
+      rating: s.averageRating || 4.6,
+      reviews: s.totalReviews || Math.floor(Math.random() * 50) + 10,
+      image: s.featuredImage || s.images?.[0] || '/service1.png',
+      category: s.category?.name || 'Service'
+    }))
+  }, [popularServices])
 
   const ServiceCard = ({ service }: { service: typeof services[0] }) => (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">

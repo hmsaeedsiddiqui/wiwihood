@@ -21,6 +21,10 @@ interface UploadFromUrlOptions {
 export const useImageUpload = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const BASE_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1').replace(/\/$/, '');
+  const baseUrlHasApiPrefix = BASE_URL.endsWith('/api/v1');
+  const apiPrefix = baseUrlHasApiPrefix ? '' : '/api/v1';
+  const apiBase = `${BASE_URL}${apiPrefix}`; // Ensures exactly one /api/v1
 
   const uploadImage = useCallback(async (file: File, options: UploadOptions) => {
     setUploading(true);
@@ -34,11 +38,13 @@ export const useImageUpload = () => {
       if (options.serviceId) formData.append('serviceId', options.serviceId);
       if (options.providerId) formData.append('providerId', options.providerId);
 
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/upload/${options.endpoint}`, {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const response = await fetch(`${apiBase}/upload/${options.endpoint}`, {
         method: 'POST',
         body: formData,
         headers: {
           // Don't set Content-Type header, let the browser set it with boundary
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
       });
 
@@ -75,10 +81,12 @@ export const useImageUpload = () => {
     setUploadProgress(0);
 
     try {
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/upload/upload-from-url`, {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const response = await fetch(`${apiBase}/upload/upload-from-url`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
         },
         body: JSON.stringify({
           imageUrl: options.imageUrl,
@@ -120,8 +128,12 @@ export const useImageUpload = () => {
       // Encode the publicId to handle slashes in the URL
       const encodedPublicId = encodeURIComponent(publicId);
       
-      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/upload/image/${encodedPublicId}`, {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  const response = await fetch(`${apiBase}/upload/image/${encodedPublicId}`, {
         method: 'DELETE',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
       });
 
       if (!response.ok) {

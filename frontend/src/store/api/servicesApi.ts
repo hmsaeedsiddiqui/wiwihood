@@ -16,7 +16,7 @@ export interface AdminServiceFilters {
 }
 
 export interface AdminApprovalData {
-  approved: boolean;
+  isApproved: boolean;
   adminComments?: string;
   adminAssignedBadge?: string;
   adminQualityRating?: number;
@@ -88,8 +88,22 @@ export interface AvailableBadge {
   description: string;
 }
 
-// Base URL for API - adjust according to your backend URL
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+// Base URL for API - align with backend default and avoid wrong port
+// Note: Prefer setting NEXT_PUBLIC_API_URL to http://localhost:8000/api/v1 in env
+// Resolve base URL robustly: allow absolute, handle relative '/api/v1' by prefixing origin in browser
+const RAW_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'
+const BASE_URL = (() => {
+  // If env provides absolute URL, use it
+  if (RAW_BASE_URL.startsWith('http://') || RAW_BASE_URL.startsWith('https://')) {
+    return RAW_BASE_URL
+  }
+  // If env provides relative path (e.g., '/api/v1'), prefer backend dev URL to avoid hitting Next server
+  if (RAW_BASE_URL.startsWith('/')) {
+    return 'http://localhost:8000/api/v1'
+  }
+  // Default
+  return 'http://localhost:8000/api/v1'
+})()
 
 // Service types based on your backend DTOs
 export interface CreateServiceRequest {
@@ -230,24 +244,67 @@ export interface ApiError {
   error?: string
 }
 
-// Ensure baseUrl does NOT include /api/v1 twice
+// Ensure endpoints do NOT include /api/v1 twice and avoid absolute-path overrides
 const API_PREFIX = '/api/v1';
-const baseUrlHasApiPrefix = BASE_URL.endsWith(API_PREFIX);
+const baseUrlHasApiPrefix = BASE_URL.replace(/\/?$/, '').endsWith(API_PREFIX);
+// Normalize baseUrl to always end with a single slash
+const BASE_URL_NORMALIZED = BASE_URL.replace(/\/?$/, '/');
+// Move the API prefix into the baseUrl so all endpoint paths can be relative (no leading slash)
+const EFFECTIVE_BASE_URL = baseUrlHasApiPrefix
+  ? BASE_URL_NORMALIZED // already has /api/v1
+  : `${BASE_URL_NORMALIZED}${API_PREFIX.replace(/^\//, '')}/`; // append api/v1/
+
+// Identify admin vs provider endpoints by RTKQ endpoint names
+const ADMIN_ENDPOINTS = new Set([
+  'getAllAdminServices',
+  'getAdminServiceById',
+  'approveAdminService',
+  'assignAdminBadge',
+  'toggleAdminServiceStatus',
+  'setAdminServicePending',
+  'deleteAdminService',
+  'bulkAdminServiceAction',
+  'getAdminServiceStats',
+  'getAdminAvailableBadges',
+  'getAdminPendingCount',
+  'exportAdminServicesData',
+]);
+
+const PROVIDER_ENDPOINTS = new Set([
+  'getProviderInfo',
+  'createService',
+  'getServicesByProvider',
+  'updateService',
+  'deleteService',
+]);
 
 export const servicesApi = createApi({
   reducerPath: 'servicesApi',
   baseQuery: fetchBaseQuery({
-    baseUrl: `${BASE_URL}`,
-    prepareHeaders: (headers, { getState }) => {
-      // Get token from localStorage
-      const token = typeof window !== 'undefined' 
-        ? localStorage.getItem('accessToken') 
-        : null
-      
+    baseUrl: EFFECTIVE_BASE_URL,
+    prepareHeaders: (headers, { endpoint }) => {
+      // Get token from localStorage (support multiple keys, same as authApi)
+      let token: string | null = null
+      if (typeof window !== 'undefined') {
+        const adminToken = localStorage.getItem('adminToken');
+        const providerToken = localStorage.getItem('providerToken') || localStorage.getItem('accessToken') || localStorage.getItem('auth-token');
+
+        // Use admin token only for admin endpoints
+        if (endpoint && ADMIN_ENDPOINTS.has(endpoint)) {
+          token = adminToken || null;
+        } else if (endpoint && PROVIDER_ENDPOINTS.has(endpoint)) {
+          // Use provider token for provider endpoints; don't fall back to admin token to avoid role mismatch
+          token = providerToken || null;
+        } else {
+          // For public/general endpoints, prefer provider/user token; avoid sending admin token by default
+          token = providerToken || null;
+        }
+      }
+
       if (token) {
         headers.set('authorization', `Bearer ${token}`)
       }
-      
+
       headers.set('content-type', 'application/json')
       return headers
     },
@@ -259,14 +316,27 @@ export const servicesApi = createApi({
     getAllAdminServices: builder.query<AdminServicesResponse, AdminServiceFilters>({
       query: (filters) => {
         const params = new URLSearchParams();
-        Object.entries(filters || {}).forEach(([key, value]) => {
+        const normalizeStatus = (s: any) => {
+          if (!s) return undefined as unknown as string;
+          switch (s) {
+            case 'PENDING_APPROVAL': return 'pending_approval';
+            case 'APPROVED': return 'approved';
+            case 'REJECTED': return 'rejected';
+            case 'ACTIVE': return 'active';
+            case 'INACTIVE': return 'inactive';
+            default: return typeof s === 'string' ? s : undefined;
+          }
+        };
+        const effective: Record<string, any> = { ...(filters || {}) };
+        if (effective.status) {
+          effective.status = normalizeStatus(effective.status);
+        }
+        Object.entries(effective).forEach(([key, value]) => {
           if (value !== undefined && value !== null && value !== '') {
             params.append(key, value.toString());
           }
         });
-        const endpoint = baseUrlHasApiPrefix
-          ? `/admin/services?${params.toString()}`
-          : `/api/v1/admin/services?${params.toString()}`;
+        const endpoint = `admin/services?${params.toString()}`;
         return {
           url: endpoint,
           method: 'GET',
@@ -283,9 +353,7 @@ export const servicesApi = createApi({
     // Get admin service by ID
     getAdminServiceById: builder.query<AdminService, string>({
       query: (id) => ({
-        url: baseUrlHasApiPrefix
-          ? `/admin/services/${id}`
-          : `/api/v1/admin/services/${id}`,
+        url: `admin/services/${id}`,
         method: 'GET',
       }),
       providesTags: (result, error, id) => [{ type: 'AdminService', id }],
@@ -299,9 +367,7 @@ export const servicesApi = createApi({
     // Approve/reject service
     approveAdminService: builder.mutation<{ success: boolean; message: string; service: AdminService }, { serviceId: string; approvalData: AdminApprovalData }>({
       query: ({ serviceId, approvalData }) => ({
-        url: baseUrlHasApiPrefix
-          ? `/admin/services/${serviceId}/approve`
-          : `/api/v1/admin/services/${serviceId}/approve`,
+        url: `admin/services/${serviceId}/approve`,
         method: 'POST',
         body: approvalData,
       }),
@@ -316,9 +382,7 @@ export const servicesApi = createApi({
     // Assign badge
     assignAdminBadge: builder.mutation<{ success: boolean; message: string; service: AdminService }, { serviceId: string; badgeData: AdminBadgeData }>({
       query: ({ serviceId, badgeData }) => ({
-        url: baseUrlHasApiPrefix
-          ? `/admin/services/${serviceId}/badge`
-          : `/api/v1/admin/services/${serviceId}/badge`,
+        url: `admin/services/${serviceId}/badge`,
         method: 'PUT',
         body: badgeData,
       }),
@@ -336,9 +400,7 @@ export const servicesApi = createApi({
     // Toggle service status (activate/deactivate)
     toggleAdminServiceStatus: builder.mutation<{ success: boolean; message: string; service: AdminService }, string>({
       query: (serviceId) => ({
-        url: baseUrlHasApiPrefix
-          ? `/admin/services/${serviceId}/toggle-status`
-          : `/api/v1/admin/services/${serviceId}/toggle-status`,
+        url: `admin/services/${serviceId}/toggle-status`,
         method: 'PUT',
       }),
       invalidatesTags: (result, error, serviceId) => [
@@ -353,12 +415,28 @@ export const servicesApi = createApi({
       } as ApiError)
     }),
 
+    // Set service approval back to pending
+    setAdminServicePending: builder.mutation<{ success: boolean; message: string; service: AdminService }, string>({
+      query: (serviceId) => ({
+        url: `admin/services/${serviceId}/pending`,
+        method: 'PUT',
+      }),
+      invalidatesTags: (result, error, serviceId) => [
+        { type: 'AdminService', id: serviceId },
+        'AdminService',
+        'ServiceStats',
+      ],
+      transformErrorResponse: (response: any) => ({
+        message: response?.data?.message || 'Failed to set pending',
+        statusCode: typeof response.status === 'number' ? response.status : 500,
+        error: response?.data?.error
+      } as ApiError)
+    }),
+
     // Delete service (admin)
     deleteAdminService: builder.mutation<{ success: boolean; message: string }, string>({
       query: (serviceId) => ({
-        url: baseUrlHasApiPrefix
-          ? `/admin/services/${serviceId}`
-          : `/api/v1/admin/services/${serviceId}`,
+        url: `admin/services/${serviceId}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['AdminService', 'ServiceStats'],
@@ -372,9 +450,7 @@ export const servicesApi = createApi({
     // Bulk admin actions
     bulkAdminServiceAction: builder.mutation<{ success: boolean; message: string }, AdminBulkAction>({
       query: (bulkData) => ({
-        url: baseUrlHasApiPrefix
-          ? `/admin/services/bulk-action`
-          : `/api/v1/admin/services/bulk-action`,
+        url: `admin/services/bulk-action`,
         method: 'POST',
         body: bulkData,
       }),
@@ -389,9 +465,7 @@ export const servicesApi = createApi({
     // Get admin service stats
     getAdminServiceStats: builder.query<ServiceStats, void>({
       query: () => ({
-        url: baseUrlHasApiPrefix
-          ? `/admin/services/stats`
-          : `/api/v1/admin/services/stats`,
+        url: `admin/services/stats`,
         method: 'GET',
       }),
       providesTags: ['ServiceStats'],
@@ -405,9 +479,7 @@ export const servicesApi = createApi({
     // Get available badges
     getAdminAvailableBadges: builder.query<{ badges: AvailableBadge[] }, void>({
       query: () => ({
-        url: baseUrlHasApiPrefix
-          ? `/admin/services/badges/available`
-          : `/api/v1/admin/services/badges/available`,
+        url: `admin/services/badges/available`,
         method: 'GET',
       }),
       transformErrorResponse: (response: any) => ({
@@ -420,9 +492,7 @@ export const servicesApi = createApi({
     // Get pending services count
     getAdminPendingCount: builder.query<{ pendingCount: number }, void>({
       query: () => ({
-        url: baseUrlHasApiPrefix
-          ? `/admin/services/pending/count`
-          : `/api/v1/admin/services/pending/count`,
+        url: `admin/services/pending/count`,
         method: 'GET',
       }),
       providesTags: ['ServiceStats'],
@@ -440,13 +510,27 @@ export const servicesApi = createApi({
       totalRecords: number;
       exportedAt: string;
     }, AdminServiceFilters>({
-      query: (filters) => ({
-        url: baseUrlHasApiPrefix
-          ? `/admin/services/export`
-          : `/api/v1/admin/services/export`,
-        method: 'POST',
-        body: filters,
-      }),
+      query: (filters) => {
+        // Normalize status for backend DTO
+        const normalizeStatus = (s: any) => {
+          if (!s) return undefined as unknown as string;
+          switch (s) {
+            case 'PENDING_APPROVAL': return 'pending_approval';
+            case 'APPROVED': return 'approved';
+            case 'REJECTED': return 'rejected';
+            case 'ACTIVE': return 'active';
+            case 'INACTIVE': return 'inactive';
+            default: return typeof s === 'string' ? s : undefined;
+          }
+        };
+        const body = { ...(filters || {}) } as any;
+        if (body.status) body.status = normalizeStatus(body.status);
+        return ({
+          url: `admin/services/export`,
+          method: 'POST',
+          body,
+        });
+      },
       transformErrorResponse: (response: any) => ({
         message: response?.data?.message || 'Failed to export services',
         statusCode: typeof response.status === 'number' ? response.status : 500,
@@ -457,7 +541,7 @@ export const servicesApi = createApi({
     getProviderInfo: builder.query<any, void>({
       // Use the correct base URL for provider info, not under /services
       query: () => ({
-        url: `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/providers/me`,
+        url: `providers/me`,
         method: 'GET',
       }),
       transformErrorResponse: (response: any) => ({
@@ -469,7 +553,7 @@ export const servicesApi = createApi({
     // Create service (requires providerId)
     createService: builder.mutation<Service, { providerId: string; serviceData: CreateServiceRequest }>({
       query: ({ providerId, serviceData }) => ({
-        url: `/api/v1/services/provider/${providerId}`,
+        url: `services/provider/${providerId}`,
         method: 'POST',
         body: serviceData,
       }),
@@ -491,7 +575,7 @@ export const servicesApi = createApi({
           }
         })
         return {
-          url: `/api/v1/services?${params.toString()}`,
+          url: `services?${params.toString()}`,
           method: 'GET',
         }
       },
@@ -513,7 +597,7 @@ export const servicesApi = createApi({
           }
         })
         return {
-          url: `/api/v1/services/search?${params.toString()}`,
+          url: `services/search?${params.toString()}`,
           method: 'GET',
         }
       },
@@ -528,7 +612,7 @@ export const servicesApi = createApi({
     // Get popular services
     getPopularServices: builder.query<Service[], { limit?: number }>({
       query: ({ limit = 10 } = {}) => ({
-        url: `/api/v1/services/popular?limit=${limit}`,
+        url: `services/popular?limit=${limit}`,
         method: 'GET',
       }),
       providesTags: ['Services'],
@@ -542,7 +626,7 @@ export const servicesApi = createApi({
     // Get service by ID
     getServiceById: builder.query<Service, string>({
       query: (id) => ({
-        url: `/api/v1/services/${id}`,
+        url: `services/${id}`,
         method: 'GET',
       }),
       providesTags: (result, error, id) => [{ type: 'Service', id }],
@@ -556,7 +640,7 @@ export const servicesApi = createApi({
     // Update service
     updateService: builder.mutation<Service, { id: string; serviceData: UpdateServiceRequest }>({
       query: ({ id, serviceData }) => ({
-        url: `/api/v1/services/${id}`,
+        url: `services/${id}`,
         method: 'PATCH',
         body: serviceData,
       }),
@@ -574,7 +658,7 @@ export const servicesApi = createApi({
     // Delete service
     deleteService: builder.mutation<void, string>({
       query: (id) => ({
-        url: `/api/v1/services/${id}`,
+        url: `services/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: (result, error, id) => [
@@ -599,7 +683,7 @@ export const servicesApi = createApi({
         })
         const queryString = params.toString()
         return {
-          url: `/api/v1/services/provider/${providerId}${queryString ? `?${queryString}` : ''}`,
+          url: `services/provider/${providerId}${queryString ? `?${queryString}` : ''}`,
           method: 'GET',
         }
       },
@@ -622,7 +706,7 @@ export const servicesApi = createApi({
         })
         const queryString = params.toString()
         return {
-          url: `/api/v1/services/category/${categoryId}${queryString ? `?${queryString}` : ''}`,
+          url: `services/category/${categoryId}${queryString ? `?${queryString}` : ''}`,
           method: 'GET',
         }
       },
@@ -656,6 +740,7 @@ export const {
   useApproveAdminServiceMutation,
   useAssignAdminBadgeMutation,
   useToggleAdminServiceStatusMutation,
+  useSetAdminServicePendingMutation,
   useDeleteAdminServiceMutation,
   useBulkAdminServiceActionMutation,
   useGetAdminServiceStatsQuery,

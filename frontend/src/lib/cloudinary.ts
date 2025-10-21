@@ -1,7 +1,7 @@
 // Cloudinary Configuration for Frontend
 export const cloudinaryConfig = {
-  cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME || 'your_cloud_name_here',
-  apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY || 'your_api_key_here',
+  cloudName: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME,
+  apiKey: process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY,
   // Note: API Secret should not be exposed on frontend, use backend endpoints for uploads
 };
 
@@ -12,6 +12,19 @@ export const buildCloudinaryUrl = (
 ) => {
   if (!publicId) {
     console.warn('buildCloudinaryUrl called with empty publicId');
+    return '';
+  }
+
+  // If it's already a full URL or data/blob URI, return as-is to avoid 414 and bad requests
+  const lower = publicId.toLowerCase();
+  if (lower.startsWith('http://') || lower.startsWith('https://') || lower.startsWith('data:') || lower.startsWith('blob:')) {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('buildCloudinaryUrl: bypassing transformation for non-publicId source', { publicIdType: lower.slice(0, lower.indexOf(':') + 1) });
+    }
+    return publicId;
+  }
+  if (!cloudinaryConfig.cloudName) {
+    console.error('Cloudinary cloudName missing. Set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME in .env.local');
     return '';
   }
   
@@ -30,7 +43,9 @@ export const buildCloudinaryUrl = (
   const transformString = transformParts.length > 0 ? `${transformParts.join(',')}/` : '';
   
   const finalUrl = `${baseUrl}/${transformString}${publicId}`;
-  console.log('buildCloudinaryUrl result:', { publicId, cloudName: cloudinaryConfig.cloudName, finalUrl });
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('buildCloudinaryUrl result:', { publicId, cloudName: cloudinaryConfig.cloudName, finalUrl });
+  }
   
   return finalUrl;
 };

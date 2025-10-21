@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { toast } from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { 
@@ -335,11 +335,13 @@ export const useAuthLogout = () => {
       toast.success('Logged out successfully')
     } finally {
       // Always clean up local storage regardless of API call success
-      localStorage.removeItem('accessToken')
-      localStorage.removeItem('providerToken')
-      localStorage.removeItem('auth-token')
-      localStorage.removeItem('user')
-      localStorage.removeItem('provider')
+      if (typeof window !== 'undefined') {
+        localStorage.removeItem('accessToken')
+        localStorage.removeItem('providerToken')
+        localStorage.removeItem('auth-token')
+        localStorage.removeItem('user')
+        localStorage.removeItem('provider')
+      }
       // Keep providerWasRegistered flag for future login redirects
       
       router.push('/')
@@ -354,48 +356,72 @@ export const useAuthLogout = () => {
 
 // Custom hook for checking authentication status
 export const useAuthStatus = () => {
-  const checkAuthStatus = useCallback(() => {
-    // Check for customer authentication
+  // SSR-safe initial state; resolve on client after mount
+  const [state, setState] = useState<{
+    isAuthenticated: boolean
+    isLoading: boolean
+    user: any
+    role: string | null
+    token: string | null
+  }>({ isAuthenticated: false, isLoading: true, user: null, role: null, token: null })
+
+  const compute = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return { isAuthenticated: false, isLoading: true, user: null, role: null, token: null }
+    }
     const customerToken = localStorage.getItem('accessToken')
     const customerUser = localStorage.getItem('user')
-    
-    // Check for provider authentication  
     const providerToken = localStorage.getItem('providerToken')
     const providerUser = localStorage.getItem('provider')
-    
+
     const isCustomerAuth = !!(customerToken && customerUser)
     const isProviderAuth = !!(providerToken && providerUser)
     const isAuthenticated = isCustomerAuth || isProviderAuth
-    
-    let user = null
-    let role = null
-    
+
+    let user: any = null
+    let role: string | null = null
+
     if (isProviderAuth) {
       try {
-        user = JSON.parse(providerUser!)
+        user = providerUser ? JSON.parse(providerUser) : null
         role = 'provider'
       } catch (e) {
         console.error('Failed to parse provider user data')
       }
     } else if (isCustomerAuth) {
       try {
-        user = JSON.parse(customerUser!)
+        user = customerUser ? JSON.parse(customerUser) : null
         role = user?.role || 'customer'
       } catch (e) {
         console.error('Failed to parse customer user data')
       }
     }
-    
+
     return {
       isAuthenticated,
-      isLoading: false, // No async operation in local storage check
+      isLoading: false,
       user,
       role,
       token: providerToken || customerToken
     }
   }, [])
 
-  return checkAuthStatus()
+  useEffect(() => {
+    // Compute on mount
+    setState(compute())
+    // Listen for changes across tabs
+    const onStorage = () => setState(compute())
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', onStorage)
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', onStorage)
+      }
+    }
+  }, [compute])
+
+  return state
 }
 
 // Aliases for backward compatibility

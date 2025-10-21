@@ -127,6 +127,25 @@ export class ServicesService {
       console.log('=== [DEBUG] existingService:', existingService);
       if (existingService) throw new BadRequestException('Service with this name already exists for this provider');
 
+      // Process images (URLs or public IDs) and cap to 5
+      let imagesPublicIds: string[] = [];
+      let imageUrls: string[] = [];
+      if (Array.isArray(serviceData.images) && serviceData.images.length > 0) {
+        // dedupe and cap
+        const deduped = Array.from(new Set(serviceData.images.filter(Boolean))).slice(0, 5);
+        const processed = await this.processImages(deduped);
+        imageUrls = processed.imageUrls.slice(0, 5);
+        imagesPublicIds = processed.imagesPublicIds.slice(0, 5);
+      }
+
+      // Decide featured image: prefer explicit valid URL, else first processed image URL
+      let featuredImage: string | undefined = undefined;
+      if (serviceData.featuredImage && typeof serviceData.featuredImage === 'string' && serviceData.featuredImage.startsWith('http')) {
+        featuredImage = serviceData.featuredImage;
+      } else if (imageUrls.length > 0) {
+        featuredImage = imageUrls[0];
+      }
+
       // Only include properties that exist on your Service entity
       const serviceData_clean: Partial<Service> = {
         name: serviceData.name,
@@ -138,12 +157,45 @@ export class ServicesService {
         providerId,
         isApproved: false,
         isActive: false,
-        // If your entity has these, uncomment:
-        // images: processedImages,
-        // imagesPublicIds: processedImagesPublicIds,
-        // serviceType: serviceData.serviceType || ServiceType.APPOINTMENT,
-        // pricingType: serviceData.pricingType || PricingType.FIXED,
-        // status: serviceData.status || ServiceStatus.PENDING_APPROVAL,
+        // Optional structured fields
+        serviceType: (serviceData.serviceType as any) || (ServiceType.APPOINTMENT as any),
+        pricingType: (serviceData.pricingType as any) || (PricingType.FIXED as any),
+        bufferTimeMinutes: serviceData.bufferTimeMinutes ?? 0,
+        maxAdvanceBookingDays: serviceData.maxAdvanceBookingDays ?? 30,
+        minAdvanceBookingHours: serviceData.minAdvanceBookingHours ?? 2,
+        cancellationPolicyHours: serviceData.cancellationPolicyHours ?? 24,
+        requiresDeposit: serviceData.requiresDeposit ?? false,
+        depositAmount: serviceData.depositAmount,
+        tags: serviceData.tags,
+        preparationInstructions: serviceData.preparationInstructions,
+        // Frontend display and promotional fields (optional)
+        displayLocation: serviceData.displayLocation,
+        providerBusinessName: serviceData.providerBusinessName,
+        highlightBadge: serviceData.highlightBadge, // provider-provided; admin badge uses adminAssignedBadge
+        availableSlots: serviceData.availableSlots,
+        promotionText: serviceData.promotionText,
+        isFeatured: serviceData.isFeatured ?? false,
+        difficultyLevel: serviceData.difficultyLevel,
+        specialRequirements: serviceData.specialRequirements,
+        includes: serviceData.includes,
+        excludes: serviceData.excludes,
+        ageRestriction: serviceData.ageRestriction,
+        genderPreference: serviceData.genderPreference,
+        isPromotional: serviceData.isPromotional ?? false,
+        discountPercentage: serviceData.discountPercentage,
+        promoCode: serviceData.promoCode,
+        dealValidUntil: serviceData.dealValidUntil,
+        dealCategory: serviceData.dealCategory,
+        dealTitle: serviceData.dealTitle,
+        dealDescription: serviceData.dealDescription,
+        originalPrice: serviceData.originalPrice,
+        minBookingAmount: serviceData.minBookingAmount,
+        usageLimit: serviceData.usageLimit,
+        dealTerms: serviceData.dealTerms,
+        // Images
+        images: imageUrls.length ? imageUrls : undefined,
+        imagesPublicIds: imagesPublicIds.length ? imagesPublicIds : undefined,
+        featuredImage,
       };
       console.log('=== [DEBUG] serviceData_clean:', serviceData_clean);
 
@@ -355,6 +407,11 @@ export class ServicesService {
       throw new ForbiddenException('You can only toggle your own services');
     }
 
+    // Only allow activation if service is approved; deactivation always allowed
+    if (!service.isApproved && !service.isActive) {
+      throw new ForbiddenException('Cannot activate unapproved service');
+    }
+
     service.isActive = !service.isActive;
     service.updatedAt = new Date();
 
@@ -396,7 +453,7 @@ export class ServicesService {
 
   async getPopularServices(limit: number = 10): Promise<Service[]> {
     const popularServices = await this.serviceRepository.find({
-      where: { isActive: true },
+      where: { isActive: true, isApproved: true },
       relations: ['category', 'provider', 'provider.user'],
       order: {
         createdAt: 'DESC'

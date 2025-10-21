@@ -39,7 +39,9 @@ export default function ConditionalLayout({
     console.log('Loading clean auth page without header for path:', pathname);
     return (
       <NoSSR fallback={<div className="min-h-screen bg-gray-50" />}>
-        {children}
+        <AuthProvider>
+          {children}
+        </AuthProvider>
       </NoSSR>
     );
   }  // Customer pages - show original customer header with auth

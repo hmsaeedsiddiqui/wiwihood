@@ -3,7 +3,8 @@ export const getAuthToken = (): string | null => {
   if (typeof window === 'undefined') return null;
   
   // Check for customer token first, then fallback to other tokens
-  return localStorage.getItem('customerToken') || 
+  return localStorage.getItem('accessToken') ||
+         localStorage.getItem('customerToken') || 
          localStorage.getItem('auth-token') || 
          localStorage.getItem('providerToken') ||
          localStorage.getItem('token');

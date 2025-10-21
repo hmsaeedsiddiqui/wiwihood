@@ -42,7 +42,7 @@ function ServicesPage() {
   const needsVerification = user && !user.isEmailVerified;
 
   // Check if we have any form of authentication
-  const hasAuth = isAuthenticated || !!localStorage.getItem('accessToken');
+  const hasAuth = isAuthenticated || (typeof window !== 'undefined' && !!localStorage.getItem('accessToken'));
   
   // RTK Query hooks - provider-specific services (skip if no providerId)
   const {
@@ -118,7 +118,7 @@ function ServicesPage() {
 
   // Development helper function
   const setupDevProvider = () => {
-    if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
       const devUser = {
         id: 'bf5eb227-6a77-499f-845e-4db8954f45a4', // Original provider ID
         email: 'dev@wiwihood.com',
@@ -129,9 +129,9 @@ function ServicesPage() {
       };
       
       // Store in localStorage for development
-      localStorage.setItem('devUser', JSON.stringify(devUser));
-      localStorage.setItem('accessToken', 'dev-token-123');
-      localStorage.setItem('devProviderId', 'bf5eb227-6a77-499f-845e-4db8954f45a4');
+  localStorage.setItem('devUser', JSON.stringify(devUser));
+  localStorage.setItem('accessToken', 'dev-token-123');
+  localStorage.setItem('devProviderId', 'bf5eb227-6a77-499f-845e-4db8954f45a4');
       
       console.log('🧪 Development provider setup complete:', devUser);
       window.location.reload();
@@ -254,9 +254,19 @@ function ServicesPage() {
         cleanedData.durationMinutes = 60;
       }
 
-      // For featuredImage, ensure it's a valid Cloudinary URL if present
-      if (cleanedData.featuredImage && typeof cleanedData.featuredImage === 'string' && !cleanedData.featuredImage.startsWith('http')) {
-        cleanedData.featuredImage = `https://res.cloudinary.com/wiwihood/image/upload/${cleanedData.featuredImage}`;
+      // Sanitize featuredImage: keep http(s) URLs only; drop data/blob placeholders
+      if (cleanedData.featuredImage && typeof cleanedData.featuredImage === 'string') {
+        const fi: string = cleanedData.featuredImage;
+        if (fi.startsWith('data:') || fi.startsWith('blob:')) {
+          delete cleanedData.featuredImage;
+        }
+        // Otherwise, leave as-is (full URL handled by renderer/backend)
+      }
+
+      // Enforce max 5 images and remove duplicates
+      if (Array.isArray(cleanedData.images)) {
+        const deduped = Array.from(new Set(cleanedData.images.filter(Boolean)));
+        cleanedData.images = deduped.slice(0, 5);
       }
 
       if (editingService) {
@@ -770,14 +780,12 @@ function ServicesPage() {
                     <ImageUpload
                       uploadType="service-image"
                       onUploadSuccess={(result: any) => {
-                        // Accept either publicId string or object with publicId property
-                        let publicId = result;
-                        if (result && typeof result === 'object' && result.publicId) {
-                          publicId = result.publicId;
-                        }
+                        // Prefer URL to meet backend @IsUrl() validation on featuredImage
+                        const url = typeof result === 'string' ? result : result?.url || result?.secure_url;
+                        if (!url) return;
                         setFormData(prev => ({
                           ...prev,
-                          featuredImage: publicId
+                          featuredImage: url
                         }));
                       }}
                       className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center hover:border-gray-400 transition-colors"
@@ -1255,16 +1263,41 @@ function ServicesPage() {
                 <Camera className="w-5 h-5 text-[#E89B8B]" />
                 Service Images (Max 5)
               </label>
+              {/* Counter and helper */}
+              <div className="text-xs text-gray-600 mb-2">
+                {formData.images.length}/5 images uploaded
+              </div>
               <div className="mb-4">
-                <ImageUpload
-                  uploadType="service-image"
-                  onUploadSuccess={(publicId: string) => {
-                    setFormData(prev => ({
-                      ...prev,
-                      images: [...prev.images, publicId]
-                    }));
-                  }}
-                />
+                {formData.images.length < 5 ? (
+                  <ImageUpload
+                    uploadType="service-image"
+                    onUploadSuccess={(result: any) => {
+                      // Use URL strings for images to be consistent with DTO description and general rendering
+                      const url = typeof result === 'string' ? result : result?.url || result?.secure_url;
+                      if (!url) return;
+
+                      // Prevent duplicates
+                      if (formData.images.includes(url)) {
+                        console.warn('Duplicate image ignored:', url);
+                        return;
+                      }
+
+                      // Enforce max 5 images
+                      if (formData.images.length >= 5) {
+                        return;
+                      }
+
+                      setFormData(prev => ({
+                        ...prev,
+                        images: [...prev.images, url]
+                      }));
+                    }}
+                  />
+                ) : (
+                  <div className="p-4 border-2 border-dashed border-gray-300 rounded-xl text-gray-600 text-sm bg-gray-50">
+                    You have uploaded the maximum of 5 images. Remove one to add more.
+                  </div>
+                )}
               </div>
               
               {/* Display current images */}
@@ -1279,6 +1312,20 @@ function ServicesPage() {
                         height={120}
                         className="rounded-xl object-cover w-full h-full shadow-lg group-hover:shadow-xl transition-all duration-300"
                       />
+                      {/* Remove button overlay */}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => ({
+                            ...prev,
+                            images: prev.images.filter((_, i) => i !== index)
+                          }));
+                        }}
+                        className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                        aria-label={`Remove image ${index + 1}`}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
                       {/* Debug info in development */}
                       {process.env.NODE_ENV === 'development' && (
                         <div className="text-xs text-gray-500 mt-1 break-all">

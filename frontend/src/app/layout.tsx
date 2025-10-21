@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { ReduxProvider } from "@/store/ReduxProvider";
 import { Toaster } from "react-hot-toast";
+import ConditionalLayout from "@/components/ConditionalLayout";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -31,7 +32,9 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <ReduxProvider>
-          {children}
+          <ConditionalLayout>
+            {children}
+          </ConditionalLayout>
           <Toaster
             position="top-right"
             toastOptions={{

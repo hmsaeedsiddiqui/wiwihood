@@ -25,22 +25,23 @@ export class AdminServiceService {
       .leftJoinAndSelect('service.provider', 'provider')
       .leftJoinAndSelect('service.category', 'category');
 
-    // Apply filters
+    // Apply filters (normalize status to lowercase for robustness)
     if (filters.status) {
-      switch (filters.status) {
-        case 'PENDING_APPROVAL':
+      const status = String(filters.status).toLowerCase();
+      switch (status) {
+        case 'pending_approval':
           queryBuilder.andWhere('service.approvalStatus = :status', { status: 'pending_approval' });
           break;
-        case 'APPROVED':
+        case 'approved':
           queryBuilder.andWhere('service.approvalStatus = :status', { status: 'approved' });
           break;
-        case 'REJECTED':
+        case 'rejected':
           queryBuilder.andWhere('service.approvalStatus = :status', { status: 'rejected' });
           break;
-        case 'ACTIVE':
+        case 'active':
           queryBuilder.andWhere('service.isActive = true AND service.isApproved = true');
           break;
-        case 'INACTIVE':
+        case 'inactive':
           queryBuilder.andWhere('service.isActive = false OR service.isApproved = false');
           break;
       }
@@ -151,15 +152,19 @@ export class AdminServiceService {
       throw new NotFoundException('Service not found');
     }
 
-    // Update service approval status
-    service.isApproved = approvalData.approved;
-    service.approvalStatus = approvalData.approved ? ServiceStatus.APPROVED : ServiceStatus.REJECTED;
+    // Determine approval flag supporting both isApproved and approved
+    const isApprovedFlag = (approvalData as any).isApproved ?? (approvalData as any).approved;
+    if (typeof isApprovedFlag !== 'boolean') {
+      throw new BadRequestException('isApproved must be a boolean value');
+    }
+    service.isApproved = isApprovedFlag;
+    service.approvalStatus = isApprovedFlag ? ServiceStatus.APPROVED : ServiceStatus.REJECTED;
     service.adminComments = approvalData.adminComments || '';
     service.approvedByAdminId = adminId;
     service.approvalDate = new Date();
 
     // If approved, also activate the service and assign badge/rating if provided
-    if (approvalData.approved) {
+    if (isApprovedFlag) {
       service.isActive = true;
       
       if (approvalData.adminAssignedBadge) {
@@ -178,7 +183,7 @@ export class AdminServiceService {
 
     return {
       success: true,
-      message: `Service ${approvalData.approved ? 'approved and activated' : 'rejected'} successfully`,
+      message: `Service ${isApprovedFlag ? 'approved and activated' : 'rejected'} successfully`,
       service
     };
   }
@@ -229,6 +234,29 @@ export class AdminServiceService {
     return {
       success: true,
       message: `Service ${service.isActive ? 'activated' : 'deactivated'} successfully`,
+      service
+    };
+  }
+
+  // Set service approval back to pending (admin only)
+  async setServicePending(serviceId: string, adminId: string) {
+    const service = await this.serviceRepository.findOne({ where: { id: serviceId } });
+    if (!service) {
+      throw new NotFoundException('Service not found');
+    }
+
+    // Move to pending: not approved and inactive
+    service.isApproved = false;
+    service.isActive = false;
+    service.approvalStatus = ServiceStatus.PENDING_APPROVAL;
+    service.approvalDate = null as any;
+    service.approvedByAdminId = adminId;
+
+    await this.serviceRepository.save(service);
+
+    return {
+      success: true,
+      message: 'Service moved to pending status successfully',
       service
     };
   }

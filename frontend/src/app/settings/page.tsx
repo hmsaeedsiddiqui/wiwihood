@@ -35,16 +35,20 @@ import {
 export default function SettingsPage() {
   const router = useRouter()
   const { isAuthenticated, user: authUser } = useAuthStatus()
-  const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile, error: profileError } = useUserProfile()
+  const { data: userProfile, isLoading: profileLoading, refetch: refetchProfile, error: profileError, isDemo } = useUserProfile()
   
   // Debug logging - API-only approach
   console.log('🔍 Settings Page Debug:')
   console.log('Auth Status:', { isAuthenticated, authUser })
   console.log('Profile Data:', { userProfile, profileLoading, profileError })
-  console.log('Tokens:', {
-    accessToken: typeof window !== 'undefined' ? localStorage.getItem('accessToken')?.substring(0, 20) + '...' : null,
-    providerToken: typeof window !== 'undefined' ? localStorage.getItem('providerToken')?.substring(0, 20) + '...' : null,
-  })
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      console.log('Tokens:', {
+        accessToken: localStorage.getItem('accessToken')?.substring(0, 20) + '...',
+        providerToken: localStorage.getItem('providerToken')?.substring(0, 20) + '...',
+      })
+    }
+  }, [])
   console.log('API Response Structure:', userProfile ? Object.keys(userProfile) : 'No data')
   
   // RTK Query mutations
@@ -56,14 +60,21 @@ export default function SettingsPage() {
   const testApiCall = async () => {
     try {
       console.log('=== MANUAL API TEST ===')
-      console.log('Current token:', localStorage.getItem('accessToken')?.substring(0, 20) + '...')
-      console.log('Current user from localStorage:', JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}'))
+      if (typeof window !== 'undefined') {
+        console.log('Current token:', localStorage.getItem('accessToken')?.substring(0, 20) + '...')
+        try {
+          const u = localStorage.getItem('user') || localStorage.getItem('provider') || '{}'
+          console.log('Current user from localStorage:', JSON.parse(u))
+        } catch (e) {
+          console.log('No valid user in localStorage')
+        }
+      }
       
       const result = await refetchProfile()
       console.log('API refetch result:', result)
       
       // Also test direct API call
-      const token = localStorage.getItem('accessToken') || localStorage.getItem('providerToken')
+  const token = typeof window !== 'undefined' ? (localStorage.getItem('accessToken') || localStorage.getItem('providerToken')) : null
       if (token) {
         try {
           const directResponse = await fetch('http://localhost:8000/api/v1/users/me', {
@@ -162,13 +173,15 @@ export default function SettingsPage() {
 
       if (isDemo) {
         // Demo mode - update localStorage
-        const currentUser = JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}')
+        const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}') : {}
         const updatedUser = { ...currentUser, ...updateData }
         
-        if (localStorage.getItem('provider')) {
-          localStorage.setItem('provider', JSON.stringify(updatedUser))
-        } else {
-          localStorage.setItem('user', JSON.stringify(updatedUser))
+        if (typeof window !== 'undefined') {
+          if (localStorage.getItem('provider')) {
+            localStorage.setItem('provider', JSON.stringify(updatedUser))
+          } else {
+            localStorage.setItem('user', JSON.stringify(updatedUser))
+          }
         }
         
         toast.success('Profile updated successfully! (Offline Mode)')
@@ -180,14 +193,16 @@ export default function SettingsPage() {
       toast.success('Profile updated successfully!')
       refetchProfile() // Refresh the profile data
     } catch (error: any) {
-      // Fallback to demo mode if backend fails
-      const currentUser = JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}')
+    // Fallback to demo mode if backend fails
+    const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}') : {}
       const updatedUser = { ...currentUser, ...updateData }
       
-      if (localStorage.getItem('provider')) {
-        localStorage.setItem('provider', JSON.stringify(updatedUser))
-      } else {
-        localStorage.setItem('user', JSON.stringify(updatedUser))
+      if (typeof window !== 'undefined') {
+        if (localStorage.getItem('provider')) {
+          localStorage.setItem('provider', JSON.stringify(updatedUser))
+        } else {
+          localStorage.setItem('user', JSON.stringify(updatedUser))
+        }
       }
       
       toast.success('Profile updated successfully! (Offline Mode - Backend Unavailable)')
@@ -263,16 +278,18 @@ export default function SettingsPage() {
 
     if (isDemo) {
       // Demo mode - update localStorage
-      const currentUser = JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}')
+      const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}') : {}
       const updatedUser = { 
         ...currentUser, 
         notificationSettings: notificationSettings
       }
       
-      if (localStorage.getItem('provider')) {
-        localStorage.setItem('provider', JSON.stringify(updatedUser))
-      } else {
-        localStorage.setItem('user', JSON.stringify(updatedUser))
+      if (typeof window !== 'undefined') {
+        if (localStorage.getItem('provider')) {
+          localStorage.setItem('provider', JSON.stringify(updatedUser))
+        } else {
+          localStorage.setItem('user', JSON.stringify(updatedUser))
+        }
       }
       
       toast.success('Notification preferences updated! (Offline Mode)')
@@ -285,17 +302,19 @@ export default function SettingsPage() {
       toast.success('Notification preferences updated!')
       refetchProfile() // Refresh the profile data
     } catch (error: any) {
-      // Fallback to demo mode if backend fails
-      const currentUser = JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}')
+    // Fallback to demo mode if backend fails
+    const currentUser = typeof window !== 'undefined' ? JSON.parse(localStorage.getItem('user') || localStorage.getItem('provider') || '{}') : {}
       const updatedUser = { 
         ...currentUser, 
         notificationSettings: notificationSettings
       }
       
-      if (localStorage.getItem('provider')) {
-        localStorage.setItem('provider', JSON.stringify(updatedUser))
-      } else {
-        localStorage.setItem('user', JSON.stringify(updatedUser))
+      if (typeof window !== 'undefined') {
+        if (localStorage.getItem('provider')) {
+          localStorage.setItem('provider', JSON.stringify(updatedUser))
+        } else {
+          localStorage.setItem('user', JSON.stringify(updatedUser))
+        }
       }
       
       toast.success('Notification preferences updated! (Offline Mode - Backend Unavailable)')

@@ -87,7 +87,16 @@ export class AdminServiceController {
     const adminId = req.user.id;
     console.log('[ADMIN API] POST /admin/services/:id/approve', { serviceId, approvalData, adminId });
     try {
-      return await this.adminServiceService.approveService(serviceId, approvalData, adminId);
+      // Normalize approval flag for backward compatibility (approved -> isApproved)
+      const normalized: any = {
+        ...approvalData,
+        isApproved: typeof approvalData.isApproved === 'boolean'
+          ? approvalData.isApproved
+          : typeof approvalData.approved === 'boolean'
+            ? approvalData.approved
+            : undefined,
+      };
+      return await this.adminServiceService.approveService(serviceId, normalized, adminId);
     } catch (err) {
       console.error('[ADMIN API] ERROR in approveService:', err);
       throw err;
@@ -128,6 +137,24 @@ export class AdminServiceController {
       return await this.adminServiceService.toggleServiceStatus(serviceId, adminId);
     } catch (err) {
       console.error('[ADMIN API] ERROR in toggleServiceStatus:', err);
+      throw err;
+    }
+  }
+
+  @Put(':id/pending')
+  @ApiOperation({ summary: 'Set service approval status back to pending' })
+  @ApiResponse({ status: 200, description: 'Service set to pending successfully' })
+  @ApiResponse({ status: 404, description: 'Service not found' })
+  async setPending(
+    @Param('id') serviceId: string,
+    @Request() req: any
+  ) {
+    const adminId = req.user.id;
+    console.log('[ADMIN API] PUT /admin/services/:id/pending', { serviceId, adminId });
+    try {
+      return await this.adminServiceService.setServicePending(serviceId, adminId);
+    } catch (err) {
+      console.error('[ADMIN API] ERROR in setPending:', err);
       throw err;
     }
   }

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   Search, 
   Plus, 
@@ -29,8 +29,8 @@ import type {
 } from '../../store/api/adminCategoriesApi';
 
 export const AdminCategoriesManager: React.FC = () => {
-  // Default wiwihood categories
-  const defaultCategories: Category[] = [
+  // Default wiwihood categories (memoized to avoid new reference each render)
+  const defaultCategories: Category[] = useMemo(() => ([
     { id: 'nails', name: 'Nails', slug: 'nails', description: 'Nail care and art services', isActive: true, isFeatured: false, sortOrder: 1, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     { id: 'lashes', name: 'Lashes', slug: 'lashes', description: 'Eyelash extensions and treatments', isActive: true, isFeatured: false, sortOrder: 2, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     { id: 'brows', name: 'Brows', slug: 'brows', description: 'Eyebrow shaping and styling', isActive: true, isFeatured: false, sortOrder: 3, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
@@ -41,7 +41,7 @@ export const AdminCategoriesManager: React.FC = () => {
     { id: 'ear', name: 'Ear', slug: 'ear', description: 'Ear care and piercing services', isActive: true, isFeatured: false, sortOrder: 8, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     { id: 'hair-remove', name: 'Hair Remove', slug: 'hair-remove', description: 'Hair removal treatments', isActive: true, isFeatured: false, sortOrder: 9, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() },
     { id: 'yoga-pilates', name: 'Yoga / Pilates', slug: 'yoga-pilates', description: 'Yoga and Pilates fitness sessions', isActive: true, isFeatured: false, sortOrder: 10, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() }
-  ];
+  ]), []);
 
   // Check authentication tokens
   React.useEffect(() => {
@@ -130,7 +130,7 @@ export const AdminCategoriesManager: React.FC = () => {
     }
     
     setFilteredCategories(filtered)
-  }, [categories, searchQuery, defaultCategories])
+  }, [categories, searchQuery])
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault()

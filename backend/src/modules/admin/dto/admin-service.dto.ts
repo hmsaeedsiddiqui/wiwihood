@@ -58,8 +58,13 @@ export class AdminServiceFiltersDto {
 }
 
 export class AdminApproveServiceDto {
+  @IsOptional()
   @IsBoolean()
-  approved: boolean;
+  isApproved?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  approved?: boolean;
 
   @IsOptional()
   @IsString()
