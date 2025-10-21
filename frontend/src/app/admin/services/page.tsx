@@ -121,42 +121,6 @@ export default function AdminServicesPage() {
 
   const services = servicesData?.services || [];
   const totalCount = servicesData?.total || 0;
-  // Derive robust statistics with multiple fallbacks
-  const stats = useMemo(() => {
-    const api = statsData as any | undefined;
-    const listStats = (servicesData as any)?.stats as any | undefined;
-    const list = services;
-
-    const toUpper = (v: any) => (v ?? '').toString().toUpperCase();
-    const countsFromList = () => {
-      let pending = 0, approved = 0, rejected = 0, active = 0, inactive = 0;
-      for (const s of list) {
-        const st = toUpper((s as any).approvalStatus);
-        const isApproved = st === 'APPROVED';
-        const isActive = !!(s as any).isActive;
-        if (st === 'PENDING_APPROVAL') pending++;
-        else if (st === 'APPROVED') approved++;
-        else if (st === 'REJECTED') rejected++;
-        if (isApproved && isActive) active++; // only approved can be active
-      }
-      // Fallback inactive based on available list information
-      // If totalCount available use that, otherwise use list length
-      const total = typeof servicesData?.total === 'number' ? servicesData!.total : list.length;
-      // inactive here is an approximation from list view (not global) when api stats missing
-      inactive = Math.max(0, total - active);
-      return { pending, approved, rejected, active, inactive, total };
-    };
-
-    const listDerived = countsFromList();
-    const total = (api?.total ?? listStats?.total ?? (typeof servicesData?.total === 'number' ? servicesData!.total : listDerived.total) ?? 0) as number;
-    const pending = (api?.pending ?? listStats?.pending ?? listDerived.pending ?? 0) as number;
-    const approved = (api?.approved ?? listStats?.approved ?? listDerived.approved ?? 0) as number;
-    const rejected = (api?.rejected ?? listStats?.rejected ?? listDerived.rejected ?? 0) as number;
-    const active = (api?.active ?? listStats?.active ?? listDerived.active ?? 0) as number;
-    const inactive = (api?.inactive ?? listStats?.inactive ?? listDerived.inactive ?? Math.max(0, total - active)) as number;
-
-    return { total, pending, approved, rejected, active, inactive };
-  }, [statsData, servicesData, services]);
 
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('ALL');
@@ -167,15 +131,6 @@ export default function AdminServicesPage() {
   const [itemsPerPage] = useState(10);
   const [isSlowLoading, setIsSlowLoading] = useState(false);
 
-  // Watchdog: if loading takes > 8s, show a helpful hint
-  useEffect(() => {
-    if (servicesLoading) {
-      const t = setTimeout(() => setIsSlowLoading(true), 8000);
-      return () => clearTimeout(t);
-    } else {
-      setIsSlowLoading(false);
-    }
-  }, [servicesLoading]);
   // Per-row loading states
   const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
@@ -189,6 +144,65 @@ export default function AdminServicesPage() {
   const [statusOverrides, setStatusOverrides] = useState<Map<string, 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED'>>(new Map());
   // Local active overrides to reflect activation state immediately (e.g., when moving to pending => deactivate)
   const [activeOverrides, setActiveOverrides] = useState<Map<string, boolean>>(new Map());
+
+  // Derive robust statistics with multiple fallbacks and apply local overrides when present
+  const stats = useMemo(() => {
+    const api = statsData as any | undefined;
+    const listStats = (servicesData as any)?.stats as any | undefined;
+    const list = services;
+
+    const toUpper = (v: any) => (v ?? '').toString().toUpperCase();
+    const countsFromList = (applyOverrides: boolean) => {
+      let pending = 0, approved = 0, rejected = 0, active = 0, inactive = 0;
+      for (const s of list) {
+        const rawStatus = toUpper((s as any).approvalStatus);
+        const effStatus = applyOverrides && statusOverrides.has((s as any).id)
+          ? (statusOverrides.get((s as any).id) as string)
+          : rawStatus;
+        const isApproved = effStatus === 'APPROVED';
+        const rawActive = !!(s as any).isActive;
+        const effActive = applyOverrides && activeOverrides.has((s as any).id)
+          ? (activeOverrides.get((s as any).id) as boolean)
+          : rawActive;
+
+        if (effStatus === 'PENDING_APPROVAL') pending++;
+        else if (effStatus === 'APPROVED') approved++;
+        else if (effStatus === 'REJECTED') rejected++;
+        if (isApproved && effActive) active++; // only approved can be active
+      }
+      const total = typeof servicesData?.total === 'number' ? servicesData!.total : list.length;
+      inactive = Math.max(0, total - active);
+      return { pending, approved, rejected, active, inactive, total };
+    };
+
+    const hasLocalOverrides = statusOverrides.size > 0 || activeOverrides.size > 0 || statusChangingIds.size > 0;
+    const listDerivedWithOverrides = countsFromList(true);
+    const listDerived = countsFromList(false);
+
+    // If there are local overrides (optimistic UI), prefer locally derived counts for immediacy
+    if (hasLocalOverrides) {
+      return listDerivedWithOverrides;
+    }
+
+    const total = (api?.total ?? listStats?.total ?? (typeof servicesData?.total === 'number' ? servicesData!.total : listDerived.total) ?? 0) as number;
+    const pending = (api?.pending ?? listStats?.pending ?? listDerived.pending ?? 0) as number;
+    const approved = (api?.approved ?? listStats?.approved ?? listDerived.approved ?? 0) as number;
+    const rejected = (api?.rejected ?? listStats?.rejected ?? listDerived.rejected ?? 0) as number;
+    const active = (api?.active ?? listStats?.active ?? listDerived.active ?? 0) as number;
+    const inactive = (api?.inactive ?? listStats?.inactive ?? listDerived.inactive ?? Math.max(0, total - active)) as number;
+
+    return { total, pending, approved, rejected, active, inactive };
+  }, [statsData, servicesData, services, statusOverrides, activeOverrides, statusChangingIds]);
+
+  // Watchdog: if loading takes > 8s, show a helpful hint
+  useEffect(() => {
+    if (servicesLoading) {
+      const t = setTimeout(() => setIsSlowLoading(true), 8000);
+      return () => clearTimeout(t);
+    } else {
+      setIsSlowLoading(false);
+    }
+  }, [servicesLoading]);
 
   // Update filters when search or status filter changes
   // Helper to map frontend status to correct enum casing for AdminServiceFilters
@@ -266,12 +280,35 @@ export default function AdminServicesPage() {
       if (comments && comments.trim().length > 0) approvalData.adminComments = comments.trim();
       if (badge && badge.trim().length > 0) approvalData.adminAssignedBadge = badge;
       if (typeof rating === 'number' && rating >= 1) approvalData.adminQualityRating = rating;
-      // Optimistic local update
-      if (approved) {
-        setLocallyApprovedIds(prev => new Set(prev).add(service.id));
-      }
+      // Optimistic local update for stats and row view
+      setStatusOverrides(prev => { const m = new Map(prev); m.set(service.id, approved ? 'APPROVED' : 'REJECTED'); return m; });
+      setActiveOverrides(prev => { const m = new Map(prev); m.set(service.id, approved ? true : false); return m; });
+      if (approved) setLocallyApprovedIds(prev => new Set(prev).add(service.id));
+
       await approveAdminService({ serviceId: service.id, approvalData }).unwrap();
-      refetchServices();
+      const refreshed = await refetchServices();
+      refetchStats();
+      // Clear overrides if backend reflects the change
+      try {
+        const expectedBackend = approved ? 'approved' : 'rejected';
+        const list = (refreshed as any)?.data?.services || servicesData?.services || [];
+        const updated = list.find((s: any) => s.id === service.id);
+        if (updated && updated.approvalStatus === expectedBackend) {
+          setStatusOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
+          setActiveOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
+        } else {
+          // Gentle retry
+          setTimeout(async () => {
+            const retry = await refetchServices();
+            const list2 = (retry as any)?.data?.services || servicesData?.services || [];
+            const updated2 = list2.find((s: any) => s.id === service.id);
+            if (updated2 && updated2.approvalStatus === expectedBackend) {
+              setStatusOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
+              setActiveOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
+            }
+          }, 600);
+        }
+      } catch {}
       setShowApprovalModal(false);
       setSelectedService(null);
       toast.success(approved ? 'Service approved and activated' : 'Service rejected');
@@ -279,9 +316,9 @@ export default function AdminServicesPage() {
       console.error('Failed to approve/reject service:', error);
       toast.error('Failed to update service status.');
       // Rollback optimistic update on failure
-      setLocallyApprovedIds(prev => {
-        const next = new Set(prev); next.delete(service.id); return next;
-      });
+      setStatusOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
+      setActiveOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
+      setLocallyApprovedIds(prev => { const next = new Set(prev); next.delete(service.id); return next; });
     }
   };
 
@@ -538,7 +575,7 @@ export default function AdminServicesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Total Services</p>
-                <p className="text-2xl font-bold text-gray-900">{(statsLoading && !statsData) ? '—' : stats.total}</p>
+                <p className="text-2xl font-bold text-gray-900">{(statsLoading && !statsData && servicesLoading) ? '—' : stats.total}</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Building2 className="w-6 h-6 text-blue-600" />
@@ -550,7 +587,7 @@ export default function AdminServicesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Pending Approval</p>
-                <p className="text-2xl font-bold text-yellow-600">{(statsLoading && !statsData) ? '—' : stats.pending}</p>
+                <p className="text-2xl font-bold text-yellow-600">{(statsLoading && !statsData && servicesLoading) ? '—' : stats.pending}</p>
               </div>
               <div className="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
                 <Clock className="w-6 h-6 text-yellow-600" />
@@ -562,7 +599,7 @@ export default function AdminServicesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Approved</p>
-                <p className="text-2xl font-bold text-green-600">{(statsLoading && !statsData) ? '—' : stats.approved}</p>
+                <p className="text-2xl font-bold text-green-600">{(statsLoading && !statsData && servicesLoading) ? '—' : stats.approved}</p>
               </div>
               <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                 <CheckCircle className="w-6 h-6 text-green-600" />
@@ -574,7 +611,7 @@ export default function AdminServicesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Active Services</p>
-                <p className="text-2xl font-bold text-blue-600">{(statsLoading && !statsData) ? '—' : stats.active}</p>
+                <p className="text-2xl font-bold text-blue-600">{(statsLoading && !statsData && servicesLoading) ? '—' : stats.active}</p>
               </div>
               <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <Star className="w-6 h-6 text-blue-600" />
@@ -586,7 +623,7 @@ export default function AdminServicesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600 mb-1">Rejected</p>
-                <p className="text-2xl font-bold text-red-600">{(statsLoading && !statsData) ? '—' : stats.rejected}</p>
+                <p className="text-2xl font-bold text-red-600">{(statsLoading && !statsData && servicesLoading) ? '—' : stats.rejected}</p>
               </div>
               <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
                 <XCircle className="w-6 h-6 text-red-600" />
