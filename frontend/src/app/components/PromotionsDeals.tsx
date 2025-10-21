@@ -1,52 +1,34 @@
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useGetServicesQuery } from '@/store/api/servicesApi'
 
 const PromotionsDeals = () => {
   const router = useRouter();
-  const deals = [
-    {
-      id: 1,
-      title: 'First Visit Special',
-      service: '25% OFF on your first appointment',
-      location: 'Valid at all partner salons',
-      discount: '25% OFF',
-      code: 'FIRST25',
-      image: '/service1.png',
-      category: 'New Customer',
-      validUntil: 'Oct 31'
-    },
-    {
-      id: 2,
-      title: 'Spa Package Deal',
-      service: 'Complete spa experience package',
-      location: 'Massage, Facial & Manicure included',
-      discount: '40% OFF',
-      code: 'SPA40',
-      image: '/service2.jpg',
-      category: 'Spa Combo',
-      validUntil: 'Nov 15'
-    },
-    {
-      id: 3,
-      title: 'Weekend Special',
-      service: 'Hair styling and makeup combo',
-      location: 'Perfect for weekend events',
-      discount: '30% OFF',
-      code: 'WEEKEND30',
-      image: '/service3.jpg',
-      category: 'Weekend Deal',
-      validUntil: 'Oct 25'
-    }
-  ]
+  const { data: services = [], isLoading, isError } = useGetServicesQuery({ limit: 20, isActive: true })
 
-  const DealCard = ({ deal }: { deal: typeof deals[0] }) => (
+  const deals = useMemo(() => {
+    const list = (services as any[]).filter(s => s?.isPromotional || s?.discountPercentage || s?.promoCode)
+    return list.slice(0, 6).map(s => ({
+      id: s.id,
+      title: s.dealTitle || s.name,
+      service: s.dealDescription || s.shortDescription || s.description || 'Special promotion',
+      location: s.displayLocation || s.provider?.businessName || '',
+      discount: s.discountPercentage ? `${s.discountPercentage} OFF` : (s.isPromotional ? 'Deal' : ''),
+      code: s.promoCode || '—',
+      image: s.featuredImage || (Array.isArray(s.images) ? s.images[0] : undefined) || '/service2.jpg',
+      category: s.dealCategory || s.category?.name || 'Promotion',
+      validUntil: s.dealValidUntil ? new Date(s.dealValidUntil).toLocaleDateString() : '',
+    }))
+  }, [services])
+
+  const DealCard = ({ deal }: { deal: any }) => (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
-        <img 
-          src={deal.image} 
+        <img
+          src={deal.image}
           alt={deal.service}
           className="w-full h-full object-cover"
         />
@@ -55,9 +37,11 @@ const PromotionsDeals = () => {
           {deal.category}
         </div>
         {/* Discount badge */}
-        <div className="absolute top-3 right-3 bg-[#E89B8B] text-white px-3 py-1 rounded-full text-sm font-bold">
-          {deal.discount}
-        </div>
+        {deal.discount && (
+          <div className="absolute top-3 right-3 bg-[#E89B8B] text-white px-3 py-1 rounded-full text-sm font-bold">
+            {deal.discount}
+          </div>
+        )}
       </div>
       
       {/* Content */}
@@ -76,7 +60,9 @@ const PromotionsDeals = () => {
           <div className="bg-[#F5F0EF] px-2 py-1 rounded text-xs font-medium text-[#E89B8B]">
             Code: {deal.code}
           </div>
-          <span className="text-xs text-gray-500">Valid until {deal.validUntil}</span>
+          {deal.validUntil && (
+            <span className="text-xs text-gray-500">Valid until {deal.validUntil}</span>
+          )}
         </div>
       </div>
     </div>
@@ -94,12 +80,21 @@ const PromotionsDeals = () => {
             View all
           </button>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {deals.map((deal) => (
-            <DealCard key={deal.id} deal={deal} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-gray-100 rounded-2xl h-72 animate-pulse" />
+            ))}
+          </div>
+        ) : isError ? (
+          <div className="text-center text-gray-500">Failed to load promotions.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {deals.map((deal) => (
+              <DealCard key={deal.id} deal={deal} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )

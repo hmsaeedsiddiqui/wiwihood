@@ -1,50 +1,45 @@
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useGetServicesQuery } from '@/store/api/servicesApi'
 
 const TopRatedBusinesses = () => {
   const router = useRouter()
-  
-  const businesses = [
-    {
-      id: 1,
-      name: 'Glamour Studio',
-      service: 'Premium Hair & Makeup Services',
-      location: 'Dubai Marina, Near JBR',
-      rating: 4.9,
-      reviews: 247,
-      image: '/service1.png',
-      category: 'Hair & Makeup'
-    },
-    {
-      id: 2,
-      name: 'Serenity Spa',
-      service: 'Relaxing Massage & Facial Treatments',
-      location: 'Downtown Dubai, DIFC',
-      rating: 4.8,
-      reviews: 189,
-      image: '/service2.jpg',
-      category: 'Spa & Wellness'
-    },
-    {
-      id: 3,
-      name: 'Elite Beauty',
-      service: 'Professional Nails & Eyebrow Care',
-      location: 'Jumeirah, Near Mall',
-      rating: 4.7,
-      reviews: 312,
-      image: '/service3.jpg',
-      category: 'Beauty Care'
-    }
-  ]
 
-  const BusinessCard = ({ business }: { business: typeof businesses[0] }) => (
+  const { data: services = [], isLoading, isError } = useGetServicesQuery({ limit: 12, isActive: true })
+
+  // Derive top-rated unique providers from services
+  const items = useMemo(() => {
+    const byProvider = new Map<string, any>()
+    for (const s of services as any[]) {
+      const provId = s?.provider?.id || s?.providerId || s?.provider?.name
+      if (!provId) continue
+      const current = byProvider.get(provId)
+      const rating = typeof s?.averageRating === 'number' ? s.averageRating : 0
+      const reviews = typeof s?.totalReviews === 'number' ? s.totalReviews : 0
+      if (!current || rating > current.rating) {
+        byProvider.set(provId, {
+          id: provId,
+          name: s?.provider?.businessName || s?.provider?.name || 'Provider',
+          service: s?.shortDescription || s?.name || '—',
+          location: s?.displayLocation || s?.provider?.city || '',
+          rating,
+          reviews,
+          image: s?.featuredImage || (Array.isArray(s?.images) ? s.images[0] : undefined) || '/service1.png',
+          category: s?.category?.name || 'Services',
+        })
+      }
+    }
+    return Array.from(byProvider.values()).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 6)
+  }, [services])
+
+  const BusinessCard = ({ business }: { business: any }) => (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
-        <img 
-          src={business.image} 
+        <img
+          src={business.image}
           alt={business.service}
           className="w-full h-full object-cover"
         />
@@ -97,12 +92,21 @@ const TopRatedBusinesses = () => {
             View all
           </button>
         </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {businesses.map((business) => (
-            <BusinessCard key={business.id} business={business} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="bg-gray-100 rounded-2xl h-72 animate-pulse" />
+            ))}
+          </div>
+        ) : isError ? (
+          <div className="text-center text-gray-500">Failed to load top-rated items.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {items.map((business: any) => (
+              <BusinessCard key={business.id} business={business} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )
