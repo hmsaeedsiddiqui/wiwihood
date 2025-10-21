@@ -2,15 +2,19 @@
 
 import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { useGetServicesQuery } from '@/store/api/servicesApi'
+import { useGetServicesQuery, useGetPopularServicesQuery } from '@/store/api/servicesApi'
 
 const PromotionsDeals = () => {
   const router = useRouter();
   // Avoid unsupported params; limit client-side
   const { data: services = [], isLoading, isError } = useGetServicesQuery({ isActive: true })
+  // Fallback to popular services if generic services query errors or returns empty
+  const shouldFallback = isError || (Array.isArray(services) && services.length === 0)
+  const { data: popularFallback = [], isLoading: isLoadingFallback, isError: isErrorFallback } = useGetPopularServicesQuery({ limit: 12 }, { skip: !shouldFallback })
 
   const deals = useMemo(() => {
-    const list = (services as any[]).filter(s => s?.isPromotional || s?.discountPercentage || s?.promoCode)
+    const base = shouldFallback ? (popularFallback as any[]) : (services as any[])
+    const list = base.filter(s => s?.isPromotional || s?.discountPercentage || s?.promoCode)
     return list.slice(0, 6).map(s => ({
       id: s.id,
       title: s.dealTitle || s.name,
@@ -22,7 +26,7 @@ const PromotionsDeals = () => {
       category: s.dealCategory || s.category?.name || 'Promotion',
       validUntil: s.dealValidUntil ? new Date(s.dealValidUntil).toLocaleDateString() : '',
     }))
-  }, [services])
+  }, [services, popularFallback, shouldFallback])
 
   const DealCard = ({ deal }: { deal: any }) => (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
@@ -81,14 +85,14 @@ const PromotionsDeals = () => {
             View all
           </button>
         </div>
-        {isLoading ? (
+        {isLoading || (shouldFallback && isLoadingFallback) ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-gray-100 rounded-2xl h-72 animate-pulse" />
             ))}
           </div>
-        ) : isError ? (
-          <div className="text-center text-gray-500">Failed to load promotions.</div>
+        ) : (isError && isErrorFallback) ? (
+          <div className="text-center text-gray-500">No promotions available right now.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {deals.map((deal) => (
