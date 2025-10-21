@@ -2,11 +2,18 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { useGetPopularServicesQuery } from '@/store/api/servicesApi'
+import { useGetPopularServicesQuery, useGetServicesQuery } from '@/store/api/servicesApi'
 
 const PopularServices = () => {
   const router = useRouter();
-  const { data: popular = [], isLoading, isError } = useGetPopularServicesQuery({ limit: 6 })
+  // Prefer services with badges indicating popularity; fallback to popular endpoint
+  const { data: allActive = [], isLoading: loadAll, isError: errAll } = useGetServicesQuery({ isActive: true })
+  const badgeSet = new Set(['Popular', 'Premium', 'Top Rated', 'Top-rated', 'Top rated'])
+  const withBadge = (allActive as any[]).filter(s => badgeSet.has((s?.adminAssignedBadge || '').toString()))
+  const { data: popular = [], isLoading: loadPopular, isError: errPopular } = useGetPopularServicesQuery({ limit: 12 }, { skip: withBadge.length > 0 })
+  const items = (withBadge.length > 0 ? withBadge.slice(0, 6) : (popular as any[]).slice(0, 6))
+  const isLoading = loadAll || (withBadge.length === 0 && loadPopular)
+  const isError = errAll && (withBadge.length === 0 && errPopular)
 
   const goToServices = (service: any) => {
     // Prefer category filter if available; else search by name
@@ -47,7 +54,7 @@ const PopularServices = () => {
             <div className="text-center text-gray-500">Failed to load popular services.</div>
           ) : (
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 md:gap-6">
-              {popular.map((svc: any, index: number) => (
+              {items.map((svc: any, index: number) => (
                 <div
                   key={svc.id || index}
                   onClick={() => goToServices(svc)}

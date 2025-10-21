@@ -12,8 +12,11 @@ const TopRatedBusinesses = () => {
 
   // Derive top-rated unique providers from services
   const items = useMemo(() => {
+    const S = services as any[]
+    const badgePreferred = S.filter(s => (s?.adminAssignedBadge || '').toString().toLowerCase().includes('top'))
+    const source = badgePreferred.length > 0 ? badgePreferred : S
     const byProvider = new Map<string, any>()
-    for (const s of services as any[]) {
+    for (const s of source) {
       const provId = s?.provider?.id || s?.providerId || s?.provider?.name
       if (!provId) continue
       const current = byProvider.get(provId)

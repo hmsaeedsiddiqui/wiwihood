@@ -14,7 +14,13 @@ const PromotionsDeals = () => {
 
   const deals = useMemo(() => {
     const base = shouldFallback ? (popularFallback as any[]) : (services as any[])
-    const list = base.filter(s => s?.isPromotional || s?.discountPercentage || s?.promoCode)
+    // Prefer admin badges indicating deals
+    const badgeFirst = base.filter(s => {
+      const b = (s?.adminAssignedBadge || '').toString().toLowerCase()
+      return b.includes('deal') || b.includes('limited') || b.includes('offer') || b.includes('hot')
+    })
+    const listSource = badgeFirst.length > 0 ? badgeFirst : base
+    const list = listSource.filter(s => s?.isPromotional || s?.discountPercentage || s?.promoCode)
     return list.slice(0, 6).map(s => ({
       id: s.id,
       title: s.dealTitle || s.name,
