@@ -8,8 +8,8 @@ function HotProduct() {
   const router = useRouter();
   // Fetch all active services for badge-driven selections
   const { data: activeServices = [], isLoading: loadingActive, isError: errorActive } = useGetServicesQuery({ isActive: true })
-  // Fallback to backend popular if no relevant badges found
-  const { data: popularFallback = [], isLoading: loadingPopular, isError: errorPopular } = useGetPopularServicesQuery({ limit: 12 }, { skip: (activeServices as any[]).length > 0 })
+  // Also fetch backend popular to use as a fallback when badge-based lists are sparse
+  const { data: popularFallback = [], isLoading: loadingPopular, isError: errorPopular } = useGetPopularServicesQuery({ limit: 12 })
 
   // Graceful fallback demo content when API is loading or errors
   const fallbackServices = [
@@ -169,7 +169,7 @@ function HotProduct() {
           <h2 className="text-4xl font-light text-gray-800 mb-4">What's hot right now</h2>
           <p className="text-gray-600 max-w-2xl mx-auto">
             Beyond the most popular treatments, our staff reviews and selections bring you 
-            brand-new professionals on vividhood.
+            brand-new professionals on Wiwihood.
           </p>
         </div>
 
@@ -192,7 +192,7 @@ function HotProduct() {
         {/* New on vividhood section */}
         <div>
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-light text-gray-800">New on vividhood</h3>
+            <h3 className="text-2xl font-light text-gray-800">New on Wiwihood</h3>
             <button 
               onClick={() => router.push('/services?filter=new')}
               className="bg-[#E89B8B] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#D4876F] transition-colors"
