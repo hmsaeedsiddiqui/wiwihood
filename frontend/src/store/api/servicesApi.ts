@@ -278,31 +278,42 @@ const PROVIDER_ENDPOINTS = new Set([
   'deleteService',
 ]);
 
+// Public endpoints that should NOT send Authorization
+const PUBLIC_ENDPOINTS = new Set([
+  'getServices',
+  'searchServices',
+  'getPopularServices',
+  'getServiceById',
+  'getServicesByCategory',
+]);
+
 export const servicesApi = createApi({
   reducerPath: 'servicesApi',
   baseQuery: fetchBaseQuery({
     baseUrl: EFFECTIVE_BASE_URL,
     prepareHeaders: (headers, { endpoint }) => {
-      // Get token from localStorage (support multiple keys, same as authApi)
+      // Only attach Authorization for admin/provider endpoints; never for public ones
       let token: string | null = null
       if (typeof window !== 'undefined') {
         const adminToken = localStorage.getItem('adminToken');
         const providerToken = localStorage.getItem('providerToken') || localStorage.getItem('accessToken') || localStorage.getItem('auth-token');
 
-        // Use admin token only for admin endpoints
         if (endpoint && ADMIN_ENDPOINTS.has(endpoint)) {
           token = adminToken || null;
         } else if (endpoint && PROVIDER_ENDPOINTS.has(endpoint)) {
-          // Use provider token for provider endpoints; don't fall back to admin token to avoid role mismatch
           token = providerToken || null;
+        } else if (endpoint && PUBLIC_ENDPOINTS.has(endpoint)) {
+          token = null; // explicitly avoid sending any token for public endpoints
         } else {
-          // For public/general endpoints, prefer provider/user token; avoid sending admin token by default
-          token = providerToken || null;
+          // Default to no token for unspecified endpoints
+          token = null;
         }
       }
 
       if (token) {
         headers.set('authorization', `Bearer ${token}`)
+      } else {
+        headers.delete('authorization')
       }
 
       headers.set('content-type', 'application/json')
