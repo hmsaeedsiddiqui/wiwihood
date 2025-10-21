@@ -7,7 +7,8 @@ import { useGetServicesQuery } from '@/store/api/servicesApi'
 const TopRatedBusinesses = () => {
   const router = useRouter()
 
-  const { data: services = [], isLoading, isError } = useGetServicesQuery({ limit: 12, isActive: true })
+  // Backend ServiceFilterDto doesn't accept limit/page in public GET; slice client-side instead
+  const { data: services = [], isLoading, isError } = useGetServicesQuery({ isActive: true })
 
   // Derive top-rated unique providers from services
   const items = useMemo(() => {

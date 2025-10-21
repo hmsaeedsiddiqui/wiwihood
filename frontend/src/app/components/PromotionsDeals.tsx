@@ -6,7 +6,8 @@ import { useGetServicesQuery } from '@/store/api/servicesApi'
 
 const PromotionsDeals = () => {
   const router = useRouter();
-  const { data: services = [], isLoading, isError } = useGetServicesQuery({ limit: 20, isActive: true })
+  // Avoid unsupported params; limit client-side
+  const { data: services = [], isLoading, isError } = useGetServicesQuery({ isActive: true })
 
   const deals = useMemo(() => {
     const list = (services as any[]).filter(s => s?.isPromotional || s?.discountPercentage || s?.promoCode)
