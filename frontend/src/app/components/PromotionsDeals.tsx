@@ -8,31 +8,82 @@ const PromotionsDeals = () => {
   const router = useRouter();
   // Avoid unsupported params; limit client-side
   const { data: services = [], isLoading, isError } = useGetServicesQuery({ isActive: true })
-  // Fallback to popular services if generic services query errors or returns empty
-  const shouldFallback = isError || (Array.isArray(services) && services.length === 0)
-  const { data: popularFallback = [], isLoading: isLoadingFallback, isError: isErrorFallback } = useGetPopularServicesQuery({ limit: 12 }, { skip: !shouldFallback })
+  // Always fetch popular to have a graceful fallback when no badge/promo items exist
+  const { data: popularFallback = [], isLoading: isLoadingFallback, isError: isErrorFallback } = useGetPopularServicesQuery({ limit: 12 })
 
   const deals = useMemo(() => {
-    const base = shouldFallback ? (popularFallback as any[]) : (services as any[])
-    // Prefer admin badges indicating deals
-    const badgeFirst = base.filter(s => {
-      const b = (s?.adminAssignedBadge || '').toString().toLowerCase()
-      return b.includes('deal') || b.includes('limited') || b.includes('offer') || b.includes('hot')
-    })
-    const listSource = badgeFirst.length > 0 ? badgeFirst : base
-    const list = listSource.filter(s => s?.isPromotional || s?.discountPercentage || s?.promoCode)
-    return list.slice(0, 6).map(s => ({
+    const S = (services as any[])
+    const P = (popularFallback as any[])
+
+    const badgeKeywords = ['deal', 'hot', 'limited', 'offer', 'discount', 'sale']
+    const getBadgeText = (s: any) => {
+      const b = s?.adminAssignedBadge
+      if (Array.isArray(b)) return b.join(' ').toString()
+      return (b || '').toString()
+    }
+    const hasDealBadge = (s: any) => {
+      const b = getBadgeText(s).toLowerCase()
+      return badgeKeywords.some(k => b.includes(k))
+    }
+    const formatDiscount = (s: any) => {
+      const raw = s?.discountPercentage
+      const num = typeof raw === 'number' ? raw : (typeof raw === 'string' ? parseFloat(raw) : NaN)
+      if (Number.isFinite(num) && num > 0) return `${num}% OFF`
+      const badge = getBadgeText(s)
+      if (badge) return badge
+      if (s?.promotionText) return s.promotionText
+      return 'Deal'
+    }
+
+    // 1) Prefer admin badges indicating deals (even if promo fields are not set)
+    const badgeFirst = S.filter(hasDealBadge)
+    if (badgeFirst.length > 0) {
+      return badgeFirst.slice(0, 6).map(s => ({
+        id: s.id,
+        title: s.dealTitle || s.name,
+        service: s.dealDescription || s.shortDescription || s.description || 'Special promotion',
+        location: s.displayLocation || s.provider?.businessName || '',
+        discount: formatDiscount(s),
+        code: s.promoCode || '—',
+        image: s.featuredImage || (Array.isArray(s.images) ? s.images[0] : undefined) || '/service2.jpg',
+        category: s.dealCategory || s.category?.name || 'Promotion',
+        validUntil: s.dealValidUntil ? new Date(s.dealValidUntil).toLocaleDateString() : '',
+      }))
+    }
+
+    // 2) Otherwise, use items with promo fields
+    const promoList = S.filter(s => !!s?.isPromotional || !!s?.discountPercentage || !!s?.promoCode)
+    if (promoList.length > 0) {
+      return promoList.slice(0, 6).map(s => ({
+        id: s.id,
+        title: s.dealTitle || s.name,
+        service: s.dealDescription || s.shortDescription || s.description || 'Special promotion',
+        location: s.displayLocation || s.provider?.businessName || '',
+        discount: (() => {
+          const raw = s?.discountPercentage
+          const num = typeof raw === 'number' ? raw : (typeof raw === 'string' ? parseFloat(raw) : NaN)
+          return Number.isFinite(num) && num > 0 ? `${num}% OFF` : (s.isPromotional ? 'Deal' : '')
+        })(),
+        code: s.promoCode || '—',
+        image: s.featuredImage || (Array.isArray(s.images) ? s.images[0] : undefined) || '/service2.jpg',
+        category: s.dealCategory || s.category?.name || 'Promotion',
+        validUntil: s.dealValidUntil ? new Date(s.dealValidUntil).toLocaleDateString() : '',
+      }))
+    }
+
+    // 3) Final fallback to backend popular
+    return P.slice(0, 6).map(s => ({
       id: s.id,
-      title: s.dealTitle || s.name,
-      service: s.dealDescription || s.shortDescription || s.description || 'Special promotion',
+      title: s.name,
+      service: s.shortDescription || s.description || 'Featured service',
       location: s.displayLocation || s.provider?.businessName || '',
-      discount: s.discountPercentage ? `${s.discountPercentage} OFF` : (s.isPromotional ? 'Deal' : ''),
-      code: s.promoCode || '—',
+      discount: '',
+      code: '—',
       image: s.featuredImage || (Array.isArray(s.images) ? s.images[0] : undefined) || '/service2.jpg',
-      category: s.dealCategory || s.category?.name || 'Promotion',
-      validUntil: s.dealValidUntil ? new Date(s.dealValidUntil).toLocaleDateString() : '',
+      category: s.category?.name || 'Service',
+      validUntil: '',
     }))
-  }, [services, popularFallback, shouldFallback])
+  }, [services, popularFallback])
 
   const DealCard = ({ deal }: { deal: any }) => (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
@@ -91,13 +142,13 @@ const PromotionsDeals = () => {
             View all
           </button>
         </div>
-        {isLoading || (shouldFallback && isLoadingFallback) ? (
+        {isLoading || isLoadingFallback ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-gray-100 rounded-2xl h-72 animate-pulse" />
             ))}
           </div>
-        ) : (isError && isErrorFallback) ? (
+        ) : (isError && isErrorFallback && deals.length === 0) ? (
           <div className="text-center text-gray-500">No promotions available right now.</div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

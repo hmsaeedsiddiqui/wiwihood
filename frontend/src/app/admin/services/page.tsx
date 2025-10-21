@@ -66,6 +66,48 @@ export default function AdminServicesPage() {
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [authChecked, setAuthChecked] = useState(false);
 
+  // Durable local cache to prevent UI regressions on reload when backend payloads are delayed/ambiguous
+  // Cache structure: { [serviceId]: { status, isActive, updatedAt } }
+  type LocalServiceState = {
+    status: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED';
+    isActive: boolean;
+    updatedAt: number;
+  };
+  const LOCAL_CACHE_KEY = 'adminServiceStateCache';
+  const loadStateCache = (): Record<string, LocalServiceState> => {
+    try {
+      if (typeof window === 'undefined') return {} as Record<string, LocalServiceState>;
+      const raw = localStorage.getItem(LOCAL_CACHE_KEY) || '{}';
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch {
+      return {} as Record<string, LocalServiceState>;
+    }
+  };
+  const writeStateCache = (cache: Record<string, LocalServiceState>) => {
+    try {
+      if (typeof window === 'undefined') return;
+      localStorage.setItem(LOCAL_CACHE_KEY, JSON.stringify(cache));
+    } catch {}
+  };
+  const upsertStateCache = (serviceId: string, patch: Partial<LocalServiceState>) => {
+    const cache = loadStateCache();
+    const prev: LocalServiceState = cache[serviceId] || { status: 'PENDING_APPROVAL', isActive: false, updatedAt: 0 };
+    cache[serviceId] = { ...prev, ...patch, updatedAt: Date.now() } as LocalServiceState;
+    writeStateCache(cache);
+  };
+  const removeFromStateCache = (ids: string[]) => {
+    const cache = loadStateCache();
+    let changed = false;
+    for (const id of ids) {
+      if (id in cache) {
+        delete cache[id];
+        changed = true;
+      }
+    }
+    if (changed) writeStateCache(cache);
+  };
+
   // Gate this page to admin role only; redirect others to admin login
   useEffect(() => {
     try {
@@ -150,6 +192,7 @@ export default function AdminServicesPage() {
     const api = statsData as any | undefined;
     const listStats = (servicesData as any)?.stats as any | undefined;
     const list = services;
+    const cache = loadStateCache();
 
     const toUpper = (v: any) => (v ?? '').toString().toUpperCase();
     const normalizeStatus = (raw: string) => {
@@ -163,7 +206,15 @@ export default function AdminServicesPage() {
       if (fromApi) return fromApi as any;
       // Fallback: if API doesn't send approvalStatus but has isApproved boolean
       if (s?.isApproved === true) return 'APPROVED';
-      if (s?.isApproved === false) return 'PENDING_APPROVAL'; // avoid assuming REJECTED without explicit status
+      if (s?.isApproved === false) {
+        // If API explicitly says not approved, we still avoid assuming REJECTED; however, use cached status if present
+        const cached = cache[(s as any).id as string];
+        if (cached && cached.status) return cached.status;
+        return 'PENDING_APPROVAL';
+      }
+      // If completely ambiguous, prefer cached status when available
+      const cached = cache[(s as any).id as string];
+      if (cached && cached.status) return cached.status;
       return 'PENDING_APPROVAL';
     };
 
@@ -178,7 +229,12 @@ export default function AdminServicesPage() {
         const baseStatus = deriveBaseStatus(s as any);
         const effStatus = applyOverrides ? getEffectiveStatus(s as any) : baseStatus;
         const isApproved = effStatus === 'APPROVED';
-        const rawActive = !!(s as any).isActive;
+        let rawActive = !!(s as any).isActive;
+        // When server payload is ambiguous, use cached active flag as fallback
+        if (!rawActive) {
+          const cached = cache[(s as any).id as string];
+          if (cached && typeof cached.isActive === 'boolean') rawActive = cached.isActive;
+        }
         const effActive = applyOverrides && activeOverrides.has((s as any).id)
           ? (activeOverrides.get((s as any).id) as boolean)
           : rawActive;
@@ -300,10 +356,14 @@ export default function AdminServicesPage() {
       if (typeof rating === 'number' && rating >= 1) approvalData.adminQualityRating = rating;
       // Optimistic local update for stats and row view
       setStatusOverrides(prev => { const m = new Map(prev); m.set(service.id, approved ? 'APPROVED' : 'REJECTED'); return m; });
-      setActiveOverrides(prev => { const m = new Map(prev); m.set(service.id, approved ? true : false); return m; });
+      // Do not force-activate on approve; preserve previous active state for consistency
+      const prevActive = activeOverrides.has(service.id) ? (activeOverrides.get(service.id) as boolean) : !!service.isActive;
+      setActiveOverrides(prev => { const m = new Map(prev); m.set(service.id, approved ? prevActive : false); return m; });
       if (approved) setLocallyApprovedIds(prev => new Set(prev).add(service.id));
 
       await approveAdminService({ serviceId: service.id, approvalData }).unwrap();
+      // Persist durable local snapshot
+      upsertStateCache(service.id, { status: approved ? 'APPROVED' : 'REJECTED', isActive: approved ? prevActive : false });
       const refreshed = await refetchServices();
       refetchStats();
       // Clear overrides if backend reflects the change
@@ -332,7 +392,7 @@ export default function AdminServicesPage() {
       } catch {}
       setShowApprovalModal(false);
       setSelectedService(null);
-      toast.success(approved ? 'Service approved and activated' : 'Service rejected');
+      toast.success(approved ? 'Service approved' : 'Service rejected');
     } catch (error) {
       console.error('Failed to approve/reject service:', error);
       toast.error('Failed to update service status.');
@@ -348,6 +408,8 @@ export default function AdminServicesPage() {
       try {
         // Use dedicated delete endpoint for single deletion
         await deleteAdminService(serviceId).unwrap();
+        // Remove from durable cache
+        removeFromStateCache([serviceId]);
         refetchServices();
         toast.success('Service deleted');
       } catch (error) {
@@ -382,6 +444,18 @@ export default function AdminServicesPage() {
           serviceIds: selectedServices,
           action: mappedAction,
         }).unwrap();
+        // Update durable cache according to the action
+        if (mappedAction === 'approve') {
+          for (const id of selectedServices) upsertStateCache(id, { status: 'APPROVED' });
+        } else if (mappedAction === 'reject') {
+          for (const id of selectedServices) upsertStateCache(id, { status: 'REJECTED', isActive: false });
+        } else if (mappedAction === 'activate') {
+          for (const id of selectedServices) upsertStateCache(id, { isActive: true });
+        } else if (mappedAction === 'deactivate') {
+          for (const id of selectedServices) upsertStateCache(id, { isActive: false });
+        } else if (mappedAction === 'delete') {
+          removeFromStateCache(selectedServices);
+        }
         refetchServices();
         setSelectedServices([]);
         const verb = action === 'delete' ? 'deleted' : action === 'approve' ? 'approved' : action === 'reject' ? 'rejected' : action === 'activate' ? 'activated' : 'deactivated';
@@ -476,15 +550,21 @@ export default function AdminServicesPage() {
         await setAdminServicePending(service.id).unwrap();
         // Ensure local approved override is cleared
         setLocallyApprovedIds(prev => { const n = new Set(prev); n.delete(service.id); return n; });
+        // Persist durable local snapshot
+        upsertStateCache(service.id, { status: 'PENDING_APPROVAL', isActive: false });
         toast.success('Moved to pending');
       } else if (nextStatus === 'APPROVED') {
         // Approve (do not force activation; toggle controls active state)
         await approveAdminService({ serviceId: service.id, approvalData: { isApproved: true } }).unwrap();
+        // Preserve current active state on approve
+        const prevActiveLocal = activeOverrides.has(service.id) ? (activeOverrides.get(service.id) as boolean) : !!service.isActive;
+        upsertStateCache(service.id, { status: 'APPROVED', isActive: prevActiveLocal });
         toast.success('Approved');
       } else if (nextStatus === 'REJECTED') {
         // Reject
         setLocallyApprovedIds(prev => { const n = new Set(prev); n.delete(service.id); return n; });
         await approveAdminService({ serviceId: service.id, approvalData: { isApproved: false } }).unwrap();
+        upsertStateCache(service.id, { status: 'REJECTED', isActive: false });
         toast.success('Rejected');
       }
       // Refresh data and stats after mutation

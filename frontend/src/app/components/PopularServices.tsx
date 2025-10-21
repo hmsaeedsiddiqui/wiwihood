@@ -2,114 +2,88 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { useGetPopularServicesQuery, useGetServicesQuery } from '@/store/api/servicesApi'
+import { useGetCategoriesQuery } from '@/store/api/providersApi'
+import { Scissors, Hand, Sparkles, Eye, Droplets, Leaf, HeartPulse } from 'lucide-react'
 
 const PopularServices = () => {
-  const router = useRouter();
-  // Prefer services with badges indicating popularity; fallback to popular endpoint
-  const { data: allActive = [], isLoading: loadAll, isError: errAll } = useGetServicesQuery({ isActive: true })
-  const badgeSet = new Set(['Popular', 'Premium', 'Top Rated', 'Top-rated', 'Top rated'])
-  const withBadge = (allActive as any[]).filter(s => badgeSet.has((s?.adminAssignedBadge || '').toString()))
-  const { data: popular = [], isLoading: loadPopular, isError: errPopular } = useGetPopularServicesQuery({ limit: 12 }, { skip: withBadge.length > 0 })
-  const items = (withBadge.length > 0 ? withBadge.slice(0, 6) : (popular as any[]).slice(0, 6))
-  const isLoading = loadAll || (withBadge.length === 0 && loadPopular)
-  const isError = errAll && (withBadge.length === 0 && errPopular)
+  const router = useRouter()
+  const { data: categories = [], isLoading: loadingCats, isError: catsError } = useGetCategoriesQuery({ isActive: true })
 
-  const goToServices = (service: any) => {
-    // Prefer category filter if available; else search by name
-    if (service?.category?.id) {
-      router.push(`/services?categoryId=${service.category.id}`)
-    } else if (service?.category?.name) {
-      router.push(`/services?category=${encodeURIComponent(service.category.name)}`)
-    } else if (service?.name) {
-      router.push(`/services?search=${encodeURIComponent(service.name)}`)
-    } else {
-      router.push('/services')
-    }
+  // Theme-aligned icons (Lucide) based on category names
+  const getIconForCategory = (name: string) => {
+    const n = (name || '').toLowerCase()
+    const commonProps = { className: 'w-4 h-4 text-[#D4876F]' }
+    if (n.includes('hair')) return <Scissors {...commonProps} />
+    if (n.includes('nail')) return <Hand {...commonProps} />
+    if (n.includes('massage') || n.includes('wellness')) return <HeartPulse {...commonProps} />
+    if (n.includes('spa')) return <Droplets {...commonProps} />
+    if (n.includes('facial') || n.includes('skin')) return <Droplets {...commonProps} />
+    if (n.includes('beauty') || n.includes('makeup')) return <Sparkles {...commonProps} />
+    if (n.includes('eyebrow') || n.includes('lash')) return <Eye {...commonProps} />
+    if (n.includes('beard') || n.includes('shave')) return <Scissors {...commonProps} />
+    return <Leaf {...commonProps} />
   }
 
+  // Sort categories: featured first, then by sortOrder, then name
+  const categoriesSorted = React.useMemo(() => {
+    return [...(categories as any[])]
+      .sort((a, b) => (b?.isFeatured === true ? 1 : 0) - (a?.isFeatured === true ? 1 : 0))
+      .sort((a, b) => {
+        const ao = typeof a?.sortOrder === 'number' ? a.sortOrder : 9999
+        const bo = typeof b?.sortOrder === 'number' ? b.sortOrder : 9999
+        return ao - bo
+      })
+      .sort((a, b) => (a?.name || '').localeCompare(b?.name || ''))
+  }, [categories])
+
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16 bg-gradient-to-b from-rose-50/40 to-white">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="text-center mb-12">
-          <h2 className="text-4xl font-light text-gray-800 mb-4">Popular Services</h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Discover our most sought-after beauty and wellness services
-          </p>
-          <button 
-            onClick={() => router.push('/services?filter=popular')}
-            className="mt-6 bg-[#E89B8B] text-white px-6 py-3 rounded-lg font-medium hover:bg-[#D4876F] transition-colors"
+        {/* Header */}
+        <div className="mb-8 text-center">
+          <h2 className="text-3xl md:text-4xl font-light text-gray-800">Explore Categories</h2>
+          <p className="mt-2 text-gray-600">Find services faster by browsing our most popular categories</p>
+          <button
+            onClick={() => router.push('/browse')}
+            className="mt-4 inline-flex items-center gap-2 rounded-full bg-[#E89B8B] text-white px-5 py-2 text-sm font-medium shadow-sm hover:bg-[#D4876F] transition-colors"
           >
-            View All Popular Services
+            View all categories
+            <svg className="w-4 h-4" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l5 5a1 1 0 010 1.414l-5 5a1 1 0 11-1.414-1.414L13.586 11H4a1 1 0 110-2h9.586l-3.293-3.293a1 1 0 010-1.414z" clipRule="evenodd"/></svg>
           </button>
         </div>
-        {isLoading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="bg-white rounded-2xl h-72 animate-pulse" />
+
+        {/* Categories content */}
+        {loadingCats ? (
+          <div className="flex flex-wrap justify-center gap-3">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="h-11 w-40 rounded-full bg-white shadow-sm ring-1 ring-gray-200 animate-pulse" />
             ))}
           </div>
-        ) : isError ? (
-          <div className="text-center text-gray-500">Failed to load popular services.</div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {items.map((svc: any, index: number) => (
-              <div
-                key={svc.id || index}
-                onClick={() => goToServices(svc)}
-                className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 cursor-pointer"
+        ) : catsError ? (
+          <div className="text-center text-gray-500">Unable to load categories right now.</div>
+        ) : categoriesSorted.length > 0 ? (
+          <div className="flex flex-wrap justify-center gap-3">
+            {categoriesSorted.slice(0, 20).map((cat: any) => (
+              <button
+                key={cat.id}
+                aria-label={`Browse ${cat.name}`}
+                onClick={() => router.push(cat?.slug ? `/category/${cat.slug}` : `/services?categoryId=${cat.id}`)}
+                className="group relative shrink-0 pl-2 pr-3 h-11 rounded-full bg-white/90 backdrop-blur border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-200 flex items-center gap-2"
+                title={cat.name}
               >
-                {/* Image */}
-                <div className="relative h-48 overflow-hidden">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={svc.featuredImage || (Array.isArray(svc.images) ? svc.images[0] : '/service1.png')}
-                    alt={svc.name}
-                    className="w-full h-full object-cover"
-                  />
-                  {/* Category badge */}
-                  {svc?.category?.name && (
-                    <div className="absolute top-3 left-3 bg-white/95 px-2 py-1 rounded text-xs text-gray-600 font-medium">
-                      {svc.category.name}
-                    </div>
-                  )}
-                  {/* Popular badge */}
-                  {svc?.adminAssignedBadge && (
-                    <div className="absolute top-3 right-3 bg-[#E89B8B] text-white px-3 py-1 rounded-full text-xs font-semibold">
-                      {svc.adminAssignedBadge}
-                    </div>
-                  )}
-                </div>
-                {/* Content */}
-                <div className="p-4">
-                  <h3 className="font-semibold text-gray-900 mb-1 truncate" title={svc.name}>{svc.name}</h3>
-                  {svc?.provider?.businessName && (
-                    <p className="text-sm text-gray-600 mb-1 truncate">{svc.provider.businessName}</p>
-                  )}
-                  <p className="text-xs text-gray-500 mb-3 truncate">{svc.displayLocation || svc.shortDescription || ''}</p>
-                  {/* Rating & Price */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className="flex items-center mr-2">
-                        {[...Array(5)].map((_, i) => (
-                          <svg
-                            key={i}
-                            className={`w-4 h-4 ${i < Math.floor(Number(svc.averageRating) || 0) ? 'text-yellow-400' : 'text-gray-200'}`}
-                            fill="currentColor"
-                            viewBox="0 0 20 20"
-                          >
-                            <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                          </svg>
-                        ))}
-                      </div>
-                      <span className="text-sm text-gray-600">({svc.totalReviews || 0})</span>
-                    </div>
-                    <span className="text-sm font-medium text-gray-900">{svc.formattedPrice || `${svc.basePrice} ${svc.currency || ''}`}</span>
-                  </div>
-                </div>
-              </div>
+                <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-rose-50 to-rose-100 ring-1 ring-rose-100">
+                  {getIconForCategory(cat.name)}
+                </span>
+                <span className="text-sm font-medium text-gray-800">{cat.name}</span>
+                <svg className="w-4 h-4 text-gray-400 group-hover:text-[#E89B8B] transition-colors" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd"/></svg>
+                {cat?.isFeatured ? (
+                  <span className="absolute -top-2 -right-2 rounded-full bg-[#E89B8B] text-white text-[10px] px-2 py-0.5 shadow">Featured</span>
+                ) : null}
+              </button>
             ))}
           </div>
+        ) : (
+          <div className="text-center text-gray-500">No categories available yet.</div>
         )}
       </div>
     </section>
