@@ -2,12 +2,14 @@
 
 import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { useGetPopularServicesQuery, type Service } from '@/store/api/servicesApi'
+import { useGetServicesQuery, useGetPopularServicesQuery } from '@/store/api/servicesApi'
 
 function HotProduct() {
   const router = useRouter();
-  // Fetch popular services (backend already filters to active services)
-  const { data: popularServices = [], isLoading, error } = useGetPopularServicesQuery({ limit: 6 })
+  // Fetch all active services for badge-driven selections
+  const { data: activeServices = [], isLoading: loadingActive, isError: errorActive } = useGetServicesQuery({ isActive: true })
+  // Fallback to backend popular if no relevant badges found
+  const { data: popularFallback = [], isLoading: loadingPopular, isError: errorPopular } = useGetPopularServicesQuery({ limit: 12 }, { skip: (activeServices as any[]).length > 0 })
 
   // Graceful fallback demo content when API is loading or errors
   const fallbackServices = [
@@ -44,21 +46,58 @@ function HotProduct() {
   ]
 
   // Map API services to card model
-  const services = useMemo(() => {
-    if (!popularServices || popularServices.length === 0) return fallbackServices
-    return popularServices.map((s: Service, idx: number) => ({
+  // Popular this week: prefer badges Popular/Premium/Top Rated
+  const popularThisWeek = useMemo(() => {
+    const S = (activeServices as any[])
+    const badgeSet = ['popular', 'premium', 'top rated', 'top-rated', 'top rated']
+    const withBadges = S.filter(s => badgeSet.includes((s?.adminAssignedBadge || '').toString().toLowerCase()))
+    const base = withBadges.length > 0 ? withBadges.slice(0, 3) : (popularFallback as any[]).slice(0, 3)
+    if (!base || base.length === 0) return fallbackServices
+    return base.map((s: any, idx: number) => ({
       id: s.id || idx,
       title: s.provider?.businessName || 'Featured Provider',
       service: s.name,
       location: s.displayLocation || s.category?.name || '—',
       rating: s.averageRating || 4.6,
       reviews: s.totalReviews || Math.floor(Math.random() * 50) + 10,
-      image: s.featuredImage || s.images?.[0] || '/service1.png',
+      image: s.featuredImage || (Array.isArray(s.images) ? s.images[0] : undefined) || '/service1.png',
       category: s.category?.name || 'Service'
     }))
-  }, [popularServices])
+  }, [activeServices, popularFallback])
 
-  const ServiceCard = ({ service }: { service: typeof services[0] }) => (
+  // New on vividhood: prefer badges
+  const newOnVividhood = useMemo(() => {
+    const S = (activeServices as any[])
+    const withBadges = S.filter(s => {
+      const b = (s?.adminAssignedBadge || '').toString().toLowerCase()
+      return b.includes('new on wiwihood') || b.includes('new on vividhood') || b.includes('new on')
+    })
+    const base = withBadges.slice(0, 3)
+    if (!base || base.length === 0) return fallbackServices
+    return base.map((s: any, idx: number) => ({
+      id: s.id || idx,
+      title: s.provider?.businessName || 'Featured Provider',
+      service: s.name,
+      location: s.displayLocation || s.category?.name || '—',
+      rating: s.averageRating || 4.6,
+      reviews: s.totalReviews || Math.floor(Math.random() * 50) + 10,
+      image: s.featuredImage || (Array.isArray(s.images) ? s.images[0] : undefined) || '/service2.jpg',
+      category: s.category?.name || 'Service'
+    }))
+  }, [activeServices])
+
+  type CardService = {
+    id: string | number
+    title: string
+    service: string
+    location: string
+    rating: number
+    reviews: number
+    image: string
+    category: string
+  }
+
+  const ServiceCard = ({ service }: { service: CardService }) => (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
@@ -144,7 +183,7 @@ function HotProduct() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((service) => (
+            {popularThisWeek.map((service) => (
               <ServiceCard key={`popular-${service.id}`} service={service} />
             ))}
           </div>
@@ -163,7 +202,7 @@ function HotProduct() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {services.map((service) => (
+            {newOnVividhood.map((service) => (
               <ServiceCard key={`new-${service.id}`} service={service} />
             ))}
           </div>
