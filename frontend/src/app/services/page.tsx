@@ -94,14 +94,14 @@ function ServicesPage() {
     const categoryParam = searchParams?.get('category');
     if (categoryParam && categories.length > 0) {
       setCategoryFilter(categoryParam);
-      const category = categories.find(cat => cat.slug === categoryParam);
+      const category = categories.find(cat => cat.slug === categoryParam || cat.id === categoryParam);
       setBreadcrumb(category ? category.name : 'Services');
       
       // Load services for this specific category
       const loadCategoryServices = async () => {
         try {
           setLoading(true);
-          const categoryData = categories.find(cat => cat.slug === categoryParam);
+          const categoryData = categories.find(cat => cat.slug === categoryParam || cat.id === categoryParam);
           if (categoryData) {
             const categoryServices = await QRTIntegration.getServicesByCategory(categoryData.id);
             setServices(categoryServices || []);
@@ -127,6 +127,8 @@ function ServicesPage() {
     if (categoryFilter) {
       filtered = services.filter(service => 
         service.category?.slug === categoryFilter || 
+        service.category?.id === categoryFilter ||
+        service.categoryId === categoryFilter ||
         service.categoryId.includes(categoryFilter)
       );
     }
@@ -339,6 +341,8 @@ function ServicesPage() {
     if (category) {
       filtered = filtered.filter(service => 
         service.category?.slug === category || 
+        service.category?.id === category ||
+        service.categoryId === category ||
         service.categoryId.includes(category)
       );
     }
@@ -380,7 +384,10 @@ function ServicesPage() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <ServiceHero />
+      <ServiceHero 
+        categoryName={breadcrumb === 'All Services' ? 'Beauty Services' : breadcrumb}
+        breadcrumb={breadcrumb}
+      />
       
       {/* Enhanced Filter Section with Better Alignment */}
       <div className="bg-gray-50 py-12">

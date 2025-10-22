@@ -1,6 +1,11 @@
 import React from 'react'
 
-function ServiceHero() {
+interface ServiceHeroProps {
+  categoryName?: string;
+  breadcrumb?: string;
+}
+
+function ServiceHero({ categoryName = 'Beauty Services', breadcrumb = 'All Services' }: ServiceHeroProps) {
   return (
     <>
       {/* Hero Section */}
@@ -22,10 +27,10 @@ function ServiceHero() {
 
         <div className="container mx-auto px-6 text-center relative z-10">
             <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Home <span className="text-gray-600"> &gt; </span> Facials
+            Home <span className="text-gray-600"> &gt; </span> {breadcrumb}
           </p>
           <h1 className="text-5xl font-light text-gray-800 mb-6">
-           Facials
+           {categoryName}
           </h1>
           
         </div>

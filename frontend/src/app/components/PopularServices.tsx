@@ -114,7 +114,7 @@ const PopularServices = () => {
           <h2 className="text-3xl md:text-4xl font-light text-gray-800 mb-3">Explore Categories</h2>
           <p className="text-gray-600 mb-6">Find services faster by browsing our most popular categories</p>
           <button
-            onClick={() => router.push('/browse')}
+            onClick={() => router.push('/services')}
             className="inline-flex items-center gap-2 rounded-full bg-[#E89B8B] text-white px-6 py-2.5 text-sm font-medium shadow-sm hover:bg-[#D4876F] hover:shadow-md transition-all duration-200"
           >
             View all categories
@@ -139,7 +139,7 @@ const PopularServices = () => {
               <button
                 key={cat.id}
                 aria-label={`Browse ${cat.name}`}
-                onClick={() => router.push(cat?.slug ? `/category/${cat.slug}` : `/services?categoryId=${cat.id}`)}
+                onClick={() => router.push(`/services?category=${cat?.slug || cat.id}`)}
                 className="group relative shrink-0 pl-3 pr-4 h-12 rounded-full bg-white/95 backdrop-blur border border-gray-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 hover:border-[#E89B8B]/30 transition-all duration-200 flex items-center gap-3"
                 title={cat.name}
               >
