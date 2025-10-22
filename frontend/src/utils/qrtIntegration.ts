@@ -5,319 +5,352 @@ const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v
 
 export class QRTIntegration {
   
-   // Notifications QRT
+  // Notifications QRT
   static async getNotifications() {
     return this.qrtCall('/notifications', [
       {
         id: '1',
-        title: 'New Appointment Booking',
-        message: 'Sarah Johnson has booked your Hair Cut & Style service for Tomorrow at 2:00 PM.',
-        type: 'booking_new',
-        isRead: false,
-        timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(), // 5 minutes ago
-        data: {
-          bookingId: '1',
-          customerName: 'Sarah Johnson',
-          serviceName: 'Hair Cut & Style',
-          startTime: 'Tomorrow at 2:00 PM'
-        }
+        title: 'New Appointment Booked',
+        message: 'Sarah Johnson has booked Hair Styling for tomorrow at 2:00 PM',
+        type: 'booking',
+        timestamp: new Date().toISOString(),
+        read: false
       },
       {
         id: '2',
-        title: 'Appointment Confirmed',
-        message: 'Mike Chen confirmed his Deep Conditioning Treatment appointment.',
-        type: 'booking_confirmed',
-        isRead: false,
-        timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(), // 30 minutes ago
-        data: {
-          bookingId: '2',
-          customerName: 'Mike Chen',
-          serviceName: 'Deep Conditioning Treatment'
-        }
-      },
-      {
-        id: '3',
-        title: 'New Review',
-        message: 'Emma Wilson left a 5-star review for your Hair Coloring service.',
-        type: 'review_new',
-        isRead: true,
-        timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(), // 2 hours ago
-        data: {
-          rating: 5,
-          customerName: 'Emma Wilson',
-          serviceName: 'Hair Coloring'
-        }
-      },
-      {
-        id: '4',
-        title: 'Appointment Cancelled',
-        message: 'Ahmed Ali cancelled his Hair Cut appointment scheduled for today.',
-        type: 'booking_cancelled',
-        isRead: true,
-        timestamp: new Date(Date.now() - 3 * 60 * 60 * 1000).toISOString(), // 3 hours ago
-        data: {
-          bookingId: '4',
-          customerName: 'Ahmed Ali',
-          serviceName: 'Hair Cut'
-        }
+        title: 'Payment Received',
+        message: 'Payment of $85 received for appointment #1234',
+        type: 'payment',
+        timestamp: new Date().toISOString(),
+        read: false
       }
     ]);
   }
 
-  // QRT Method: Quick API calls with intelligent fallback
+  // Generic QRT method with smart error handling
   static async qrtCall(endpoint: string, fallbackData: any, options: any = {}) {
     try {
-      const token = localStorage.getItem('providerToken');
-      if (!token) {
-        console.log(`QRT: ${endpoint} - No token, using fallback`);
-        return fallbackData;
-      }
-      
       const response = await axios.get(`${API_BASE}${endpoint}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        timeout: 5000, // 5 second timeout for QRT
+        timeout: 5000,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          ...options.headers
+        },
         ...options
       });
       
-      console.log(`QRT: ${endpoint} - SUCCESS`);
-      return response.data;
+      if (response.data) {
+        console.log(`✅ QRT: Live data loaded from ${endpoint}`);
+        return response.data;
+      }
     } catch (error: any) {
-      console.log(`QRT: ${endpoint} - ERROR:`, error?.response?.status, error?.response?.data || error?.message);
-      console.log(`QRT: ${endpoint} - FALLBACK USED`);
-      return fallbackData;
+      console.log(`⚠️ QRT: API call failed for ${endpoint}, using fallback`);
     }
+    
+    return fallbackData;
   }
 
   // Dashboard Stats QRT
   static async getDashboardStats() {
-    return this.qrtCall('/providers/dashboard', {
+    return this.qrtCall('/dashboard/stats', {
+      totalRevenue: 15420,
       totalAppointments: 156,
-      todayAppointments: 8,
-      monthlyEarnings: 12450.75,
-      completedServices: 133,
-      rating: 4.8,
-      pendingBookings: 5  // Changed from 23 to 5
+      totalCustomers: 89,
+      growthRate: 12.5
     });
   }
 
-  // Appointments QRT  
+  // Appointments QRT - Enhanced with multiple endpoint attempts
   static async getAppointments() {
-    return this.qrtCall('/bookings/my-bookings', [
-      {
-        id: '1',
-        customerName: 'Sarah Johnson',
-        customerEmail: 'sarah.johnson@email.com',
-        customerPhone: '+971 50 123 4567',
-        serviceName: 'Hair Cut & Style',
-        time: '2:00 PM',
-        date: 'Today',
-        status: 'confirmed',
-        amount: 85,
-        duration: '1h',
-        location: 'Luxio Nail Ladies Salon'
-      },
-      {
-        id: '2', 
-        customerName: 'Mike Chen',
-        customerEmail: 'mike.chen@email.com',
-        customerPhone: '+971 50 765 4321',
-        serviceName: 'Deep Conditioning Treatment',
-        time: '4:30 PM',
-        date: 'Today',
-        status: 'pending',
-        amount: 120,
-        duration: '90min',
-        location: 'Luxio Nail Ladies Salon'
-      },
-      {
-        id: '3',
-        customerName: 'Emma Wilson',
-        customerEmail: 'emma.wilson@email.com',
-        customerPhone: '+971 50 999 8888',
-        serviceName: 'Hair Coloring',
-        time: '10:00 AM',
-        date: 'Tomorrow',
-        status: 'confirmed',
-        amount: 200,
-        duration: '2h',
-        location: 'Luxio Nail Ladies Salon'
-      },
-      {
-        id: '4',
-        customerName: 'Ahmed Ali',
-        customerEmail: 'ahmed.ali@email.com',
-        customerPhone: '+971 50 111 2222',
-        serviceName: 'Hair Cut & Style',
-        time: '3:00 PM',
-        date: 'Tomorrow',
-        status: 'completed',
-        amount: 85,
-        duration: '1h',
-        location: 'Luxio Nail Ladies Salon'
-      }
-    ]);
-  }
-
-  // Staff QRT
-  static async getStaff() {
-    return this.qrtCall('/providers/staff', [
-      {
-        id: '1',
-        name: 'Emma Wilson',
-        email: 'emma.wilson@luxio.com',
-        phone: '+971 50 123 4567',
-        role: 'Senior Stylist',
-        status: 'active',
-        specialization: 'Hair Styling & Coloring',
-        bio: 'Experienced hair stylist with 8+ years in the beauty industry',
-        profileImage: null,
-        workingHours: [],
-        createdAt: new Date(Date.now() - 86400000 * 30).toISOString() // 30 days ago
-      },
-      {
-        id: '2',
-        name: 'Sarah Johnson',
-        email: 'sarah.johnson@luxio.com',
-        phone: '+971 50 765 4321',
-        role: 'Beauty Specialist',
-        status: 'active',
-        specialization: 'Facial Treatments & Skincare',
-        bio: 'Licensed aesthetician specializing in advanced skincare treatments',
-        profileImage: null,
-        workingHours: [],
-        createdAt: new Date(Date.now() - 86400000 * 15).toISOString() // 15 days ago
-      },
-      {
-        id: '3',
-        name: 'Ahmed Hassan',
-        email: 'ahmed.hassan@luxio.com',
-        phone: '+971 50 999 8888',
-        role: 'Massage Therapist',
-        status: 'inactive',
-        specialization: 'Deep Tissue & Relaxation Massage',
-        bio: 'Certified massage therapist with expertise in therapeutic treatments',
-        profileImage: null,
-        workingHours: [],
-        createdAt: new Date(Date.now() - 86400000 * 60).toISOString() // 60 days ago
-      }
-    ]);
-  }
-
-  // Services QRT - Public endpoint (no auth required)
-  static async getServices() {
     try {
-      console.log('🔍 QRT: Fetching all services...');
-      
-      // Try public services endpoints
+      // Try multiple endpoints to get appointments
       const endpoints = [
-        '/services?isActive=true&isApproved=true',
-        '/services?isActive=true',
-        '/services'
+        '/appointments',
+        '/appointments?status=active',
+        '/api/appointments',
+        '/bookings',
+        '/public/appointments'
       ];
       
       for (const endpoint of endpoints) {
         try {
+          console.log(`Fetching appointments from: ${API_BASE}${endpoint}`);
           const response = await axios.get(`${API_BASE}${endpoint}`, {
-            timeout: 10000,
+            timeout: 15000,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
           });
           
-          console.log('✅ QRT: Services API response:', response.data);
           if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-            return response.data;
-          } else if (response.data && response.data.services && Array.isArray(response.data.services)) {
-            return response.data.services;
+            console.log('Backend appointments loaded:', response.data.length, 'appointments');
+            return response.data.map((appointment: any) => ({
+              ...appointment,
+              id: appointment.id || appointment._id,
+              customerName: appointment.customerName || appointment.customer?.name || 'Unknown Customer',
+              serviceName: appointment.serviceName || appointment.service?.name || 'Unknown Service',
+              scheduledAt: appointment.scheduledAt || appointment.date || new Date().toISOString(),
+              status: appointment.status || 'confirmed'
+            }));
+          } else if (response.data && response.data.appointments && Array.isArray(response.data.appointments)) {
+            console.log('Backend appointments loaded from nested:', response.data.appointments.length, 'appointments');
+            return response.data.appointments.map((appointment: any) => ({
+              ...appointment,
+              id: appointment.id || appointment._id,
+              customerName: appointment.customerName || appointment.customer?.name || 'Unknown Customer',
+              serviceName: appointment.serviceName || appointment.service?.name || 'Unknown Service',
+              scheduledAt: appointment.scheduledAt || appointment.date || new Date().toISOString(),
+              status: appointment.status || 'confirmed'
+            }));
           }
         } catch (error: any) {
-          console.log(`❌ QRT: Endpoint ${endpoint} failed:`, error?.response?.status, error?.message);
+          console.log(`Failed to fetch appointments from ${endpoint}:`, error.message);
           continue;
         }
       }
       
-      console.log('⚠️ QRT: No services API worked, using fallback data');
-      return [
+      // If all API calls fail, return empty array instead of fallback data
+      console.log('All appointment API endpoints failed, returning empty array');
+      return [];
+    } catch (error: any) {
+      console.error('Error fetching appointments:', error);
+      return [];
+    }
+  }
+
+  // Staff QRT
+  static async getStaff() {
+    return this.qrtCall('/staff', [
       {
         id: '1',
-        name: 'Hair Cut & Style',
-        description: 'Professional hair cutting and styling service with modern techniques',
-        shortDescription: 'Professional hair cutting and styling',
-        categoryId: 'hair-services',
-        category: { id: 'hair-services', name: 'Hair Services', slug: 'hair-services' },
-        serviceType: 'appointment',
-        pricingType: 'fixed',
-        basePrice: 85,
-        durationMinutes: 60,
-        isActive: true,
+        name: 'Maria Rodriguez',
+        role: 'Senior Hair Stylist',
+        email: 'maria@wiwihood.com',
+        phone: '+1 (555) 123-4567',
+        avatar: '/staff1.jpg',
+        specialties: ['Hair Cutting', 'Hair Coloring', 'Hair Styling'],
         status: 'active',
-        images: [],
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        name: 'Deep Conditioning Treatment',
-        description: 'Intensive hair treatment to restore moisture and shine',
-        shortDescription: 'Deep conditioning for damaged hair',
-        categoryId: 'hair-services',
-        category: { id: 'hair-services', name: 'Hair Services', slug: 'hair-services' },
-        serviceType: 'appointment',
-        pricingType: 'fixed',
-        basePrice: 120,
-        durationMinutes: 90,
-        isActive: true,
-        status: 'active',
-        images: [],
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: '3',
-        name: 'Hair Coloring',
-        description: 'Professional hair coloring with premium products',
-        shortDescription: 'Expert hair coloring service',
-        categoryId: 'hair-services',
-        category: { id: 'hair-services', name: 'Hair Services', slug: 'hair-services' },
-        serviceType: 'appointment',
-        pricingType: 'fixed',
-        basePrice: 200,
-        durationMinutes: 120,
-        isActive: true,
-        status: 'active',
-        images: ['/service1.png', '/service2.jpg'],
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: '4',
-        name: 'Men\'s Haircut',
-        description: 'Classic and modern haircuts for men with professional styling',
-        shortDescription: 'Professional men\'s haircut',
-        categoryId: 'hair-services',
-        category: { id: 'hair-services', name: 'Hair Services', slug: 'hair-services' },
-        serviceType: 'appointment',
-        pricingType: 'fixed',
-        basePrice: 75,
-        durationMinutes: 45,
-        isActive: true,
-        status: 'active',
-        images: ['/service3.jpg'],
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: '5',
-        name: 'Hair Wash & Blowdry',
-        description: 'Professional hair washing and blow-drying service',
-        shortDescription: 'Hair wash and styling',
-        categoryId: 'hair-services',
-        category: { id: 'hair-services', name: 'Hair Services', slug: 'hair-services' },
-        serviceType: 'appointment',
-        pricingType: 'fixed',
-        basePrice: 50,
-        durationMinutes: 30,
-        isActive: true,
-        status: 'active',
-        images: ['/service1.png'],
-        createdAt: new Date().toISOString()
+        rating: 4.9,
+        experience: '8 years'
       }
-    ];
+    ]);
+  }
+
+  // Services QRT - Enhanced with multiple endpoint attempts and dynamic processing
+  static async getServices() {
+    try {
+      // Try multiple endpoints to get services
+      const endpoints = [
+        '/services',
+        '/services?isActive=true',
+        '/api/services',
+        '/public/services'
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Fetching services from: ${API_BASE}${endpoint}`);
+          const response = await axios.get(`${API_BASE}${endpoint}`, {
+            timeout: 15000,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            console.log('✅ Backend services loaded:', response.data.length, 'services');
+            
+            // Process and enhance service data
+            return response.data.map((service: any) => ({
+              ...service,
+              id: service.id || service._id,
+              name: service.name || service.title || 'Unnamed Service',
+              description: service.description || service.longDescription || 'No description available',
+              shortDescription: service.shortDescription || service.summary || service.description?.substring(0, 100) || 'Brief service description',
+              price: service.price || service.basePrice || service.cost || 0,
+              duration: service.duration || service.durationMinutes || 60,
+              category: service.category || service.categoryName || 'General',
+              categoryId: service.categoryId || service.category_id || 'general',
+              images: service.images && Array.isArray(service.images) ? service.images : 
+                      service.image ? [service.image] :
+                      service.thumbnail ? [service.thumbnail] :
+                      service.photo ? [service.photo] : [],
+              isActive: service.isActive !== undefined ? service.isActive : true,
+              status: service.status || 'active'
+            }));
+          } else if (response.data && response.data.services && Array.isArray(response.data.services)) {
+            console.log('✅ Backend services loaded from nested:', response.data.services.length, 'services');
+            return response.data.services.map((service: any) => ({
+              ...service,
+              id: service.id || service._id,
+              name: service.name || service.title || 'Unnamed Service',
+              description: service.description || service.longDescription || 'No description available',
+              shortDescription: service.shortDescription || service.summary || service.description?.substring(0, 100) || 'Brief service description',
+              price: service.price || service.basePrice || service.cost || 0,
+              duration: service.duration || service.durationMinutes || 60,
+              category: service.category || service.categoryName || 'General',
+              categoryId: service.categoryId || service.category_id || 'general',
+              images: service.images && Array.isArray(service.images) ? service.images : 
+                      service.image ? [service.image] :
+                      service.thumbnail ? [service.thumbnail] :
+                      service.photo ? [service.photo] : [],
+              isActive: service.isActive !== undefined ? service.isActive : true,
+              status: service.status || 'active'
+            }));
+          } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+            console.log('✅ Backend services loaded from data field:', response.data.data.length, 'services');
+            return response.data.data.map((service: any) => ({
+              ...service,
+              id: service.id || service._id,
+              name: service.name || service.title || 'Unnamed Service',
+              description: service.description || service.longDescription || 'No description available',
+              shortDescription: service.shortDescription || service.summary || service.description?.substring(0, 100) || 'Brief service description',
+              price: service.price || service.basePrice || service.cost || 0,
+              duration: service.duration || service.durationMinutes || 60,
+              category: service.category || service.categoryName || 'General',
+              categoryId: service.categoryId || service.category_id || 'general',
+              images: service.images && Array.isArray(service.images) ? service.images : 
+                      service.image ? [service.image] :
+                      service.thumbnail ? [service.thumbnail] :
+                      service.photo ? [service.photo] : [],
+              isActive: service.isActive !== undefined ? service.isActive : true,
+              status: service.status || 'active'
+            }));
+          }
+        } catch (error: any) {
+          console.log(`Failed to fetch services from ${endpoint}:`, error.message);
+          continue;
+        }
+      }
+      
+      // If all API calls fail, return empty array instead of fallback data
+      console.log('⚠️ All service API endpoints failed, returning empty array');
+      return [];
     } catch (error: any) {
-      console.error('❌ QRT: getServices failed:', error?.message);
+      console.error('❌ Error fetching services:', error);
+      return [];
+    }
+  }
+
+  // Services by Category QRT - Enhanced with multiple endpoint attempts
+  static async getServicesByCategory(categoryId: string) {
+    try {
+      // Try multiple endpoints for category-specific services
+      const endpoints = [
+        `/services/category/${categoryId}`,
+        `/services?categoryId=${categoryId}`,
+        `/services?category=${categoryId}`,
+        `/api/services?categoryId=${categoryId}`,
+        `/public/services?category=${categoryId}`
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Fetching services by category from: ${API_BASE}${endpoint}`);
+          const response = await axios.get(`${API_BASE}${endpoint}`, {
+            timeout: 15000,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            console.log(`Backend category services loaded for ${categoryId}:`, response.data.length, 'services');
+            return response.data.map((service: any) => ({
+              ...service,
+              id: service.id || service._id,
+              name: service.name || service.title || 'Unnamed Service',
+              description: service.description || service.longDescription || 'No description available',
+              shortDescription: service.shortDescription || service.summary || service.description?.substring(0, 100) || 'Brief service description',
+              price: service.price || service.basePrice || service.cost || 0,
+              duration: service.duration || service.durationMinutes || 60,
+              category: service.category || service.categoryName || 'General',
+              categoryId: service.categoryId || service.category_id || categoryId,
+              images: service.images && Array.isArray(service.images) ? service.images : 
+                      service.image ? [service.image] :
+                      service.thumbnail ? [service.thumbnail] :
+                      service.photo ? [service.photo] : [],
+              isActive: service.isActive !== undefined ? service.isActive : true,
+              status: service.status || 'active'
+            }));
+          }
+        } catch (error: any) {
+          console.log(`Failed to fetch category services from ${endpoint}:`, error.message);
+          continue;
+        }
+      }
+      
+      // If all API calls fail, return empty array instead of fallback data
+      console.log(`All category service API endpoints failed for ${categoryId}, returning empty array`);
+      return [];
+    } catch (error: any) {
+      console.error(`Error fetching services for category ${categoryId}:`, error);
+      return [];
+    }
+  }
+
+  // Categories QRT - Public endpoint (no auth required)
+  static async getCategories() {
+    try {
+      // Try multiple endpoints to get categories
+      const endpoints = [
+        '/categories',
+        '/categories?isActive=true',
+        '/api/categories',
+        '/public/categories'
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Fetching categories from: ${API_BASE}${endpoint}`);
+          const response = await axios.get(`${API_BASE}${endpoint}`, {
+            timeout: 15000,
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            }
+          });
+          
+          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            console.log('Backend categories loaded:', response.data.length, 'categories');
+            return response.data.map((category: any) => ({
+              ...category,
+              id: category.id || category._id,
+              name: category.name || category.title || 'Unnamed Category',
+              slug: category.slug || category.name?.toLowerCase().replace(/\s+/g, '-') || 'unnamed'
+            }));
+          } else if (response.data && response.data.categories && Array.isArray(response.data.categories)) {
+            console.log('Backend categories loaded from nested:', response.data.categories.length, 'categories');
+            return response.data.categories.map((category: any) => ({
+              ...category,
+              id: category.id || category._id,
+              name: category.name || category.title || 'Unnamed Category',
+              slug: category.slug || category.name?.toLowerCase().replace(/\s+/g, '-') || 'unnamed'
+            }));
+          } else if (response.data && response.data.data && Array.isArray(response.data.data)) {
+            console.log('Backend categories loaded from data field:', response.data.data.length, 'categories');
+            return response.data.data.map((category: any) => ({
+              ...category,
+              id: category.id || category._id,
+              name: category.name || category.title || 'Unnamed Category',
+              slug: category.slug || category.name?.toLowerCase().replace(/\s+/g, '-') || 'unnamed'
+            }));
+          }
+        } catch (error: any) {
+          console.log(`Failed to fetch categories from ${endpoint}:`, error.message);
+          continue;
+        }
+      }
+      
+      // If all API calls fail, return empty array instead of fallback data
+      console.log('All category API endpoints failed, returning empty array');
+      return [];
+    } catch (error: any) {
+      console.error('Error fetching categories:', error);
       return [];
     }
   }
@@ -340,13 +373,10 @@ export class QRTIntegration {
 
   // Auth Profile QRT - Try real API first, then localStorage, then mock
   static async getAuthProfile() {
-    console.log('🔍 QRT Auth: Starting auth profile check...');
-    
     // First try real API call if we have token
     const token = typeof window !== 'undefined' ? localStorage.getItem('providerToken') : null;
     
     if (token) {
-      console.log('� QRT Auth: Token found, trying real API call...');
       try {
         const response = await axios.get(`${API_BASE}/auth/profile`, {
           headers: { Authorization: `Bearer ${token}` },
@@ -354,321 +384,142 @@ export class QRTIntegration {
         });
         
         if (response.data) {
-          console.log('✅ QRT Auth: Real API SUCCESS! User data:', response.data);
           return response.data;
         }
       } catch (error: any) {
-        console.log('❌ QRT Auth: Real API failed:', error?.message || error);
+        // Continue to fallback
       }
-    } else {
-      console.log('🚫 QRT Auth: No token found');
     }
     
     // Fallback 1: Try localStorage data  
     const storedUser = typeof window !== 'undefined' ? localStorage.getItem('provider') : null;
-    console.log('🔍 QRT Auth: Checking stored user data...', storedUser ? 'Found' : 'Not found');
     
     if (storedUser) {
       try {
         const userData = JSON.parse(storedUser);
-        console.log('📋 QRT Auth: Using localStorage data:', userData);
         
         if (userData && (userData.firstName || userData.lastName || userData.email)) {
-          const realUserData = {
-            id: userData.id || ('user-' + Date.now()),
-            email: userData.email || 'unknown@example.com',
-            firstName: userData.firstName || 'Unknown',
-            lastName: userData.lastName || 'User',
+          console.log('✅ Auth profile loaded from localStorage');
+          return {
+            id: userData.id || 'local-user',
+            firstName: userData.firstName || 'Provider',
+            lastName: userData.lastName || '',
+            email: userData.email || 'provider@example.com',
+            phone: userData.phone || '',
+            avatar: userData.avatar || '/default-avatar.jpg',
+            businessName: userData.businessName || 'My Business',
+            isVerified: userData.isVerified || false,
             role: userData.role || 'provider',
-            profilePicture: userData.profilePicture || null,
-            businessName: userData.businessName || `${userData.firstName || 'User'}'s Business`,
-            businessAddress: userData.businessAddress || 'Unknown Location',
-            phone: userData.phone || '+1234567890',
-            isVerified: userData.isVerified !== undefined ? userData.isVerified : true
+            ...userData
           };
-          
-          console.log('✅ QRT Auth: Using localStorage data for:', realUserData.firstName, realUserData.lastName, realUserData.email);
-          return realUserData;
         }
       } catch (error) {
-        console.log('❌ QRT Auth: Error parsing stored user data:', error);
+        console.log('Failed to parse stored user data');
       }
     }
     
     // Fallback 2: Mock data
-    const mockData = {
-      id: 'provider-123',
-      email: 'saeed.siddiqui@luxio.com',
-      firstName: 'Saeed',
-      lastName: 'Siddiqui',
-      role: 'provider',
-      profilePicture: null,
-      businessName: 'Luxio Nail Ladies Salon',
-      businessAddress: 'Dubai Marina, UAE',
-      phone: '+971 50 123 4567',
-      isVerified: true
-    };
-    
-    console.log('🎭 QRT Auth: Using final fallback mock data:', mockData.firstName, mockData.lastName);
-    return mockData;
-  }
-
-  // Helper method to get token
-  static getToken() {
-    return typeof window !== 'undefined' ? localStorage.getItem('providerToken') : null;
-  }
-
-  // Provider Profile QRT - Get detailed provider profile
-  static async getProviderProfile() {
-    console.log('🏢 QRT Provider: Getting provider profile...');
-    
-    try {
-      const token = this.getToken();
-      if (token) {
-        console.log('🔑 QRT Provider: Token found, calling backend API...');
-        const response = await axios.get(`${API_BASE}/providers/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        if (response.data) {
-          console.log('✅ QRT Provider: Backend data received');
-          return {
-            id: response.data.id,
-            businessName: response.data.businessName,
-            description: response.data.description,
-            address: response.data.address,
-            city: response.data.city,
-            state: response.data.state,
-            country: response.data.country,
-            postalCode: response.data.postalCode,
-            fullAddress: response.data.fullAddress,
-            phone: response.data.phone,
-            email: response.data.email,
-            website: response.data.website,
-            isVerified: response.data.isVerified,
-            rating: response.data.rating,
-            totalReviews: response.data.totalReviews,
-            businessHours: response.data.businessHours,
-            categories: response.data.categories,
-            services: response.data.services,
-            images: response.data.images,
-            socialMedia: response.data.socialMedia
-          };
-        }
-      }
-    } catch (error) {
-      console.log('⚠️ QRT Provider: Backend API failed, using fallback...');
-    }
-
-    // Fallback mock data
+    console.log('⚠️ Using mock auth profile data');
     return {
-      id: 'provider_1',
-      businessName: 'Luxio Nail Ladies Salon',
-      description: 'Premium nail salon offering luxury manicure, pedicure, and nail art services in Dubai Marina.',
-      address: 'Marina Walk, Dubai Marina',
-      city: 'Dubai',
-      state: 'Dubai',
-      country: 'UAE',
-      postalCode: '00000',
-      fullAddress: 'Marina Walk, Dubai Marina, Dubai, UAE 00000',
-      phone: '+971 50 123 4567',
-      email: 'info@luxionails.ae',
-      website: 'https://luxionails.ae',
+      id: 'mock-provider-1',
+      firstName: 'John',
+      lastName: 'Doe',
+      email: 'john.doe@wiwihood.com',
+      phone: '+1 (555) 123-4567',
+      avatar: '/default-avatar.jpg',
+      businessName: 'Wiwihood Salon',
+      address: '123 Main Street, New York, NY 10001',
       isVerified: true,
-      rating: 4.8,
-      totalReviews: 247,
-      businessHours: {
-        monday: '9:00 AM - 10:00 PM',
-        tuesday: '9:00 AM - 10:00 PM',
-        wednesday: '9:00 AM - 10:00 PM',
-        thursday: '9:00 AM - 10:00 PM',
-        friday: '9:00 AM - 11:00 PM',
-        saturday: '9:00 AM - 11:00 PM',
-        sunday: '10:00 AM - 9:00 PM'
-      },
-      categories: ['Beauty & Wellness', 'Nail Care'],
-      services: [
-        { id: 1, name: 'Classic Manicure', price: 50, duration: '30 min' },
-        { id: 2, name: 'Gel Manicure', price: 80, duration: '45 min' },
-        { id: 3, name: 'Nail Art', price: 120, duration: '60 min' },
-        { id: 4, name: 'Pedicure', price: 70, duration: '45 min' }
-      ],
-      images: [
-        '/images/salon1.jpg',
-        '/images/salon2.jpg',
-        '/images/salon3.jpg'
-      ],
+      role: 'provider',
+      joinedAt: '2023-01-15T00:00:00Z',
+      subscription: {
+        plan: 'Professional',
+        status: 'active',
+        expiresAt: '2024-12-31T23:59:59Z'
+      }
+    };
+  }
+
+  // Provider Profile QRT
+  static async getProviderProfile() {
+    return this.qrtCall('/provider/profile', {
+      id: '1',
+      businessName: 'Wiwihood Beauty Salon',
+      ownerName: 'Maria Garcia',
+      email: 'maria@wiwihood.com',
+      phone: '+1 (555) 123-4567',
+      address: '123 Beauty Street, New York, NY 10001',
+      description: 'Premier beauty salon offering comprehensive hair, beauty, and wellness services.',
+      website: 'https://wiwihood.com',
       socialMedia: {
-        instagram: '@luxionails_dubai',
-        facebook: 'LuxioNailsDubai',
-        tiktok: '@luxionails'
-      }
-    };
+        instagram: '@wiwihood',
+        facebook: 'WiwihoodSalon',
+        twitter: '@wiwihood'
+      },
+      hours: {
+        monday: '9:00 AM - 7:00 PM',
+        tuesday: '9:00 AM - 7:00 PM',
+        wednesday: '9:00 AM - 7:00 PM',
+        thursday: '9:00 AM - 8:00 PM',
+        friday: '9:00 AM - 8:00 PM',
+        saturday: '8:00 AM - 6:00 PM',
+        sunday: 'Closed'
+      },
+      images: [
+        '/salon1.jpg',
+        '/salon2.jpg',
+        '/salon3.jpg'
+      ],
+      amenities: [
+        'Free WiFi',
+        'Complimentary Beverages',
+        'Parking Available',
+        'Wheelchair Accessible',
+        'Air Conditioning'
+      ],
+      rating: 4.8,
+      reviewCount: 247,
+      established: '2018',
+      staff: 8,
+      services: 25
+    });
   }
 
-  // Venue Location QRT - Get venue location for maps
+  // Venue Location QRT
   static async getVenueLocation() {
-    console.log('📍 QRT Venue: Getting venue location...');
-    
-    try {
-      const profile = await this.getProviderProfile();
-      
-      if (profile && profile.fullAddress) {
-        return {
-          address: profile.fullAddress,
-          businessName: profile.businessName,
-          coordinates: {
-            lat: 25.0772, // Dubai Marina coordinates (mock)
-            lng: 55.1391
-          },
-          googleMapsUrl: `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(profile.fullAddress)}`,
-          directionsUrl: `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(profile.fullAddress)}`,
-          phone: profile.phone,
-          website: profile.website
-        };
-      }
-    } catch (error) {
-      console.log('⚠️ QRT Venue: Failed to get location, using fallback...');
-    }
-
-    // Fallback location data
-    return {
-      address: 'Marina Walk, Dubai Marina, Dubai, UAE 00000',
-      businessName: 'Luxio Nail Ladies Salon',
+    return this.qrtCall('/venue/location', {
+      id: '1',
+      name: 'Wiwihood Beauty Salon',
+      address: '123 Beauty Street, New York, NY 10001',
       coordinates: {
-        lat: 25.0772,
-        lng: 55.1391
+        lat: 40.7128,
+        lng: -74.0060
       },
-      googleMapsUrl: 'https://www.google.com/maps/search/?api=1&query=Marina+Walk,+Dubai+Marina,+Dubai,+UAE',
-      directionsUrl: 'https://www.google.com/maps/dir/?api=1&destination=Marina+Walk,+Dubai+Marina,+Dubai,+UAE',
-      phone: '+971 50 123 4567',
-      website: 'https://luxionails.ae'
-    };
+      phone: '+1 (555) 123-4567',
+      email: 'info@wiwihood.com',
+      website: 'https://wiwihood.com',
+      hours: {
+        monday: '9:00 AM - 7:00 PM',
+        tuesday: '9:00 AM - 7:00 PM',
+        wednesday: '9:00 AM - 7:00 PM',
+        thursday: '9:00 AM - 8:00 PM',
+        friday: '9:00 AM - 8:00 PM',
+        saturday: '8:00 AM - 6:00 PM',
+        sunday: 'Closed'
+      },
+      images: ['/venue1.jpg', '/venue2.jpg']
+    });
   }
 
-  // Categories QRT - Public endpoint (no auth required)
-  static async getCategories() {
-    try {
-      console.log('🔍 QRT: Fetching categories...');
-      
-      const response = await axios.get(`${API_BASE}/categories?isActive=true`, {
-        timeout: 10000,
-      });
-      
-      console.log('✅ QRT: Categories API response:', response.data);
-      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-        return response.data;
-      } else if (response.data && response.data.categories && Array.isArray(response.data.categories)) {
-        return response.data.categories;
-      }
-      
-      console.log('⚠️ QRT: No categories found, using fallback data');
-    } catch (error: any) {
-      console.log('❌ QRT: Categories API failed:', error?.response?.status, error?.message);
-      console.log('⚠️ QRT: Using fallback categories');
-    }
-    
-    return [
-      {
-        id: 'hair-services',
-        name: 'Hair Services',
-        slug: 'hair-services',
-        description: 'Professional hair cutting, styling, and treatment services',
-        isActive: true
-      },
-      {
-        id: 'beauty-services',
-        name: 'Beauty Services',
-        slug: 'beauty-services',
-        description: 'Makeup, skincare, and beauty enhancement services',
-        isActive: true
-      },
-      {
-        id: 'nail-services',
-        name: 'Nail Services',
-        slug: 'nail-services',
-        description: 'Manicure, pedicure, and nail art services',
-        isActive: true
-      },
-      {
-        id: 'spa-wellness',
-        name: 'Spa & Wellness',
-        slug: 'spa-wellness',
-        description: 'Massage, facial, and relaxation services',
-        isActive: true
-      },
-      {
-        id: 'fitness',
-        name: 'Fitness & Training',
-        slug: 'fitness',
-        description: 'Personal training and fitness services',
-        isActive: true
-      }
-    ]);
-  }
-
-  // Get services by category QRT - only approved and active services
-  static async getServicesByCategory(categoryId: string) {
-    try {
-      console.log('🔍 QRT: Fetching services for category:', categoryId);
-      
-      // Try multiple endpoints to get category services
-      const endpoints = [
-        `/services?categoryId=${categoryId}&isActive=true&isApproved=true`,
-        `/services/category/${categoryId}?isActive=true&isApproved=true`,
-        `/services?category=${categoryId}&isActive=true&isApproved=true`
-      ];
-      
-      for (const endpoint of endpoints) {
-        try {
-          const response = await axios.get(`${API_BASE}${endpoint}`, {
-            timeout: 10000,
-          });
-          
-          console.log('✅ QRT: Category services API response:', response.data);
-          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
-            return response.data;
-          } else if (response.data && response.data.services && Array.isArray(response.data.services)) {
-            return response.data.services;
-          }
-        } catch (error: any) {
-          console.log(`❌ QRT: Endpoint ${endpoint} failed:`, error?.response?.status, error?.message);
-          continue;
-        }
-      }
-      
-      // If no category-specific services found, try to get all services and filter client-side
-      console.log('⚠️ QRT: No category-specific endpoint worked, trying to get all services');
-      const allServices = await this.getServices();
-      if (allServices && Array.isArray(allServices)) {
-        const filtered = allServices.filter(service => 
-          service.categoryId === categoryId || 
-          service.category?.id === categoryId ||
-          service.category?.slug === categoryId
-        );
-        console.log('✅ QRT: Filtered services from all services:', filtered.length);
-        return filtered;
-      }
-      
-      console.log('❌ QRT: No services found for category:', categoryId);
-      return [];
-    } catch (error: any) {
-      console.error('❌ QRT: getServicesByCategory failed:', error?.message);
-      return [];
-    }
-  }
-
-  // Service Management QRT Methods
+  // Service CRUD Operations
   static async createService(serviceData: any) {
     try {
-      const token = localStorage.getItem('providerToken');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-      
       const response = await axios.post(`${API_BASE}/services`, serviceData, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
+        timeout: 10000,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
       
       console.log('✅ QRT: Service created successfully');
@@ -681,14 +532,12 @@ export class QRTIntegration {
 
   static async updateService(serviceId: string, serviceData: any) {
     try {
-      const token = localStorage.getItem('providerToken');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-      
-      const response = await axios.patch(`${API_BASE}/services/${serviceId}`, serviceData, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
+      const response = await axios.put(`${API_BASE}/services/${serviceId}`, serviceData, {
+        timeout: 10000,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
       
       console.log('✅ QRT: Service updated successfully');
@@ -701,14 +550,11 @@ export class QRTIntegration {
 
   static async deleteService(serviceId: string) {
     try {
-      const token = localStorage.getItem('providerToken');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-      
       const response = await axios.delete(`${API_BASE}/services/${serviceId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
+        timeout: 10000,
+        headers: {
+          'Accept': 'application/json'
+        }
       });
       
       console.log('✅ QRT: Service deleted successfully');
@@ -721,14 +567,12 @@ export class QRTIntegration {
 
   static async toggleServiceStatus(serviceId: string) {
     try {
-      const token = localStorage.getItem('providerToken');
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-      
-      const response = await axios.patch(`${API_BASE}/services/${serviceId}/toggle-active`, {}, {
-        headers: { Authorization: `Bearer ${token}` },
-        withCredentials: true,
+      const response = await axios.patch(`${API_BASE}/services/${serviceId}/toggle`, {}, {
+        timeout: 10000,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
       });
       
       console.log('✅ QRT: Service status toggled successfully');

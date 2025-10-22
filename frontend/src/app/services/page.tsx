@@ -72,42 +72,16 @@ function ServicesPage() {
     const loadData = async () => {
       try {
         setLoading(true);
-        console.log('🔍 Loading services and categories...');
         
         const [servicesData, categoriesData] = await Promise.all([
           QRTIntegration.getServices(),
           QRTIntegration.getCategories()
         ]);
         
-        console.log('📊 Services loaded:', servicesData?.length || 0);
-        console.log('📊 Categories loaded:', categoriesData?.length || 0);
-        
         setServices(servicesData || []);
         setCategories(categoriesData || []);
-        
-        // If no services loaded but we have categories, try to load category-specific services
-        if ((!servicesData || servicesData.length === 0) && categoriesData && categoriesData.length > 0) {
-          console.log('⚠️ No services loaded, trying to load from all categories...');
-          const allCategoryServices = [];
-          
-          for (const category of categoriesData) {
-            try {
-              const categoryServices = await QRTIntegration.getServicesByCategory(category.id);
-              if (categoryServices && categoryServices.length > 0) {
-                allCategoryServices.push(...categoryServices);
-              }
-            } catch (error) {
-              console.log(`❌ Failed to load services for category ${category.name}:`, error.message);
-            }
-          }
-          
-          if (allCategoryServices.length > 0) {
-            console.log('✅ Loaded services from categories:', allCategoryServices.length);
-            setServices(allCategoryServices);
-          }
-        }
       } catch (error) {
-        console.error('❌ Error loading data:', error);
+        console.error('Error loading data:', error);
       } finally {
         setLoading(false);
       }
@@ -119,80 +93,77 @@ function ServicesPage() {
   // Handle URL category parameter and load category-specific services
   useEffect(() => {
     const categoryParam = searchParams?.get('category');
-    console.log('🔍 Category parameter from URL:', categoryParam);
     
     if (categoryParam && categories.length > 0) {
       setCategoryFilter(categoryParam);
       const category = categories.find(cat => cat.slug === categoryParam || cat.id === categoryParam);
-      console.log('🔍 Found category:', category);
       setBreadcrumb(category ? category.name : 'Services');
-      
-      // Load services for this specific category
-      const loadCategoryServices = async () => {
-        try {
-          setLoading(true);
-          const categoryData = categories.find(cat => cat.slug === categoryParam || cat.id === categoryParam);
-          console.log('🔍 Loading services for category:', categoryData);
-          
-          if (categoryData) {
-            const categoryServices = await QRTIntegration.getServicesByCategory(categoryData.id);
-            console.log('📊 Category services loaded:', categoryServices?.length || 0);
-            setServices(categoryServices || []);
-          }
-        } catch (error) {
-          console.error('❌ Error loading category services:', error);
-        } finally {
-          setLoading(false);
-        }
-      };
-      
-      loadCategoryServices();
     } else {
       setCategoryFilter('');
       setBreadcrumb('All Services');
-      console.log('🔍 No category filter, showing all services');
     }
   }, [searchParams, categories]);
 
   // Filter services based on category
   useEffect(() => {
-    console.log('🔍 Filtering services - Total services:', services.length, 'Category filter:', categoryFilter);
-    
     let filtered = services;
     
     if (categoryFilter) {
-      console.log('🔍 Applying category filter for:', categoryFilter);
       filtered = services.filter(service => {
-        const matches = service.category?.slug === categoryFilter || 
+        return service.category?.slug === categoryFilter || 
           service.category?.id === categoryFilter ||
           service.categoryId === categoryFilter ||
           service.categoryId?.includes(categoryFilter);
-        
-        if (matches) {
-          console.log('✅ Service matches filter:', service.name, 'Category:', service.category?.name || service.categoryId);
-        }
-        return matches;
       });
-      console.log('📊 Filtered services count:', filtered.length);
     }
 
     // Convert services to shop format for compatibility
-    const shopData = filtered.map(service => ({
-      id: parseInt(service.id) || Math.random() * 1000,
-      category: service.category?.name || 'Service',
-      name: service.name,
-      image: service.images?.[0] || '/service1.png',
-      description: service.description,
-      rating: 4.5 + Math.random() * 0.5,
-      reviews: Math.floor(Math.random() * 50) + 10,
-      verified: true,
-      priceFrom: service.basePrice,
-      distance: Math.round(Math.random() * 10 + 1),
-      availableSlots: ['10:00 AM', '2:00 PM', '5:00 PM'],
-      tags: service.isActive ? ['active'] : []
-    }));
+    const shopData = filtered.map(service => {
+      const categorySlug = service.category?.slug || 'default';
+      
+      // Priority: 1. Backend image, 2. Category-specific fallback, 3. Default fallback
+      let imageUrl = '';
+      
+      // First, try to use the image from backend
+      if (service.images && service.images.length > 0 && service.images[0]) {
+        imageUrl = service.images[0];
+        console.log(`Using backend image for ${service.name}:`, imageUrl);
+      } else {
+        // Fallback to category-specific images if no backend image
+        let fallbackImage = '/service1.png';
+        
+        if (categorySlug.includes('lash') || service.name.toLowerCase().includes('lash')) {
+          fallbackImage = '/service2.jpg';
+        } else if (categorySlug.includes('massage') || service.name.toLowerCase().includes('massage')) {
+          fallbackImage = '/service3.jpg';
+        } else if (categorySlug.includes('brow') || service.name.toLowerCase().includes('brow')) {
+          fallbackImage = '/facial-treatment.jpg';
+        } else if (categorySlug.includes('nail') || service.name.toLowerCase().includes('nail')) {
+          fallbackImage = '/service1.png';
+        } else if (categorySlug.includes('facial') || service.name.toLowerCase().includes('facial')) {
+          fallbackImage = '/facial-treatment.jpg';
+        }
+        
+        imageUrl = fallbackImage;
+        console.log(`Using fallback image for ${service.name}:`, imageUrl);
+      }
+      
+      return {
+        id: parseInt(service.id) || Math.random() * 1000,
+        category: service.category?.name || 'Service',
+        name: service.name,
+        image: imageUrl,
+        description: service.description,
+        rating: 4.5 + Math.random() * 0.5,
+        reviews: Math.floor(Math.random() * 50) + 10,
+        verified: true,
+        priceFrom: service.basePrice,
+        distance: Math.round(Math.random() * 10 + 1),
+        availableSlots: ['10:00 AM', '2:00 PM', '5:00 PM'],
+        tags: service.isActive ? ['active'] : []
+      };
+    });
 
-    console.log('📊 Final shop data count:', shopData.length);
     setFilteredShops(shopData);
   }, [services, categoryFilter]);
 
@@ -372,46 +343,6 @@ function ServicesPage() {
       )
     }
   ];
-
-  // Filter based on URL parameters and user selections
-  useEffect(() => {
-    // Use real services data instead of dummy shops
-    let filtered = services;
-
-    const filterType = searchParams?.get('filter');
-    const category = searchParams?.get('category');
-    
-    // Apply category filter
-    if (category) {
-      filtered = filtered.filter(service => 
-        service.category?.slug === category || 
-        service.category?.id === category ||
-        service.categoryId === category ||
-        service.categoryId.includes(category)
-      );
-    }
-
-    // Convert services to shop format for compatibility with existing UI
-    const shopData = filtered.map(service => ({
-      id: parseInt(service.id) || Math.random() * 1000,
-      category: service.category?.slug || service.categoryId,
-      name: service.name,
-      image: service.images?.[0] || '/service1.png',
-      description: service.description,
-      rating: 4.5 + Math.random() * 0.5,
-      reviews: Math.floor(Math.random() * 50) + 10,
-      verified: true,
-      priceFrom: service.basePrice,
-      distance: Math.round(Math.random() * 10 + 1),
-      availableSlots: ['10:00 AM', '2:00 PM', '5:00 PM'],
-      tags: service.isActive ? ['active'] : []
-    }));
-
-    setFilteredShops(shopData);
-    
-    // Reset to first page when filters change
-    setCurrentPage(1);
-  }, [searchParams, selectedService, priceRange, minRating, maxDistance, services]);
 
   // Pagination calculations
   const totalPages = Math.ceil(filteredShops.length / itemsPerPage);
@@ -771,11 +702,31 @@ function ServicesPage() {
                     <Link key={shop.id} href={`/services/${shop.id}`} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
                     
                     {/* Image Container */}
-                    <div className="relative h-48 overflow-hidden">
+                    <div className="relative h-48 overflow-hidden bg-gray-100">
                       <img
                         src={shop.image}
                         alt={shop.name}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover transition-opacity duration-300"
+                        onError={(e) => {
+                          // If backend image fails, try category-specific fallback
+                          const target = e.currentTarget;
+                          if (!target.src.includes('/service')) {
+                            console.log('Backend image failed, using fallback for:', shop.name);
+                            // Determine fallback based on service name or category
+                            if (shop.name.toLowerCase().includes('lash')) {
+                              target.src = '/service2.jpg';
+                            } else if (shop.name.toLowerCase().includes('massage')) {
+                              target.src = '/service3.jpg';
+                            } else if (shop.name.toLowerCase().includes('brow') || shop.name.toLowerCase().includes('facial')) {
+                              target.src = '/facial-treatment.jpg';
+                            } else {
+                              target.src = '/service1.png';
+                            }
+                          }
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully for:', shop.name, 'URL:', shop.image);
+                        }}
                       />
                       
                       {/* Category Badge */}
