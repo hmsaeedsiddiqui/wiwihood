@@ -1,7 +1,7 @@
 ﻿import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
-import { Service, ServiceStatus } from '../../entities/service.entity';
+import { Service, ServiceStatus, ServiceType, PricingType } from '../../entities/service.entity';
 import { CreateServiceDto } from './dto/create-service.dto';
 import { UpdateServiceDto } from './dto/update-service.dto';
 import { ServiceFilterDto } from './dto/service-filter.dto';
@@ -34,17 +34,27 @@ export class ServicesService {
         throw new NotFoundException('Category not found');
       }
 
-      const service = this.serviceRepository.create({
+            // Create service data object with proper enum typing
+      const serviceData: Partial<Service> = {
         ...createServiceDto,
         providerId,
-        // Set initial status for admin approval
         isApproved: false,
-        isActive: false,
+        isActive: true,
         approvalStatus: ServiceStatus.PENDING_APPROVAL,
-        status: ServiceStatus.PENDING_APPROVAL,
-      });
+        status: ServiceStatus.ACTIVE,
+        // Convert string enums to enum values if they exist in DTO
+        serviceType: createServiceDto.serviceType ? 
+          ServiceType[createServiceDto.serviceType.toUpperCase() as keyof typeof ServiceType] : 
+          ServiceType.APPOINTMENT,
+        pricingType: createServiceDto.pricingType ? 
+          PricingType[createServiceDto.pricingType.toUpperCase() as keyof typeof PricingType] : 
+          PricingType.FIXED,
+      };
 
-      return await this.serviceRepository.save(service);
+      const service = this.serviceRepository.create(serviceData);
+      const savedService: Service = await this.serviceRepository.save(service);
+
+      return savedService;
     } catch (error) {
       console.error('Error creating service:', error);
       throw error;
