@@ -98,12 +98,14 @@ export class ServicesController {
       console.log('🔍 [ServicesController] Fetching services directly from repository...');
       
       // Query database directly with joins for provider business name
+      // Only show services that are approved and active (visible on homepage)
       const queryBuilder = this.serviceRepository
         .createQueryBuilder('service')
         .leftJoinAndSelect('service.provider', 'provider')
         .leftJoinAndSelect('service.category', 'category')
         .where('service.isActive = :isActive', { isActive: true })
         .andWhere('service.isApproved = :isApproved', { isApproved: true })
+        .andWhere('service.approvalStatus = :approvalStatus', { approvalStatus: 'approved' })
         .orderBy('service.createdAt', 'DESC');
 
       // Apply additional filters if provided
