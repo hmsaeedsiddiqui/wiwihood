@@ -1,4 +1,5 @@
 import React, { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { 
   useServices, 
   useCreateService, 
@@ -206,17 +207,22 @@ export default function ServicesExample() {
 
 // Service Card Component
 function ServiceCard({ service }: { service: any }) {
+  const router = useRouter()
+  
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-shadow">
+    <div 
+      className="bg-white rounded-lg shadow-md overflow-hidden hover:shadow-lg transition-all duration-300 cursor-pointer transform hover:scale-105"
+      onClick={() => router.push(`/services/${service.id}`)}
+    >
       {service.images && service.images.length > 0 && (
         <img
           src={service.images[0]}
           alt={service.name}
-          className="w-full h-48 object-cover"
+          className="w-full h-48 object-cover transition-transform duration-300 hover:scale-110"
         />
       )}
       <div className="p-4">
-        <h3 className="font-semibold text-lg mb-2">{service.name}</h3>
+        <h3 className="font-semibold text-lg mb-2 hover:text-blue-600 transition-colors">{service.name}</h3>
         <p className="text-gray-600 text-sm mb-2 line-clamp-2">{service.shortDescription}</p>
         
         <div className="flex justify-between items-center">

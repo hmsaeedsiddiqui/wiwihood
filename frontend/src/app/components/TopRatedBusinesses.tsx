@@ -47,7 +47,10 @@ const TopRatedBusinesses = () => {
   }, [services])
 
   const BusinessCard = ({ business }: { business: any }) => (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
+    <div 
+      className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer hover:scale-105"
+      onClick={() => router.push(`/services/${business.id}`)}
+    >
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
         <img
