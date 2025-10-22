@@ -1,30 +1,27 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGetServicesQuery } from '@/store/api/servicesApi'
+// Removed external badge mapping import
 
 const TopRatedBusinesses = () => {
   const router = useRouter()
 
-  // Optionally scope to current provider if logged in as provider
-  const [providerId, setProviderId] = useState<string | undefined>(undefined)
-  useEffect(() => {
-    try {
-      const providerStr = typeof window !== 'undefined' ? localStorage.getItem('provider') : null
-      const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null
-      const p = providerStr ? JSON.parse(providerStr) : (userStr ? JSON.parse(userStr) : null)
-      const pid = p?.id || p?.providerId || p?._id
-      if (pid) setProviderId(pid)
-    } catch {}
-  }, [])
   // Backend ServiceFilterDto doesn't accept limit/page in public GET; slice client-side instead
-  const { data: services = [], isLoading, isError } = useGetServicesQuery({ isActive: true, ...(providerId ? { providerId } : {}) })
+  const { data: services = [], isLoading, isError } = useGetServicesQuery({ isActive: true })
 
   // Derive top-rated unique providers from services
   const items = useMemo(() => {
     const S = services as any[]
-    const badgePreferred = S.filter(s => (s?.adminAssignedBadge || '').toString().toLowerCase().includes('top'))
+    console.log('🔍 TopRatedBusinesses: Total active services received:', S.length, S.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
+    // Top Rated badges: Top rated, Top-rated, Highly rated, Excellent, Premium
+    const topRatedBadges = ['top rated', 'top-rated', 'highly rated', 'high rated', 'excellent', 'premium', 'best quality', 'superior']
+    const badgePreferred = S.filter(s => {
+      const badge = (s?.adminAssignedBadge || '').toString().toLowerCase()
+      return topRatedBadges.some(b => badge === b || badge.includes(b))
+    })
+    console.log('🔍 TopRatedBusinesses: Top badges matched:', badgePreferred.length, badgePreferred.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
     const source = badgePreferred.length > 0 ? badgePreferred : S
     const byProvider = new Map<string, any>()
     for (const s of source) {
@@ -46,7 +43,7 @@ const TopRatedBusinesses = () => {
         })
       }
     }
-    return Array.from(byProvider.values()).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 4)
+    return Array.from(byProvider.values()).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 6)
   }, [services])
 
   const BusinessCard = ({ business }: { business: any }) => (
@@ -116,7 +113,7 @@ const TopRatedBusinesses = () => {
         ) : isError ? (
           <div className="text-center text-gray-500">Failed to load top-rated items.</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {items.map((business: any) => (
               <BusinessCard key={business.id} business={business} />
             ))}

@@ -1,39 +1,31 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { useGetServicesQuery, useGetPopularServicesQuery } from '@/store/api/servicesApi'
+import { useGetServicesQuery } from '@/store/api/servicesApi'
+// Removed external badge mapping import
 
 const PromotionsDeals = () => {
   const router = useRouter();
-  const [providerId, setProviderId] = useState<string | undefined>(undefined)
-  useEffect(() => {
-    try {
-      const providerStr = typeof window !== 'undefined' ? localStorage.getItem('provider') : null
-      const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null
-      const p = providerStr ? JSON.parse(providerStr) : (userStr ? JSON.parse(userStr) : null)
-      const pid = p?.id || p?.providerId || p?._id
-      if (pid) setProviderId(pid)
-    } catch {}
-  }, [])
   // Avoid unsupported params; limit client-side
-  const { data: services = [], isLoading, isError } = useGetServicesQuery({ isActive: true, ...(providerId ? { providerId } : {}) })
-  // Always fetch popular to have a graceful fallback when no badge/promo items exist
-  const { data: popularFallback = [], isLoading: isLoadingFallback, isError: isErrorFallback } = useGetPopularServicesQuery({ limit: 12 })
+  const { data: services = [], isLoading, isError } = useGetServicesQuery({ isActive: true })
+  // No fallback services - only show services with actual deal badges or promotional flags
 
   const deals = useMemo(() => {
     const S = (services as any[])
-    const P = (popularFallback as any[])
+    console.log('🔍 PromotionsDeals: Total active services received:', S.length, S.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
 
-    const badgeKeywords = ['deal', 'hot', 'limited', 'offer', 'discount', 'sale']
+    // Deals/Promotions badges: Hot deal, Discount, Sale, Promotion, Offer
+    const dealBadges = ['hot deal', 'hot-deal', 'discount', 'sale', 'promotion', 'offer', 'special offer', 'limited time', 'deal']
+    const hasDealBadge = (s: any) => {
+      const badge = (s?.adminAssignedBadge || '').toString().toLowerCase()
+      return dealBadges.some(b => badge === b || badge.includes(b))
+    }
+    
     const getBadgeText = (s: any) => {
       const b = s?.adminAssignedBadge
       if (Array.isArray(b)) return b.join(' ').toString()
       return (b || '').toString()
-    }
-    const hasDealBadge = (s: any) => {
-      const b = getBadgeText(s).toLowerCase()
-      return badgeKeywords.some(k => b.includes(k))
     }
     const formatDiscount = (s: any) => {
       const raw = s?.discountPercentage
@@ -48,7 +40,7 @@ const PromotionsDeals = () => {
     // 1) Prefer admin badges indicating deals (even if promo fields are not set)
     const badgeFirst = S.filter(hasDealBadge)
     if (badgeFirst.length > 0) {
-  return badgeFirst.slice(0, 4).map(s => ({
+      return badgeFirst.slice(0, 6).map(s => ({
         id: s.id,
         title: s.dealTitle || s.name,
         service: s.dealDescription || s.shortDescription || s.description || 'Special promotion',
@@ -64,7 +56,7 @@ const PromotionsDeals = () => {
     // 2) Otherwise, use items with promo fields
     const promoList = S.filter(s => !!s?.isPromotional || !!s?.discountPercentage || !!s?.promoCode)
     if (promoList.length > 0) {
-  return promoList.slice(0, 4).map(s => ({
+      return promoList.slice(0, 6).map(s => ({
         id: s.id,
         title: s.dealTitle || s.name,
         service: s.dealDescription || s.shortDescription || s.description || 'Special promotion',
@@ -81,19 +73,9 @@ const PromotionsDeals = () => {
       }))
     }
 
-    // 3) Final fallback to backend popular
-  return P.slice(0, 4).map(s => ({
-      id: s.id,
-      title: s.name,
-      service: s.shortDescription || s.description || 'Featured service',
-      location: s.displayLocation || s.provider?.businessName || '',
-      discount: '',
-      code: '—',
-      image: s.featuredImage || (Array.isArray(s.images) ? s.images[0] : undefined) || '/service2.jpg',
-      category: s.category?.name || 'Service',
-      validUntil: '',
-    }))
-  }, [services, popularFallback])
+    // 3) No fallback - only show services with deal badges or promotional flags
+    return []
+  }, [services])
 
   const DealCard = ({ deal }: { deal: any }) => (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300">
@@ -152,16 +134,16 @@ const PromotionsDeals = () => {
             View all
           </button>
         </div>
-        {isLoading || isLoadingFallback ? (
+        {isLoading ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
+            {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="bg-gray-100 rounded-2xl h-72 animate-pulse" />
             ))}
           </div>
-        ) : (isError && isErrorFallback && deals.length === 0) ? (
+        ) : (isError && deals.length === 0) ? (
           <div className="text-center text-gray-500">No promotions available right now.</div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {deals.map((deal) => (
               <DealCard key={deal.id} deal={deal} />
             ))}

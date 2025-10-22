@@ -13,10 +13,10 @@ export const CloudinaryProvider = {
     if (!cloudName || !apiKey || !apiSecret || looksLikePlaceholder(apiKey) || looksLikePlaceholder(apiSecret) || looksLikePlaceholder(cloudName)) {
       const maskedKey = apiKey ? apiKey.replace(/.(?=.{4})/g, '*') : 'undefined';
       const maskedSecret = apiSecret ? apiSecret.replace(/.(?=.{4})/g, '*') : 'undefined';
-      const msg = `Cloudinary configuration invalid. CLOUDINARY_CLOUD_NAME='${cloudName || 'undefined'}', CLOUDINARY_API_KEY='${maskedKey}', CLOUDINARY_API_SECRET='${maskedSecret}'. Ensure backend/.env has correct values and no placeholders.`;
+      const msg = `⚠️  Cloudinary configuration invalid. CLOUDINARY_CLOUD_NAME='${cloudName || 'undefined'}', CLOUDINARY_API_KEY='${maskedKey}', CLOUDINARY_API_SECRET='${maskedSecret}'. Image upload features disabled.`;
       // eslint-disable-next-line no-console
-      console.error(msg);
-      throw new Error(msg);
+      console.warn(msg);
+      return null; // Return null instead of throwing
     }
 
     cloudinary.config({

@@ -1,68 +1,30 @@
 "use client"
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { useGetServicesQuery, useGetPopularServicesQuery } from '@/store/api/servicesApi'
+import { useGetServicesQuery } from '@/store/api/servicesApi'
 
 function HotProduct() {
   const router = useRouter();
   // Fetch all active services for badge-driven selections
-  const [providerId, setProviderId] = useState<string | undefined>(undefined)
-  useEffect(() => {
-    try {
-      const providerStr = typeof window !== 'undefined' ? localStorage.getItem('provider') : null
-      const userStr = typeof window !== 'undefined' ? localStorage.getItem('user') : null
-      const p = providerStr ? JSON.parse(providerStr) : (userStr ? JSON.parse(userStr) : null)
-      const pid = p?.id || p?.providerId || p?._id
-      if (pid) setProviderId(pid)
-    } catch {}
-  }, [])
-  const { data: activeServices = [], isLoading: loadingActive, isError: errorActive } = useGetServicesQuery({ isActive: true, ...(providerId ? { providerId } : {}) })
-  // Also fetch backend popular to use as a fallback when badge-based lists are sparse
-  const { data: popularFallback = [], isLoading: loadingPopular, isError: errorPopular } = useGetPopularServicesQuery({ limit: 12 })
-
-  // Graceful fallback demo content when API is loading or errors
-  const fallbackServices = [
-    {
-      id: 1,
-      title: "Lumi Nail Studio",
-      service: "Double Tip by Elena At Square",
-      location: "AWP Properties, At Moreland",
-      rating: 4.5,
-      reviews: 25,
-      image: "/service1.png",
-      category: "Nails"
-    },
-    {
-      id: 2,
-      title: "Lumi Nail Studio", 
-      service: "Double Tip by Elena At Square",
-      location: "AWP Properties, At Moreland",
-      rating: 4.8,
-      reviews: 30,
-      image: "/service2.jpg",
-      category: "Nails"
-    },
-    {
-      id: 3,
-      title: "Lumi Nail Studio",
-      service: "Double Tip by Elena At Square", 
-      location: "AWP Properties, At Moreland",
-      rating: 4.7,
-      reviews: 18,
-      image: "/service3.jpg",
-      category: "Nails"
-    }
-  ]
+  const { data: activeServices = [], isLoading: loadingActive, isError: errorActive } = useGetServicesQuery({ isActive: true })
+  // No fallback services - use only real API data matching badges
 
   // Map API services to card model
   // Popular this week: prefer badges Popular/Premium/Top Rated
   const popularThisWeek = useMemo(() => {
     const S = (activeServices as any[])
-    const badgeSet = ['popular', 'premium', 'top rated', 'top-rated', 'top rated']
-    const withBadges = S.filter(s => badgeSet.includes((s?.adminAssignedBadge || '').toString().toLowerCase()))
-  const base = withBadges.length > 0 ? withBadges.slice(0, 4) : (popularFallback as any[]).slice(0, 4)
-    if (!base || base.length === 0) return fallbackServices
+    console.log('🔍 HotProduct: Total active services received:', S.length, S.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
+    // Popular This Week: Top Rated, Best Seller, Premium, Popular badges
+    const popularBadges = ['popular', 'premium', 'top rated', 'top-rated', 'best seller', 'best-seller', 'trending']
+    const withBadges = S.filter(s => {
+      const badge = (s?.adminAssignedBadge || '').toString().toLowerCase()
+      return popularBadges.some(b => badge === b || badge.includes(b))
+    })
+    console.log('🔍 HotProduct: Popular badges matched:', withBadges.length, withBadges.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
+    // Only show services with matching badges - no fallback to popular API
+    const base = withBadges.slice(0, 3)
+    if (!base || base.length === 0) return []
     return base.map((s: any, idx: number) => ({
       id: s.id || idx,
       title: s.provider?.businessName || 'Featured Provider',
@@ -73,17 +35,21 @@ function HotProduct() {
       image: s.featuredImage || (Array.isArray(s.images) ? s.images[0] : undefined) || '/service1.png',
       category: s.category?.name || 'Service'
     }))
-  }, [activeServices, popularFallback])
+  }, [activeServices])
 
   // New on vividhood: prefer badges
   const newOnVividhood = useMemo(() => {
     const S = (activeServices as any[])
+    console.log('🔍 HotProduct: Checking for New badges in:', S.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
+    // New on Platform: New, New on vividhood, Recently added badges
+    const newBadges = ['new', 'new on vividhood', 'new on wiwihood', 'new on', 'recently added', 'latest']
     const withBadges = S.filter(s => {
-      const b = (s?.adminAssignedBadge || '').toString().toLowerCase()
-      return b.includes('new on wiwihood') || b.includes('new on vividhood') || b.includes('new on')
+      const badge = (s?.adminAssignedBadge || '').toString().toLowerCase()
+      return newBadges.some(b => badge === b || badge.includes(b))
     })
-  const base = withBadges.slice(0, 4)
-  if (!base || base.length === 0) return fallbackServices.slice(0, 4)
+    console.log('🔍 HotProduct: New badges matched:', withBadges.length, withBadges.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
+    const base = withBadges.slice(0, 3)
+    if (!base || base.length === 0) return []
     return base.map((s: any, idx: number) => ({
       id: s.id || idx,
       title: s.provider?.businessName || 'Featured Provider',
@@ -193,7 +159,7 @@ function HotProduct() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {popularThisWeek.slice(0, 4).map((service) => (
+            {popularThisWeek.map((service) => (
               <ServiceCard key={`popular-${service.id}`} service={service} />
             ))}
           </div>
@@ -212,7 +178,7 @@ function HotProduct() {
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {newOnVividhood.slice(0, 4).map((service) => (
+            {newOnVividhood.map((service) => (
               <ServiceCard key={`new-${service.id}`} service={service} />
             ))}
           </div>

@@ -1,0 +1,61 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "loading": "Loading...",
+    "error": "An error occurred",
+    "success": "Success",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "next": "Next",
+    "previous": "Previous",
+    "close": "Close"
+  },
+  "auth": {
+    "login": "Login",
+    "logout": "Logout",
+    "register": "Register",
+    "forgotPassword": "Forgot Password",
+    "resetPassword": "Reset Password",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "loginSuccess": "Login successful",
+    "loginFailed": "Login failed",
+    "registerSuccess": "Registration successful",
+    "invalidCredentials": "Invalid credentials"
+  },
+  "booking": {
+    "bookNow": "Book Now",
+    "selectService": "Select Service",
+    "selectDate": "Select Date",
+    "selectTime": "Select Time",
+    "bookingConfirmed": "Booking Confirmed",
+    "bookingCancelled": "Booking Cancelled",
+    "reschedule": "Reschedule",
+    "cancel": "Cancel Booking",
+    "upcoming": "Upcoming Bookings",
+    "past": "Past Bookings",
+    "noBookings": "No bookings found"
+  },
+  "services": {
+    "haircut": "Haircut",
+    "massage": "Massage",
+    "facial": "Facial",
+    "nails": "Nail Care",
+    "spa": "Spa Treatment",
+    "beauty": "Beauty Services",
+    "wellness": "Wellness Services"
+  },
+  "notifications": {
+    "bookingReminder": "Booking Reminder",
+    "bookingConfirmation": "Booking Confirmation",
+    "newMessage": "New Message",
+    "paymentReceived": "Payment Received"
+  }
+}

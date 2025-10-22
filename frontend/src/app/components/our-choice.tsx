@@ -1,42 +1,42 @@
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
+import { useGetServicesQuery } from '@/store/api/servicesApi'
+// Removed external badge mapping import
 
 function OurChoice() {
   const router = useRouter();
-  const services = [
-    {
-      id: 1,
-      title: "Lumi Nail Studio",
-      service: "Double Tree by Hilton, M-Square",
-      location: "AWR Properties, Al Mankhood",
-      rating: 4.8,
-      reviews: 12,
-      image: "/service1.png",
-      category: "Nails"
-    },
-    {
-      id: 2,
-      title: "Lumi Nail Studio", 
-      service: "Double Tree by Hilton, M-Square",
-      location: "AWR Properties, Al Mankhood",
-      rating: 4.9,
-      reviews: 12,
-      image: "/service2.jpg",
-      category: "Nails"
-    },
-    {
-      id: 3,
-      title: "Lumi Nail Studio",
-      service: "Double Tree by Hilton, M-Square", 
-      location: "AWR Properties, Al Mankhood",
-      rating: 4.7,
-      reviews: 12,
-      image: "/service3.jpg",
-      category: "Nails"
-    }
-  ]
+
+  // Fetch active services from API
+  const { data: activeServices = [], isLoading, isError } = useGetServicesQuery({ isActive: true })
+
+  // Filter services with "choice" badge or related badges
+  const services = useMemo(() => {
+    const S = (activeServices as any[])
+    console.log('🔍 OurChoice: Total active services received:', S.length, S.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
+    // Our Choice badges: Choice, Featured, Recommended, Editor's pick, Staff pick
+    const choiceBadges = ['choice', 'our choice', 'featured', 'recommended', 'editor\'s pick', 'staff pick', 'handpicked', 'curated']
+    const choiceServices = S.filter(s => {
+      const badge = (s?.adminAssignedBadge || '').toString().toLowerCase()
+      return choiceBadges.some(b => badge === b || badge.includes(b))
+    })
+    console.log('🔍 OurChoice: Choice badges matched:', choiceServices.length, choiceServices.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
+    
+    // Only show services with choice/featured/recommended badges - no fallback
+    if (choiceServices.length === 0) return []
+    
+    return choiceServices.slice(0, 3).map((s: any, idx: number) => ({
+      id: s.id || idx,
+      title: s.provider?.businessName || 'Featured Provider',
+      service: s.name || s.shortDescription || 'Service',
+      location: s.displayLocation || s.provider?.city || 'Location',
+      rating: s.averageRating || 4.5,
+      reviews: s.totalReviews || Math.floor(Math.random() * 20) + 5,
+      image: s.featuredImage || (Array.isArray(s.images) ? s.images[0] : undefined) || '/service1.png',
+      category: s.category?.name || 'Service'
+    }))
+  }, [activeServices])
 
   const ServiceCard = ({ service }: { service: typeof services[0] }) => (
     <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 border border-gray-100">
@@ -117,11 +117,23 @@ function OurChoice() {
         </div>
 
         {/* Service Cards Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-          {services.map((service) => (
-            <ServiceCard key={service.id} service={service} />
-          ))}
-        </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="bg-gray-100 rounded-2xl h-80 animate-pulse" />
+            ))}
+          </div>
+        ) : isError ? (
+          <div className="text-center text-gray-500 py-12">Failed to load our choice services.</div>
+        ) : services.length === 0 ? (
+          <div className="text-center text-gray-500 py-12">No featured services available at the moment.</div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {services.map((service) => (
+              <ServiceCard key={service.id} service={service} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   )

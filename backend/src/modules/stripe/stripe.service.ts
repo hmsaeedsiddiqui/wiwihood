@@ -11,13 +11,26 @@ export class StripeService {
   private stripe: any;
 
   constructor(private configService: ConfigService) {
-    this.stripe = new Stripe(this.configService.get('stripe.secretKey'), {
-      apiVersion: '2023-10-16',
-    });
+    const stripeKey = this.configService.get('stripe.secretKey') || process.env.STRIPE_SECRET_KEY;
+    if (stripeKey) {
+      this.stripe = new Stripe(stripeKey, {
+        apiVersion: '2023-10-16',
+      });
+    } else {
+      this.logger.warn('⚠️  Stripe not configured - payment features disabled');
+    }
+  }
+
+  private checkStripeConfig() {
+    if (!this.stripe) {
+      throw new Error('Stripe is not configured. Please set STRIPE_SECRET_KEY environment variable.');
+    }
   }
 
   // Create Payment Intent for one-time payments
   async createPaymentIntent(createPaymentIntentDto: CreatePaymentIntentDto) {
+    this.checkStripeConfig();
+    
     try {
       const { amount, currency, customerId, metadata } = createPaymentIntentDto;
       

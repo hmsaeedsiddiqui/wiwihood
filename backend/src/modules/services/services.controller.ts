@@ -9,6 +9,7 @@ import {
   Query,
   UseGuards,
   Req,
+  Res,
   ParseUUIDPipe,
   HttpStatus,
   HttpCode,
@@ -29,11 +30,17 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../users/guards/roles.guard';
 import { Roles } from '../users/decorators/roles.decorator';
 import { Service } from '../../entities/service.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 
 @ApiTags('Services')
 @Controller('services')
 export class ServicesController {
-  constructor(private readonly servicesService: ServicesService) {}
+  constructor(
+    private readonly servicesService: ServicesService,
+    @InjectRepository(Service)
+    private readonly serviceRepository: Repository<Service>
+  ) {}
 
   @ApiOperation({ summary: 'Create a new service' })
   @ApiResponse({
@@ -74,8 +81,140 @@ export class ServicesController {
   @ApiQuery({ name: 'isActive', required: false, description: 'Active status filter' })
   @ApiQuery({ name: 'status', required: false, description: 'Service status filter' })
   @Get()
-  async findAll(@Query() filters: ServiceFilterDto): Promise<Service[]> {
-    return await this.servicesService.findAll(filters);
+  async findAll(@Query() filters: ServiceFilterDto, @Req() req: any, @Res() res: any): Promise<void> {
+    console.log('🔍 [ServicesController] GET /services called with query:', req.query);
+    console.log('🔍 [ServicesController] Parsed filters:', JSON.stringify(filters, null, 2));
+    
+    // Set cache control headers to prevent caching issues
+    res.set({
+      'Cache-Control': 'no-cache, no-store, must-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+      'ETag': undefined
+    });
+    
+    try {
+      // Direct repository query bypassing problematic service methods
+      console.log('🔍 [ServicesController] Fetching services directly from repository...');
+      
+      // Query database directly with joins for provider business name
+      const queryBuilder = this.serviceRepository
+        .createQueryBuilder('service')
+        .leftJoinAndSelect('service.provider', 'provider')
+        .leftJoinAndSelect('service.category', 'category')
+        .where('service.isActive = :isActive', { isActive: true })
+        .andWhere('service.isApproved = :isApproved', { isApproved: true })
+        .orderBy('service.createdAt', 'DESC');
+
+      // Apply additional filters if provided
+      if (filters.categoryId) {
+        queryBuilder.andWhere('service.categoryId = :categoryId', { categoryId: filters.categoryId });
+      }
+      
+      if (filters.providerId) {
+        queryBuilder.andWhere('service.providerId = :providerId', { providerId: filters.providerId });
+      }
+      
+      if (filters.search) {
+        queryBuilder.andWhere(
+          '(service.name ILIKE :search OR service.description ILIKE :search OR service.shortDescription ILIKE :search)',
+          { search: `%${filters.search}%` }
+        );
+      }
+      
+      if (filters.minPrice !== undefined) {
+        queryBuilder.andWhere('service.basePrice >= :minPrice', { minPrice: filters.minPrice });
+      }
+      
+      if (filters.maxPrice !== undefined) {
+        queryBuilder.andWhere('service.basePrice <= :maxPrice', { maxPrice: filters.maxPrice });
+      }
+
+      const services = await queryBuilder.getMany();
+      
+      console.log('🔍 [ServicesController] Direct query returned', services.length, 'services');
+      
+      // Transform services to include computed fields
+      const transformedServices = services.map(service => ({
+        ...service,
+        // Include provider business name from joined data
+        providerBusinessName: service.provider?.businessName || service.providerBusinessName || 'Unknown Business',
+        // Transform images to URLs if they're public IDs
+        images: service.imagesPublicIds || service.images || [],
+        featuredImage: service.featuredImage || (service.images && service.images[0] 
+          ? `https://res.cloudinary.com/${process.env.CLOUDINARY_CLOUD_NAME}/image/upload/${service.images[0]}`
+          : null
+        )
+      }));
+      
+      let filteredServices = transformedServices;
+      
+      console.log('🔍 [ServicesController] Returning', filteredServices.length, 'transformed services');
+      
+      if (filteredServices.length > 0) {
+        console.log('🔍 [ServicesController] Sample service:', {
+          name: filteredServices[0].name,
+          adminAssignedBadge: filteredServices[0].adminAssignedBadge,
+          providerBusinessName: filteredServices[0].providerBusinessName,
+          featuredImage: filteredServices[0].featuredImage
+        });
+      }
+      
+      res.json(filteredServices);
+      
+    } catch (error) {
+      console.error('🔍 [ServicesController] Error fetching services:', error);
+      res.status(500).json({ error: 'Failed to fetch services', details: error.message });
+    }
+  }
+
+  @ApiOperation({ summary: 'Debug services - get raw count without filters' })
+  @Get('debug')
+  async debugServices(): Promise<{ count: number; sample: any }> {
+    console.log('🔍 [DEBUG] Debug endpoint called');
+    const allServices = await this.servicesService.findAllRaw();
+    const sample = allServices.length > 0 ? {
+      id: allServices[0].id,
+      name: allServices[0].name,
+      isActive: allServices[0].isActive,
+      isApproved: allServices[0].isApproved,
+      status: allServices[0].status,
+      approvalStatus: allServices[0].approvalStatus
+    } : null;
+    return { count: allServices.length, sample };
+  }
+
+  @ApiOperation({ summary: 'Test direct repository access' })
+  @Get('test-direct')
+  async testDirect() {
+    try {
+      console.log('🔍 [TEST-DIRECT] Testing direct repository access...');
+      
+      // Test direct repository query
+      const services = await this.serviceRepository
+        .createQueryBuilder('service')
+        .where('service.isActive = :isActive', { isActive: true })
+        .andWhere('service.isApproved = :isApproved', { isApproved: true })
+        .orderBy('service.createdAt', 'DESC')
+        .getMany();
+      
+      console.log('🔍 [TEST-DIRECT] Found', services.length, 'services');
+      
+      return {
+        count: services.length,
+        services: services.map(s => ({
+          id: s.id,
+          name: s.name,
+          adminAssignedBadge: s.adminAssignedBadge,
+          providerBusinessName: s.providerBusinessName,
+          isActive: s.isActive,
+          isApproved: s.isApproved
+        }))
+      };
+    } catch (error) {
+      console.error('🔍 [TEST-DIRECT] Error:', error);
+      return { error: error.message };
+    }
   }
 
   @ApiOperation({ summary: 'Search services' })

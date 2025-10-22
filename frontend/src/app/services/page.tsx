@@ -201,81 +201,9 @@ function ServicesPage() {
       return [...defaultOptions, ...categoryOptions];
     }
 
-    // Fallback static options if categories aren't loaded yet
-    const fallbackOptions = [
-      { 
-        value: 'hair', 
-        label: 'Hair Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9M21 9H9M21 13H9M21 17H9" />
-          </svg>
-        )
-      },
-      { 
-        value: 'nails', 
-        label: 'Nail Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21l4-4h6l-4 4M3 17l4-4V7a4 4 0 118 0v6l4 4" />
-          </svg>
-        )
-      },
-      { 
-        value: 'spa', 
-        label: 'Spa Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-          </svg>
-        )
-      },
-      { 
-        value: 'makeup', 
-        label: 'Makeup Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-            <circle cx="9" cy="9" r="1.5" fill="currentColor" />
-            <circle cx="15" cy="9" r="1.5" fill="currentColor" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 13s1.5 2 4 2 4-2 4-2" />
-          </svg>
-        )
-      },
-      { 
-        value: 'massage', 
-        label: 'Massage Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2M7 4h10M7 4l-2 16h14L17 4M12 8v8M9 12h6" />
-          </svg>
-        )
-      },
-      { 
-        value: 'facial', 
-        label: 'Facial Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
-            <circle cx="9" cy="9" r="1.5" fill="currentColor" />
-            <circle cx="15" cy="9" r="1.5" fill="currentColor" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 13s1.5 2 4 2 4-2 4-2" />
-          </svg>
-        )
-      },
-      { 
-        value: 'wellness', 
-        label: 'Wellness Services',
-        icon: (
-          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-          </svg>
-        )
-      }
-    ];
+    // No hardcoded fallback options - use only real API data
 
-    return [...defaultOptions, ...fallbackOptions];
+    return defaultOptions;
   };
 
   // Helper function to get icon for category

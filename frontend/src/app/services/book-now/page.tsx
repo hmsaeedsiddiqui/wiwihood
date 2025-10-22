@@ -20,24 +20,11 @@ function BookNow() {
     router.push('/services/select-time')
   }
 
-  const serviceCategories = [
-    'Haircut', 'Wet Shave', 'Beard Trimming', 'Combination', 'Student Cuts'
-  ]
+  // Categories will come from API - no hardcoded data
+  const serviceCategories: string[] = []
 
-  const services = [
-    {
-      id: 1,
-      name: 'IBX Treatment without Service',
-      duration: '30 mins',
-      price: 'AED 70'
-    },
-    {
-      id: 2,
-      name: 'IBX Treatment without Service',
-      duration: '30 mins',
-      price: 'AED 70'
-    }
-  ]
+  // Services will come from API - no hardcoded data
+  const services: any[] = []
 
   const toggleService = (serviceId: number) => {
     if (selectedServices.includes(serviceId)) {

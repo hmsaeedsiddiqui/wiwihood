@@ -4,6 +4,10 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
 import * as compression from 'compression';
 import { AppModule } from './app.module';
+import { config } from 'dotenv';
+
+// Load environment variables
+config();
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -14,7 +18,11 @@ async function bootstrap() {
 
   // Enable CORS for all origins and IPs
   app.enableCors({
-    origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+    origin: [
+      process.env.FRONTEND_URL || 'http://localhost:3000',
+      'http://localhost:7000',  // Add port 7000 for frontend
+      'http://localhost:3000',  // Keep original port
+    ],
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS', 'HEAD'],
     allowedHeaders: [

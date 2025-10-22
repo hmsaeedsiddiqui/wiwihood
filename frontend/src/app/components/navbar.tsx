@@ -28,13 +28,13 @@ function Navbar() {
         }))
         setCategories(transformedCategories)
       } else {
-        // Fallback to default categories if API fails
-        setCategories(getDefaultCategories())
+        // API failed - set empty array to show only real data
+        setCategories([])
       }
     } catch (error) {
       console.error('Error fetching categories:', error)
-      // Fallback to default categories
-      setCategories(getDefaultCategories())
+      // API error - set empty array to show only real data
+      setCategories([])
     } finally {
       setLoadingCategories(false)
     }
@@ -57,15 +57,7 @@ function Navbar() {
     return iconMap[categoryName] || '🌟'
   }
 
-  // Fallback categories
-  const getDefaultCategories = () => [
-    { id: 1, name: 'Hair Services', slug: 'hair', icon: '✂️' },
-    { id: 2, name: 'Nail Services', slug: 'nail', icon: '💅' },
-    { id: 3, name: 'Massage Services', slug: 'massage', icon: '💆‍♀️' },
-    { id: 4, name: 'Facial Services', slug: 'facial', icon: '✨' },
-    { id: 5, name: 'Beauty Services', slug: 'beauty', icon: '💄' },
-    { id: 6, name: 'Wellness Services', slug: 'wellness', icon: '🧘‍♀️' }
-  ]
+  // No hardcoded fallback categories - use only real API data
 
   // Load categories when component mounts or when categories menu is opened for first time
   useEffect(() => {
