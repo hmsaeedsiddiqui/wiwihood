@@ -203,9 +203,38 @@ export class QRTIntegration {
     ]);
   }
 
-  // Services QRT
+  // Services QRT - Public endpoint (no auth required)
   static async getServices() {
-    return this.qrtCall('/services?isActive=true', [
+    try {
+      console.log('🔍 QRT: Fetching all services...');
+      
+      // Try public services endpoints
+      const endpoints = [
+        '/services?isActive=true&isApproved=true',
+        '/services?isActive=true',
+        '/services'
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          const response = await axios.get(`${API_BASE}${endpoint}`, {
+            timeout: 10000,
+          });
+          
+          console.log('✅ QRT: Services API response:', response.data);
+          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            return response.data;
+          } else if (response.data && response.data.services && Array.isArray(response.data.services)) {
+            return response.data.services;
+          }
+        } catch (error: any) {
+          console.log(`❌ QRT: Endpoint ${endpoint} failed:`, error?.response?.status, error?.message);
+          continue;
+        }
+      }
+      
+      console.log('⚠️ QRT: No services API worked, using fallback data');
+      return [
       {
         id: '1',
         name: 'Hair Cut & Style',
@@ -286,7 +315,11 @@ export class QRTIntegration {
         images: ['/service1.png'],
         createdAt: new Date().toISOString()
       }
-    ]);
+    ];
+    } catch (error: any) {
+      console.error('❌ QRT: getServices failed:', error?.message);
+      return [];
+    }
   }
 
   // Calendar Bookings QRT
@@ -513,9 +546,29 @@ export class QRTIntegration {
     };
   }
 
-  // Categories QRT
+  // Categories QRT - Public endpoint (no auth required)
   static async getCategories() {
-    return this.qrtCall('/categories?isActive=true', [
+    try {
+      console.log('🔍 QRT: Fetching categories...');
+      
+      const response = await axios.get(`${API_BASE}/categories?isActive=true`, {
+        timeout: 10000,
+      });
+      
+      console.log('✅ QRT: Categories API response:', response.data);
+      if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+        return response.data;
+      } else if (response.data && response.data.categories && Array.isArray(response.data.categories)) {
+        return response.data.categories;
+      }
+      
+      console.log('⚠️ QRT: No categories found, using fallback data');
+    } catch (error: any) {
+      console.log('❌ QRT: Categories API failed:', error?.response?.status, error?.message);
+      console.log('⚠️ QRT: Using fallback categories');
+    }
+    
+    return [
       {
         id: 'hair-services',
         name: 'Hair Services',
@@ -556,9 +609,53 @@ export class QRTIntegration {
 
   // Get services by category QRT - only approved and active services
   static async getServicesByCategory(categoryId: string) {
-    return this.qrtCall(`/services/category/${categoryId}?isApproved=true&isActive=true&approvalStatus=APPROVED`, [
-      // Fallback mock data filtered by category would be added here
-    ]);
+    try {
+      console.log('🔍 QRT: Fetching services for category:', categoryId);
+      
+      // Try multiple endpoints to get category services
+      const endpoints = [
+        `/services?categoryId=${categoryId}&isActive=true&isApproved=true`,
+        `/services/category/${categoryId}?isActive=true&isApproved=true`,
+        `/services?category=${categoryId}&isActive=true&isApproved=true`
+      ];
+      
+      for (const endpoint of endpoints) {
+        try {
+          const response = await axios.get(`${API_BASE}${endpoint}`, {
+            timeout: 10000,
+          });
+          
+          console.log('✅ QRT: Category services API response:', response.data);
+          if (response.data && Array.isArray(response.data) && response.data.length > 0) {
+            return response.data;
+          } else if (response.data && response.data.services && Array.isArray(response.data.services)) {
+            return response.data.services;
+          }
+        } catch (error: any) {
+          console.log(`❌ QRT: Endpoint ${endpoint} failed:`, error?.response?.status, error?.message);
+          continue;
+        }
+      }
+      
+      // If no category-specific services found, try to get all services and filter client-side
+      console.log('⚠️ QRT: No category-specific endpoint worked, trying to get all services');
+      const allServices = await this.getServices();
+      if (allServices && Array.isArray(allServices)) {
+        const filtered = allServices.filter(service => 
+          service.categoryId === categoryId || 
+          service.category?.id === categoryId ||
+          service.category?.slug === categoryId
+        );
+        console.log('✅ QRT: Filtered services from all services:', filtered.length);
+        return filtered;
+      }
+      
+      console.log('❌ QRT: No services found for category:', categoryId);
+      return [];
+    } catch (error: any) {
+      console.error('❌ QRT: getServicesByCategory failed:', error?.message);
+      return [];
+    }
   }
 
   // Service Management QRT Methods

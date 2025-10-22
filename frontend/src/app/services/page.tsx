@@ -72,15 +72,42 @@ function ServicesPage() {
     const loadData = async () => {
       try {
         setLoading(true);
+        console.log('🔍 Loading services and categories...');
+        
         const [servicesData, categoriesData] = await Promise.all([
           QRTIntegration.getServices(),
           QRTIntegration.getCategories()
         ]);
         
+        console.log('📊 Services loaded:', servicesData?.length || 0);
+        console.log('📊 Categories loaded:', categoriesData?.length || 0);
+        
         setServices(servicesData || []);
         setCategories(categoriesData || []);
+        
+        // If no services loaded but we have categories, try to load category-specific services
+        if ((!servicesData || servicesData.length === 0) && categoriesData && categoriesData.length > 0) {
+          console.log('⚠️ No services loaded, trying to load from all categories...');
+          const allCategoryServices = [];
+          
+          for (const category of categoriesData) {
+            try {
+              const categoryServices = await QRTIntegration.getServicesByCategory(category.id);
+              if (categoryServices && categoryServices.length > 0) {
+                allCategoryServices.push(...categoryServices);
+              }
+            } catch (error) {
+              console.log(`❌ Failed to load services for category ${category.name}:`, error.message);
+            }
+          }
+          
+          if (allCategoryServices.length > 0) {
+            console.log('✅ Loaded services from categories:', allCategoryServices.length);
+            setServices(allCategoryServices);
+          }
+        }
       } catch (error) {
-        console.error('Error loading data:', error);
+        console.error('❌ Error loading data:', error);
       } finally {
         setLoading(false);
       }
@@ -92,9 +119,12 @@ function ServicesPage() {
   // Handle URL category parameter and load category-specific services
   useEffect(() => {
     const categoryParam = searchParams?.get('category');
+    console.log('🔍 Category parameter from URL:', categoryParam);
+    
     if (categoryParam && categories.length > 0) {
       setCategoryFilter(categoryParam);
       const category = categories.find(cat => cat.slug === categoryParam || cat.id === categoryParam);
+      console.log('🔍 Found category:', category);
       setBreadcrumb(category ? category.name : 'Services');
       
       // Load services for this specific category
@@ -102,12 +132,15 @@ function ServicesPage() {
         try {
           setLoading(true);
           const categoryData = categories.find(cat => cat.slug === categoryParam || cat.id === categoryParam);
+          console.log('🔍 Loading services for category:', categoryData);
+          
           if (categoryData) {
             const categoryServices = await QRTIntegration.getServicesByCategory(categoryData.id);
+            console.log('📊 Category services loaded:', categoryServices?.length || 0);
             setServices(categoryServices || []);
           }
         } catch (error) {
-          console.error('Error loading category services:', error);
+          console.error('❌ Error loading category services:', error);
         } finally {
           setLoading(false);
         }
@@ -117,20 +150,30 @@ function ServicesPage() {
     } else {
       setCategoryFilter('');
       setBreadcrumb('All Services');
+      console.log('🔍 No category filter, showing all services');
     }
   }, [searchParams, categories]);
 
   // Filter services based on category
   useEffect(() => {
+    console.log('🔍 Filtering services - Total services:', services.length, 'Category filter:', categoryFilter);
+    
     let filtered = services;
     
     if (categoryFilter) {
-      filtered = services.filter(service => 
-        service.category?.slug === categoryFilter || 
-        service.category?.id === categoryFilter ||
-        service.categoryId === categoryFilter ||
-        service.categoryId.includes(categoryFilter)
-      );
+      console.log('🔍 Applying category filter for:', categoryFilter);
+      filtered = services.filter(service => {
+        const matches = service.category?.slug === categoryFilter || 
+          service.category?.id === categoryFilter ||
+          service.categoryId === categoryFilter ||
+          service.categoryId?.includes(categoryFilter);
+        
+        if (matches) {
+          console.log('✅ Service matches filter:', service.name, 'Category:', service.category?.name || service.categoryId);
+        }
+        return matches;
+      });
+      console.log('📊 Filtered services count:', filtered.length);
     }
 
     // Convert services to shop format for compatibility
@@ -149,6 +192,7 @@ function ServicesPage() {
       tags: service.isActive ? ['active'] : []
     }));
 
+    console.log('📊 Final shop data count:', shopData.length);
     setFilteredShops(shopData);
   }, [services, categoryFilter]);
 
