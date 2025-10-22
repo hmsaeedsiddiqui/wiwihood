@@ -11,19 +11,19 @@ function HotProduct() {
   // No fallback services - use only real API data matching badges
 
   // Map API services to card model
-  // Popular this week: prefer badges Popular/Premium/Top Rated
+  // Popular this week: prefer badges Popular/Premium/Top Rated - ONLY SHOW 1 SERVICE
   const popularThisWeek = useMemo(() => {
     const S = (activeServices as any[])
     console.log('🔍 HotProduct: Total active services received:', S.length, S.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
-    // Popular This Week: Top Rated, Best Seller, Premium, Popular badges
-    const popularBadges = ['popular', 'premium', 'top rated', 'top-rated', 'best seller', 'best-seller', 'trending']
+    // Popular This Week: Only Top Rated badge (excluding Best Seller for more specificity)
+    const popularBadges = ['popular', 'premium', 'top rated', 'top-rated', 'trending', 'most popular']
     const withBadges = S.filter(s => {
       const badge = (s?.adminAssignedBadge || '').toString().toLowerCase()
       return popularBadges.some(b => badge === b || badge.includes(b))
     })
     console.log('🔍 HotProduct: Popular badges matched:', withBadges.length, withBadges.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
-    // Only show services with matching badges - no fallback to popular API
-    const base = withBadges.slice(0, 3)
+    // ONLY SHOW 1 SERVICE for Popular this week as requested
+    const base = withBadges.slice(0, 1)
     if (!base || base.length === 0) return []
     return base.map((s: any, idx: number) => ({
       id: s.id || idx,
@@ -58,6 +58,31 @@ function HotProduct() {
       rating: s.averageRating || 4.6,
       reviews: s.totalReviews || Math.floor(Math.random() * 50) + 10,
       image: s.featuredImage || (Array.isArray(s.images) ? s.images[0] : undefined) || '/service2.jpg',
+      category: s.category?.name || 'Service'
+    }))
+  }, [activeServices])
+
+  // Best Sellers section: only Best Seller badges
+  const bestSellers = useMemo(() => {
+    const S = (activeServices as any[])
+    console.log('🔍 HotProduct: Checking for Best Seller badges in:', S.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
+    // Best Sellers: Best Seller badges only
+    const bestSellerBadges = ['best seller', 'best-seller', 'bestseller', 'top seller']
+    const withBadges = S.filter(s => {
+      const badge = (s?.adminAssignedBadge || '').toString().toLowerCase()
+      return bestSellerBadges.some(b => badge === b || badge.includes(b))
+    })
+    console.log('🔍 HotProduct: Best Seller badges matched:', withBadges.length, withBadges.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
+    const base = withBadges.slice(0, 3)
+    if (!base || base.length === 0) return []
+    return base.map((s: any, idx: number) => ({
+      id: s.id || idx,
+      title: s.provider?.businessName || 'Featured Provider',
+      service: s.name,
+      location: s.displayLocation || s.category?.name || '—',
+      rating: s.averageRating || 4.6,
+      reviews: s.totalReviews || Math.floor(Math.random() * 50) + 10,
+      image: s.featuredImage || (Array.isArray(s.images) ? s.images[0] : undefined) || '/service3.jpg',
       category: s.category?.name || 'Service'
     }))
   }, [activeServices])
@@ -164,6 +189,27 @@ function HotProduct() {
             ))}
           </div>
         </div>
+
+        {/* Best Sellers section */}
+        {bestSellers.length > 0 && (
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-light text-gray-800">Best Sellers</h3>
+              <button 
+                onClick={() => router.push('/services?filter=bestseller')}
+                className="bg-[#E89B8B] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#D4876F] transition-colors"
+              >
+                View all
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {bestSellers.map((service) => (
+                <ServiceCard key={`bestseller-${service.id}`} service={service} />
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* New on vividhood section */}
         <div>
