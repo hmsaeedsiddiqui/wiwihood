@@ -10,7 +10,7 @@ const FeaturedSections = () => {
     <div className="w-full">
       <PopularServices />
       <TopRatedBusinesses />
-      <PromotionsDeals />
+      {/* Removed PromotionsDeals - now handled in HotProduct component with proper badge filtering */}
     </div>
   )
 }

@@ -87,6 +87,31 @@ function HotProduct() {
     }))
   }, [activeServices])
 
+  // Hot Deals section: only Hot Deal badges
+  const hotDeals = useMemo(() => {
+    const S = (activeServices as any[])
+    console.log('🔍 HotProduct: Checking for Hot Deal badges in:', S.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
+    // Hot Deals: Hot Deal badges only
+    const hotDealBadges = ['hot deal', 'hot-deal', 'deal', 'limited time', 'special offer', 'promotion']
+    const withBadges = S.filter(s => {
+      const badge = (s?.adminAssignedBadge || '').toString().toLowerCase()
+      return hotDealBadges.some(b => badge === b || badge.includes(b))
+    })
+    console.log('🔍 HotProduct: Hot Deal badges matched:', withBadges.length, withBadges.map(s => ({ name: s.name, badge: s.adminAssignedBadge })))
+    const base = withBadges.slice(0, 3)
+    if (!base || base.length === 0) return []
+    return base.map((s: any, idx: number) => ({
+      id: s.id || idx,
+      title: s.provider?.businessName || 'Featured Provider',
+      service: s.name,
+      location: s.displayLocation || s.category?.name || '—',
+      rating: s.averageRating || 4.6,
+      reviews: s.totalReviews || Math.floor(Math.random() * 50) + 10,
+      image: s.featuredImage || (Array.isArray(s.images) ? s.images[0] : undefined) || '/service4.jpg',
+      category: s.category?.name || 'Service'
+    }))
+  }, [activeServices])
+
   type CardService = {
     id: string | number
     title: string
@@ -206,6 +231,27 @@ function HotProduct() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {bestSellers.map((service) => (
                 <ServiceCard key={`bestseller-${service.id}`} service={service} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Hot Deals section */}
+        {hotDeals.length > 0 && (
+          <div className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-2xl font-light text-gray-800">Hot Deals</h3>
+              <button 
+                onClick={() => router.push('/services?filter=deals')}
+                className="bg-[#E89B8B] text-white px-4 py-2 rounded-lg text-sm hover:bg-[#D4876F] transition-colors"
+              >
+                View all
+              </button>
+            </div>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {hotDeals.map((service) => (
+                <ServiceCard key={`hotdeal-${service.id}`} service={service} />
               ))}
             </div>
           </div>
