@@ -1,0 +1,894 @@
+"use client"
+
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
+import Image from "next/image";
+import { useSearchParams } from "next/navigation";
+import { getServiceSlug } from '@/utils/serviceHelpers';
+import { createServiceUrl } from '@/utils/slugify';
+import Footer from "../components/footer";
+import Navbar from "../components/navbar";
+import ServiceHero from "../services/service-hero";
+import { useGetServicesQuery } from '@/store/api/servicesApi';
+import { useGetCategoriesQuery } from '@/store/api/providersApi';
+
+interface Shop {
+  id: string;
+  category: string;
+  name: string;
+  image: string;
+  description: string;
+  rating: number;
+  reviews: number;
+  verified: boolean;
+  priceFrom: number;
+  distance: number;
+  availableSlots: string[];
+  tags?: string[];
+}
+
+function ServicesPage() {
+  const searchParams = useSearchParams();
+  const [services, setServices] = useState<Service[]>([]);
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filteredShops, setFilteredShops] = useState<Shop[]>([]);
+  const [selectedService, setSelectedService] = useState('');
+  const [selectedLocation, setSelectedLocation] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
+  const [priceRange, setPriceRange] = useState([0, 500]);
+  const [minRating, setMinRating] = useState(0);
+  const [maxDistance, setMaxDistance] = useState(50);
+  const [showServiceDropdown, setShowServiceDropdown] = useState(false);
+  const [showLocationDropdown, setShowLocationDropdown] = useState(false);
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [breadcrumb, setBreadcrumb] = useState('All Services');
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 9; // 3x3 grid
+
+  // Load services and categories on mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        const [servicesData, categoriesData] = await Promise.all([
+          QRTIntegration.getServices(),
+          QRTIntegration.getCategories()
+        ]);
+        
+        setServices(servicesData || []);
+        setCategories(categoriesData || []);
+      } catch (error) {
+        console.error('Error loading data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, []);
+
+  // Handle URL category parameter and load category-specific services
+  useEffect(() => {
+    const categoryParam = searchParams?.get('category');
+    
+    if (categoryParam && categories.length > 0) {
+      setCategoryFilter(categoryParam);
+      const category = categories.find(cat => cat.slug === categoryParam || cat.id === categoryParam);
+      setBreadcrumb(category ? category.name : 'Services');
+    } else {
+      setCategoryFilter('');
+      setBreadcrumb('All Services');
+    }
+  }, [searchParams, categories]);
+
+  // Filter services based on category
+  useEffect(() => {
+    let filtered = services;
+    
+    if (categoryFilter) {
+      filtered = services.filter(service => {
+        return service.category?.slug === categoryFilter || 
+          service.category?.id === categoryFilter ||
+          service.categoryId === categoryFilter ||
+          service.categoryId?.includes(categoryFilter);
+      });
+    }
+
+    // Convert services to shop format for compatibility
+    const shopData = filtered.map(service => {
+      const categorySlug = service.category?.slug || 'default';
+      
+      // Priority: 1. Backend image, 2. Category-specific fallback, 3. Default fallback
+      let imageUrl = '';
+      
+      // First, try to use the image from backend
+      if (service.images && service.images.length > 0 && service.images[0]) {
+        imageUrl = service.images[0];
+        console.log(`Using backend image for ${service.name}:`, imageUrl);
+      } else {
+        // Fallback to category-specific images if no backend image
+        let fallbackImage = '/service1.png';
+        
+        if (categorySlug.includes('lash') || service.name.toLowerCase().includes('lash')) {
+          fallbackImage = '/service2.jpg';
+        } else if (categorySlug.includes('massage') || service.name.toLowerCase().includes('massage')) {
+          fallbackImage = '/service3.jpg';
+        } else if (categorySlug.includes('brow') || service.name.toLowerCase().includes('brow')) {
+          fallbackImage = '/facial-treatment.jpg';
+        } else if (categorySlug.includes('nail') || service.name.toLowerCase().includes('nail')) {
+          fallbackImage = '/service1.png';
+        } else if (categorySlug.includes('facial') || service.name.toLowerCase().includes('facial')) {
+          fallbackImage = '/facial-treatment.jpg';
+        }
+        
+        imageUrl = fallbackImage;
+        console.log(`Using fallback image for ${service.name}:`, imageUrl);
+      }
+      
+      return {
+        id: service.id, // Keep original service ID
+        category: service.category?.name || 'Service',
+        name: service.name,
+        image: imageUrl,
+        description: service.description,
+        rating: 4.5 + Math.random() * 0.5,
+        reviews: Math.floor(Math.random() * 50) + 10,
+        verified: true,
+        priceFrom: service.basePrice,
+        distance: Math.round(Math.random() * 10 + 1),
+        availableSlots: ['10:00 AM', '2:00 PM', '5:00 PM'],
+        tags: service.isActive ? ['active'] : []
+      };
+    });
+
+    setFilteredShops(shopData);
+  }, [services, categoryFilter]);
+
+  // Clear all filters
+  const clearFilters = () => {
+    setSelectedService('');
+    setSelectedLocation('');
+    setPriceRange([0, 500]);
+    setMinRating(0);
+    setMaxDistance(50);
+    setCategoryFilter('');
+    setBreadcrumb('All Services');
+  };
+
+  // Service options with wiwihood theme icons
+  // Click outside handler to close dropdowns
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as Element;
+      if (!target.closest('.dropdown-container')) {
+        setShowServiceDropdown(false);
+        setShowLocationDropdown(false);
+      }
+    };
+
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
+  // Generate service options dynamically from categories
+  const generateServiceOptions = (categories: any[]) => {
+    // Default options with icons
+    const defaultOptions = [
+      { 
+        value: '', 
+        label: 'All Services',
+        icon: (
+          <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        )
+      }
+    ];
+
+    // If categories are loaded, create options from them
+    if (categories && categories.length > 0) {
+      const categoryOptions = categories.map(category => ({
+        value: category.slug,
+        label: category.name,
+        icon: getIconForCategory(category.name)
+      }));
+      return [...defaultOptions, ...categoryOptions];
+    }
+
+    // No hardcoded fallback options - use only real API data
+
+    return defaultOptions;
+  };
+
+  // Helper function to get icon for category
+  const getIconForCategory = (categoryName: string) => {
+    const iconMap: { [key: string]: React.ReactElement } = {
+      'Hair Services': (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9M21 9H9M21 13H9M21 17H9" />
+        </svg>
+      ),
+      'Nail Services': (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21l4-4h6l-4 4M3 17l4-4V7a4 4 0 118 0v6l4 4" />
+        </svg>
+      ),
+      'Massage Services': (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 4V2a1 1 0 011-1h8a1 1 0 011 1v2M7 4h10M7 4l-2 16h14L17 4M12 8v8M9 12h6" />
+        </svg>
+      ),
+      'Facial Services': (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" />
+          <circle cx="9" cy="9" r="1.5" fill="currentColor" />
+          <circle cx="15" cy="9" r="1.5" fill="currentColor" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 13s1.5 2 4 2 4-2 4-2" />
+        </svg>
+      ),
+      'Beauty Services': (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="currentColor" viewBox="0 0 24 24">
+          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+      ),
+      'Wellness Services': (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      ),
+      'Spa Services': (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+        </svg>
+      )
+    };
+    
+    return iconMap[categoryName] || (
+      <svg className="w-5 h-5 text-[#E89B8B]" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+      </svg>
+    );
+  };
+
+  // Get service options (dynamically generated from categories)
+  const serviceOptions = generateServiceOptions(categories);
+
+  // Location options with wiwihood theme icons
+  const locationOptions = [
+    { 
+      value: '', 
+      label: 'All Locations',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+        </svg>
+      )
+    },
+    { 
+      value: 'dubai-marina', 
+      label: 'Dubai Marina',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      )
+    },
+    { 
+      value: 'downtown-dubai', 
+      label: 'Downtown Dubai',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      )
+    },
+    { 
+      value: 'jumeirah', 
+      label: 'Jumeirah',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+        </svg>
+      )
+    },
+    { 
+      value: 'business-bay', 
+      label: 'Business Bay',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+        </svg>
+      )
+    },
+    { 
+      value: 'difc', 
+      label: 'DIFC',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 21v-8.25M15.75 21v-8.25M8.25 21v-8.25M3 9l9-6 9 6m-1.5 12V10.332A48.36 48.36 0 0012 9.75c-2.551 0-5.056.2-7.5.582V21M3 21h18M12 6.75h.008v.008H12V6.75z" />
+        </svg>
+      )
+    },
+    { 
+      value: 'jbr', 
+      label: 'JBR',
+      icon: (
+        <svg className="w-5 h-5 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 10h4.764a2 2 0 011.789 2.894l-3.5 7A2 2 0 0115.263 21h-4.017c-.163 0-.326-.02-.485-.06L7 20m7-10V5a2 2 0 00-2-2h-.095c-.5 0-.905.405-.905.905 0 .714-.211 1.412-.608 2.006L7 11v9m7-10h-2M7 20H5a2 2 0 01-2-2v-6a2 2 0 012-2h2.5" />
+        </svg>
+      )
+    }
+  ];
+
+  // Pagination calculations
+  const totalPages = Math.ceil(filteredShops.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const currentShops = filteredShops.slice(startIndex, endIndex);
+
+  // Initialize
+  useEffect(() => {
+    const today = new Date().toISOString().split('T')[0];
+    setSelectedDate(today);
+  }, []);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <ServiceHero 
+        categoryName={breadcrumb === 'All Services' ? 'Beauty Services' : breadcrumb}
+        breadcrumb={breadcrumb}
+      />
+      
+      {/* Enhanced Filter Section with Better Alignment */}
+      <div className="bg-gray-50 py-12">
+        <div className="container mx-auto px-6">
+          {/* Filter Header - Better Spacing */}
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h1 className="text-4xl font-light text-gray-800 mb-2">Beauty Services</h1>
+              <p className="text-lg text-gray-600">
+                {filteredShops.length} services available near you
+              </p>
+            </div>
+            <button 
+              onClick={clearFilters}
+              className="bg-white text-[#E89B8B] border border-[#E89B8B] px-6 py-3 rounded-lg font-medium hover:bg-[#E89B8B] hover:text-white transition-all duration-200 shadow-sm"
+            >
+              Clear All Filters
+            </button>
+          </div>
+
+          {/* Main Filter Grid - Better Spacing */}
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+            
+            {/* Filters Sidebar - Better Design */}
+            <div className="lg:col-span-1">
+              <div className="bg-white rounded-2xl shadow-sm p-6 sticky top-8 border border-gray-100">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-semibold text-gray-800">Filters</h3>
+                  <div className="w-8 h-8 bg-[#F5F0EF] rounded-full flex items-center justify-center">
+                    <svg className="w-4 h-4 text-[#E89B8B]" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M3 3a1 1 0 011-1h12a1 1 0 011 1v3a1 1 0 01-.293.707L12 11.414V15a1 1 0 01-.293.707l-2 2A1 1 0 018 17v-5.586L3.293 6.707A1 1 0 013 6V3z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                </div>
+                
+                {/* Service Category Filter - Better Styling */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zM21 5H9M21 9H9M21 13H9M21 17H9" />
+                    </svg>
+                    Service Category
+                  </label>
+                  <div className="relative dropdown-container">
+                    <button
+                      onClick={() => setShowServiceDropdown(!showServiceDropdown)}
+                      className="w-full p-4 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#E89B8B] focus:border-[#E89B8B] text-left flex items-center justify-between"
+                    >
+                      <div className="flex items-center">
+                        {serviceOptions.find(option => option.value === selectedService)?.icon}
+                        <span className="ml-2">
+                          {serviceOptions.find(option => option.value === selectedService)?.label || 'All Services'}
+                        </span>
+                      </div>
+                      <svg className={`w-5 h-5 text-[#E89B8B] transition-transform ${showServiceDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {showServiceDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                        {serviceOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={() => {
+                              setSelectedService(option.value);
+                              setShowServiceDropdown(false);
+                            }}
+                            className="w-full p-3 text-left hover:bg-[#F5F0EF] flex items-center transition-colors"
+                          >
+                            {option.icon}
+                            <span className="ml-2">{option.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Location Filter - Better Styling */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    Location
+                  </label>
+                  <div className="relative dropdown-container">
+                    <button
+                      onClick={() => setShowLocationDropdown(!showLocationDropdown)}
+                      className="w-full p-4 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#E89B8B] focus:border-[#E89B8B] text-left flex items-center justify-between"
+                    >
+                      <div className="flex items-center">
+                        {locationOptions.find(option => option.value === selectedLocation)?.icon}
+                        <span className="ml-2">
+                          {locationOptions.find(option => option.value === selectedLocation)?.label || 'All Locations'}
+                        </span>
+                      </div>
+                      <svg className={`w-5 h-5 text-[#E89B8B] transition-transform ${showLocationDropdown ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                    
+                    {showLocationDropdown && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-lg max-h-60 overflow-y-auto">
+                        {locationOptions.map((option) => (
+                          <button
+                            key={option.value}
+                            onClick={() => {
+                              setSelectedLocation(option.value);
+                              setShowLocationDropdown(false);
+                            }}
+                            className="w-full p-3 text-left hover:bg-[#F5F0EF] flex items-center transition-colors"
+                          >
+                            {option.icon}
+                            <span className="ml-2">{option.label}</span>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Date & Time - Side by Side */}
+                <div className="grid grid-cols-1 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 002 2v12a2 2 0 002 2z" />
+                      </svg>
+                      Date
+                    </label>
+                    <input
+                      type="date"
+                      value={selectedDate}
+                      onChange={(e) => setSelectedDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full p-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-[#E89B8B] focus:border-[#E89B8B]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Time
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={selectedTime}
+                        onChange={(e) => setSelectedTime(e.target.value)}
+                        className="w-full p-4 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#E89B8B] focus:border-[#E89B8B] appearance-none"
+                      >
+                        <option value="">Any Time</option>
+                        <option value="09:00">9:00 AM</option>
+                        <option value="10:00">10:00 AM</option>
+                        <option value="11:00">11:00 AM</option>
+                        <option value="12:00">12:00 PM</option>
+                        <option value="13:00">1:00 PM</option>
+                        <option value="14:00">2:00 PM</option>
+                        <option value="15:00">3:00 PM</option>
+                        <option value="16:00">4:00 PM</option>
+                        <option value="17:00">5:00 PM</option>
+                        <option value="18:00">6:00 PM</option>
+                      </select>
+                      <svg className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#E89B8B] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Price Range Filter - Enhanced Design */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
+                    </svg>
+                    Price Range (AED)
+                  </label>
+                  <div className="bg-[#F5F0EF] rounded-xl p-4">
+                    <div className="flex justify-between text-sm text-[#E89B8B] font-medium mb-3">
+                      <span>AED {priceRange[0]}</span>
+                      <span>AED {priceRange[1]}</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="0"
+                      max="500"
+                      value={priceRange[1]}
+                      onChange={(e) => setPriceRange([0, parseInt(e.target.value)])}
+                      className="w-full h-3 bg-gray-200 rounded-lg appearance-none cursor-pointer slider"
+                      style={{
+                        background: `linear-gradient(to right, #E89B8B 0%, #E89B8B ${(priceRange[1]/500)*100}%, #e5e7eb ${(priceRange[1]/500)*100}%, #e5e7eb 100%)`
+                      }}
+                    />
+                    <div className="grid grid-cols-2 gap-3 mt-4">
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Min Price</label>
+                        <input
+                          type="number"
+                          placeholder="0"
+                          value={priceRange[0]}
+                          onChange={(e) => setPriceRange([parseInt(e.target.value) || 0, priceRange[1]])}
+                          className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#E89B8B]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-gray-500 mb-1">Max Price</label>
+                        <input
+                          type="number"
+                          placeholder="500"
+                          value={priceRange[1]}
+                          onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value) || 500])}
+                          className="w-full p-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-[#E89B8B]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Rating Filter - Enhanced Design */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="currentColor" viewBox="0 0 20 20">
+                      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                    </svg>
+                    Minimum Rating
+                  </label>
+                  <div className="space-y-3">
+                    {[4.5, 4.0, 3.5, 3.0, 0].map((rating) => (
+                      <label key={rating} className="flex items-center cursor-pointer p-3 rounded-xl hover:bg-[#F5F0EF] transition-colors group">
+                        <input
+                          type="radio"
+                          name="rating"
+                          value={rating}
+                          checked={minRating === rating}
+                          onChange={(e) => setMinRating(parseFloat(e.target.value))}
+                          className="mr-3 text-[#E89B8B] focus:ring-[#E89B8B] w-4 h-4"
+                        />
+                        <div className="flex items-center">
+                          <div className="flex text-yellow-400 text-sm mr-2">
+                            {'★'.repeat(Math.floor(rating || 1))}
+                            {'☆'.repeat(5 - Math.floor(rating || 1))}
+                          </div>
+                          <span className="text-sm text-gray-600 font-medium group-hover:text-[#E89B8B]">
+                            {rating > 0 ? `${rating}+ stars` : 'Any rating'}
+                          </span>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Distance Filter - Enhanced Design */}
+                <div className="mb-6">
+                  <label className="block text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                    <svg className="w-5 h-5 text-[#E89B8B] mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                    </svg>
+                    Distance
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={maxDistance}
+                      onChange={(e) => setMaxDistance(parseInt(e.target.value))}
+                      className="w-full p-4 border border-gray-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-[#E89B8B] focus:border-[#E89B8B] appearance-none"
+                    >
+                      <option value={1}>Within 1 km</option>
+                      <option value={5}>Within 5 km</option>
+                      <option value={10}>Within 10 km</option>
+                      <option value={25}>Within 25 km</option>
+                      <option value={50}>Within 50 km</option>
+                    </select>
+                    <svg className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-[#E89B8B] pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </div>
+                </div>
+
+                {/* Results Count - Enhanced Design */}
+                <div className="bg-gradient-to-r from-[#E89B8B] to-[#D4876F] p-4 rounded-xl text-center shadow-sm">
+                  <div className="flex items-center justify-center space-x-2">
+                    <svg className="w-5 h-5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-white font-semibold">
+                      {filteredShops.length} services found
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Services Grid - Home Page Style Cards */}
+            <div className="lg:col-span-3">
+              {/* Breadcrumb */}
+              <div className="mb-6">
+                <nav className="flex items-center text-sm text-gray-600">
+                  <Link href="/" className="hover:text-[#E89B8B] transition-colors">
+                    Home
+                  </Link>
+                  <svg className="mx-2 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                  </svg>
+                  <span className="text-[#E89B8B] font-medium">{breadcrumb}</span>
+                </nav>
+                <h1 className="text-2xl font-bold text-gray-900 mt-2">{breadcrumb}</h1>
+                <p className="text-gray-600 mt-1">
+                  {loading ? 'Loading services...' : `${filteredShops.length} services available`}
+                </p>
+              </div>
+
+              {loading ? (
+                <div className="text-center py-12">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#E89B8B]"></div>
+                  <p className="mt-4 text-gray-600">Loading services...</p>
+                </div>
+              ) : filteredShops.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 48 48">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M34 14a14 14 0 00-28 0m28 0L20 28m14-14l-6 6" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No services found</h3>
+                  <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or browse all services.</p>
+                  <div className="mt-6">
+                    <Link href="/services" className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#E89B8B] hover:bg-[#D4876F]">
+                      Browse All Services
+                    </Link>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                  {currentShops.map((shop) => {
+                    // Find the original service to get slug
+                    const originalService = services.find(s => s.id === shop.id);
+                    const serviceSlug = originalService ? getServiceSlug(originalService) : shop.id;
+                    
+                    return (
+                      <Link key={shop.id} href={createServiceUrl(serviceSlug)} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
+                    
+                    {/* Image Container */}
+                    <div className="relative h-48 overflow-hidden bg-gray-100">
+                      <img
+                        src={shop.image}
+                        alt={shop.name}
+                        className="w-full h-full object-cover transition-opacity duration-300"
+                        onError={(e) => {
+                          // If backend image fails, try category-specific fallback
+                          const target = e.currentTarget;
+                          if (!target.src.includes('/service')) {
+                            console.log('Backend image failed, using fallback for:', shop.name);
+                            // Determine fallback based on service name or category
+                            if (shop.name.toLowerCase().includes('lash')) {
+                              target.src = '/service2.jpg';
+                            } else if (shop.name.toLowerCase().includes('massage')) {
+                              target.src = '/service3.jpg';
+                            } else if (shop.name.toLowerCase().includes('brow') || shop.name.toLowerCase().includes('facial')) {
+                              target.src = '/facial-treatment.jpg';
+                            } else {
+                              target.src = '/service1.png';
+                            }
+                          }
+                        }}
+                        onLoad={() => {
+                          console.log('Image loaded successfully for:', shop.name, 'URL:', shop.image);
+                        }}
+                      />
+                      
+                      {/* Category Badge */}
+                      <div className="absolute top-3 left-3 bg-white px-2 py-1 rounded text-xs text-gray-600 font-medium">
+                        {shop.category}
+                      </div>
+                    </div>
+
+                    {/* Content Section */}
+                    <div className="p-4 flex flex-col flex-1">
+                      <h3 className="font-semibold text-gray-900 mb-1 line-clamp-1" title={shop.name}>
+                        {shop.name.length > 25 ? `${shop.name.substring(0, 25)}...` : shop.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 mb-2 line-clamp-2 flex-1" title={shop.description}>
+                        {shop.description.length > 60 ? `${shop.description.substring(0, 60)}...` : shop.description}
+                      </p>
+                      <p className="text-xs text-gray-500 mb-3">📍 {shop.distance} km away</p>
+                      
+                      {/* Rating */}
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center">
+                          <div className="flex items-center mr-2">
+                            {[...Array(5)].map((_, i) => (
+                              <svg 
+                                key={i} 
+                                className={`w-4 h-4 ${i < Math.floor(shop.rating) ? 'text-yellow-400' : 'text-gray-200'}`} 
+                                fill="currentColor" 
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                          <span className="text-sm text-gray-600">({shop.reviews})</span>
+                        </div>
+                        <span className="text-sm font-semibold text-[#E89B8B]">From AED {shop.priceFrom}</span>
+                      </div>
+
+                      {/* Available Slots */}
+                      {shop.availableSlots && shop.availableSlots.length > 0 && (
+                        <div className="mb-3">
+                          <div className="flex flex-wrap gap-1">
+                            {shop.availableSlots.slice(0, 2).map((slot, index) => (
+                              <span
+                                key={index}
+                                className="bg-green-50 text-green-700 px-2 py-1 rounded text-xs font-medium"
+                              >
+                                {slot}
+                              </span>
+                            ))}
+                            {shop.availableSlots.length > 2 && (
+                              <span className="bg-gray-100 text-gray-600 px-2 py-1 rounded text-xs">
+                                +{shop.availableSlots.length - 2}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Book Button */}
+                      <button className="w-full bg-[#E89B8B] text-white py-2 rounded-lg font-medium hover:bg-[#D4876F] transition-colors text-sm mt-auto">
+                        Book Now
+                      </button>
+                    </div>
+                  </Link>
+                    )
+                  })}
+                </div>
+              )}
+
+              {/* No Results State - Enhanced */}
+              {currentShops.length === 0 && filteredShops.length === 0 && (
+                <div className="col-span-full flex flex-col items-center justify-center py-20 bg-white rounded-2xl shadow-sm border border-gray-100">
+                  <div className="w-24 h-24 bg-[#F5F0EF] rounded-full flex items-center justify-center mb-6">
+                    <svg className="w-12 h-12 text-[#E89B8B]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-3">No services found</h3>
+                  <p className="text-gray-600 text-center max-w-md mb-6">
+                    We couldn't find any services matching your current filters. Try adjusting your search criteria.
+                  </p>
+                  <button 
+                    onClick={clearFilters}
+                    className="bg-[#E89B8B] text-white px-8 py-3 rounded-xl font-semibold hover:bg-[#D4876F] transition-colors duration-200 shadow-md"
+                  >
+                    Clear All Filters
+                  </button>
+                </div>
+              )}
+
+              {/* Pagination */}
+              {filteredShops.length > 0 && totalPages > 1 && (
+                <div className="col-span-full flex justify-center mt-12">
+                  <div className="flex items-center space-x-2">
+                    {/* Previous Button */}
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        currentPage === 1
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-white text-gray-700 hover:bg-[#F5F0EF] border border-gray-200'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+                      </svg>
+                    </button>
+
+                    {/* Page Numbers */}
+                    {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                      // Show first page, last page, current page, and pages around current
+                      const showPage = 
+                        page === 1 || 
+                        page === totalPages || 
+                        (page >= currentPage - 1 && page <= currentPage + 1);
+                      
+                      if (!showPage) {
+                        // Show dots for gaps
+                        if (page === currentPage - 2 || page === currentPage + 2) {
+                          return (
+                            <span key={page} className="px-2 py-2 text-gray-400">
+                              ...
+                            </span>
+                          );
+                        }
+                        return null;
+                      }
+
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => setCurrentPage(page)}
+                          className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                            currentPage === page
+                              ? 'bg-[#E89B8B] text-white'
+                              : 'bg-white text-gray-700 hover:bg-[#F5F0EF] border border-gray-200'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    })}
+
+                    {/* Next Button */}
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                        currentPage === totalPages
+                          ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                          : 'bg-white text-gray-700 hover:bg-[#F5F0EF] border border-gray-200'
+                      }`}
+                    >
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  {/* Results Info */}
+                  <div className="mt-4 text-center text-sm text-gray-600">
+                    Showing {startIndex + 1}-{Math.min(endIndex, filteredShops.length)} of {filteredShops.length} services
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <Footer />
+    </div>
+  );
+}
+
+export default ServicesPage;

@@ -160,11 +160,13 @@ export interface UpdateServiceRequest extends Partial<CreateServiceRequest> {}
 export interface ServiceFilterRequest {
   search?: string
   categoryId?: string
+  category?: string  // Category name filter
   providerId?: string
   minPrice?: number
   maxPrice?: number
   isActive?: boolean
   status?: 'active' | 'inactive' | 'draft'
+  type?: 'top-rated' | 'popular' | 'best-seller' | 'hot-deal' | 'new' | 'featured'  // Section-based filtering
   page?: number
   limit?: number
 }
@@ -606,6 +608,72 @@ export const servicesApi = createApi({
       } as ApiError)
     }),
 
+    // Get services by section/type
+    getTopRatedServices: builder.query<Service[], { limit?: number }>({
+      query: ({ limit = 6 } = {}) => ({
+        url: `services?type=top-rated&isActive=true&status=active&limit=${limit}`,
+        method: 'GET',
+      }),
+      providesTags: ['Services'],
+      transformErrorResponse: (response: any) => ({
+        message: response?.data?.message || 'Failed to fetch top-rated services',
+        statusCode: typeof response.status === 'number' ? response.status : 500,
+        error: response?.data?.error
+      } as ApiError)
+    }),
+
+    getPopularServices: builder.query<Service[], { limit?: number }>({
+      query: ({ limit = 6 } = {}) => ({
+        url: `services?type=popular&isActive=true&status=active&limit=${limit}`,
+        method: 'GET',
+      }),
+      providesTags: ['Services'],
+      transformErrorResponse: (response: any) => ({
+        message: response?.data?.message || 'Failed to fetch popular services',
+        statusCode: typeof response.status === 'number' ? response.status : 500,
+        error: response?.data?.error
+      } as ApiError)
+    }),
+
+    getBestSellerServices: builder.query<Service[], { limit?: number }>({
+      query: ({ limit = 6 } = {}) => ({
+        url: `services?type=best-seller&isActive=true&status=active&limit=${limit}`,
+        method: 'GET',
+      }),
+      providesTags: ['Services'],
+      transformErrorResponse: (response: any) => ({
+        message: response?.data?.message || 'Failed to fetch best-seller services',
+        statusCode: typeof response.status === 'number' ? response.status : 500,
+        error: response?.data?.error
+      } as ApiError)
+    }),
+
+    getHotDealServices: builder.query<Service[], { limit?: number }>({
+      query: ({ limit = 6 } = {}) => ({
+        url: `services?type=hot-deal&isActive=true&status=active&limit=${limit}`,
+        method: 'GET',
+      }),
+      providesTags: ['Services'],
+      transformErrorResponse: (response: any) => ({
+        message: response?.data?.message || 'Failed to fetch hot-deal services',
+        statusCode: typeof response.status === 'number' ? response.status : 500,
+        error: response?.data?.error
+      } as ApiError)
+    }),
+
+    getNewServices: builder.query<Service[], { limit?: number }>({
+      query: ({ limit = 6 } = {}) => ({
+        url: `services?type=new&isActive=true&status=active&limit=${limit}`,
+        method: 'GET',
+      }),
+      providesTags: ['Services'],
+      transformErrorResponse: (response: any) => ({
+        message: response?.data?.message || 'Failed to fetch new services',
+        statusCode: typeof response.status === 'number' ? response.status : 500,
+        error: response?.data?.error
+      } as ApiError)
+    }),
+
     // Search services
     searchServices: builder.query<Service[], { query: string; filters?: ServiceFilterRequest }>({
       query: ({ query, filters = {} }) => {
@@ -628,21 +696,7 @@ export const servicesApi = createApi({
       } as ApiError)
     }),
 
-    // Get popular services
-    getPopularServices: builder.query<Service[], { limit?: number }>({
-      query: ({ limit = 10 } = {}) => ({
-        url: `services/popular?limit=${limit}`,
-        method: 'GET',
-      }),
-      providesTags: ['Services'],
-      transformErrorResponse: (response: any) => ({
-        message: response?.data?.message || 'Failed to fetch popular services',
-        statusCode: typeof response.status === 'number' ? response.status : 500,
-        error: response?.data?.error
-      } as ApiError)
-    }),
-
-    // Get service by ID
+    // Search services
     getServiceById: builder.query<Service, string>({
       query: (id) => ({
         url: `services/${id}`,
@@ -757,6 +811,10 @@ export const {
   useGetServicesQuery,
   useSearchServicesQuery,
   useGetPopularServicesQuery,
+  useGetTopRatedServicesQuery,
+  useGetBestSellerServicesQuery,
+  useGetHotDealServicesQuery,
+  useGetNewServicesQuery,
   useGetServiceByIdQuery,
   useGetServiceBySlugQuery,
   useUpdateServiceMutation,
