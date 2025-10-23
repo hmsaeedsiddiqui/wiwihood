@@ -2,6 +2,8 @@
 import React from "react";
 import Link from "next/link";
 import { useGetServicesQuery } from "@/store/api/servicesApi";
+import { getServiceSlug } from "@/utils/serviceHelpers";
+import { createServiceUrl } from "@/utils/slugify";
 
 interface ServicesProps {
   categoryId?: string;
@@ -100,12 +102,14 @@ function Services({ categoryId, excludeServiceId }: ServicesProps) {
         You may also like
       </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
-        {displayServices.map((service, index) => (
-          <Link
-            key={service.id || index}
-            href={`/services/${service.id}`}
-            className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow block"
-          >
+        {displayServices.map((service, index) => {
+          const serviceSlug = getServiceSlug(service);
+          return (
+            <Link
+              key={service.id || index}
+              href={createServiceUrl(serviceSlug)}
+              className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow block"
+            >
             <div className="aspect-[4/3] overflow-hidden">
               <img
                 src={service.featuredImage || service.images?.[0] || "/service1.png"}
@@ -146,7 +150,8 @@ function Services({ categoryId, excludeServiceId }: ServicesProps) {
               </div>
             </div>
           </Link>
-        ))}
+          )
+        })}
       </div>
       
       {/* View More Button */}

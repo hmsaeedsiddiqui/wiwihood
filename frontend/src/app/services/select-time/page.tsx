@@ -7,6 +7,7 @@ import { useGetServicesQuery } from '@/store/api/servicesApi'
 import { useGetAvailableTimeSlotsQuery } from '@/store/api/bookingsApi'
 import { setSelectedDate, setSelectedTimeSlot } from '@/store/slices/bookingSlice'
 import { RootState } from '@/store'
+import { getServiceSlug } from '@/utils/serviceHelpers'
 
 function SelectTime() {
   const router = useRouter()
@@ -78,7 +79,14 @@ function SelectTime() {
   const staffMembers = ['Any Professional'] // For now, we'll keep this simple
 
   const handleBack = () => {
-    router.push(`/services/book-now?serviceId=${serviceIds[0]}`)
+    // Get the slug for the first selected service
+    const firstService = selectedServices[0]
+    if (firstService) {
+      const serviceSlug = getServiceSlug(firstService)
+      router.push(`/services/book-now?service=${serviceSlug}`)
+    } else {
+      router.push('/services/book-now')
+    }
   }
 
   const handleClose = () => {
