@@ -172,6 +172,7 @@ export interface ServiceFilterRequest {
 export interface Service {
   id: string
   name: string
+  slug?: string  // SEO-friendly URL slug
   description: string
   shortDescription: string
   categoryId: string
@@ -209,6 +210,7 @@ export interface Service {
   providerBusinessName?: string
   highlightBadge?: string
   featuredImage?: string
+  adminAssignedBadge?: string
   availableSlots?: string[]
   promotionText?: string
   difficultyLevel?: 'beginner' | 'intermediate' | 'advanced'
@@ -233,6 +235,12 @@ export interface Service {
   category?: any
   provider?: any
   bookings?: any[]
+  // Approval fields
+  isApproved?: boolean
+  approvalStatus?: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'pending_approval' | 'approved' | 'rejected'
+  approvalDate?: string
+  approvedByAdminId?: string
+  adminComments?: string
   // Virtual properties
   formattedPrice?: string
   formattedDuration?: string
@@ -728,6 +736,17 @@ export const servicesApi = createApi({
         error: response?.data?.error
       } as ApiError)
     }),
+
+    // Get service by slug
+    getServiceBySlug: builder.query<Service, string>({
+      query: (slug) => `services/slug/${slug}`,
+      providesTags: (result, error, slug) => [{ type: 'Service', id: result?.id }],
+      transformErrorResponse: (response: any) => ({
+        message: response?.data?.message || 'Service not found',
+        statusCode: typeof response.status === 'number' ? response.status : 500,
+        error: response?.data?.error
+      } as ApiError)
+    }),
   }),
 })
 
@@ -739,6 +758,7 @@ export const {
   useSearchServicesQuery,
   useGetPopularServicesQuery,
   useGetServiceByIdQuery,
+  useGetServiceBySlugQuery,
   useUpdateServiceMutation,
   useDeleteServiceMutation,
   useGetServicesByProviderQuery,

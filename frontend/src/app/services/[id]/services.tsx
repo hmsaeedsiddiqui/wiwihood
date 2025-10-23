@@ -1,69 +1,165 @@
 
 import React from "react";
+import Link from "next/link";
 import { useGetServicesQuery } from "@/store/api/servicesApi";
 
-function Services() {
-  // Only show approved and active services
-  const { data: services = [], isLoading, error } = useGetServicesQuery({ isActive: true, status: "active" });
+interface ServicesProps {
+  categoryId?: string;
+  excludeServiceId?: string;
+}
 
-  // Optionally filter for isApproved if backend supports it
-  const filteredServices = Array.isArray(services)
-  ? services.filter(s => s.isActive)
+function Services({ categoryId, excludeServiceId }: ServicesProps) {
+  // Always get all services and filter client-side for better reliability
+  const { data: services = [], isLoading, error } = useGetServicesQuery({});
+
+  // Filter by category and exclude current service
+  const filteredServices = Array.isArray(services) && services.length > 0
+    ? services.filter(s => {
+        // Must be active and approved
+        if (!s.isActive || s.status !== 'active') return false;
+        // Check if service is approved (handle different approval status formats)
+        if (s.approvalStatus && 
+            s.approvalStatus !== 'approved' && 
+            s.approvalStatus !== 'APPROVED') return false;
+        if (s.isApproved === false) return false;
+        // Exclude current service
+        if (excludeServiceId && s.id === excludeServiceId) return false;
+        // If categoryId provided, show only same category services
+        if (categoryId && s.categoryId === categoryId) return true;
+        // If no categoryId or no same-category services, show other services
+        if (!categoryId) return true;
+        return false;
+      }).slice(0, 5) // Limit to 5 services as requested
     : [];
+
+  // Fallback: if no same-category services, show other services
+  const allOtherServices = Array.isArray(services) && filteredServices.length === 0
+    ? services.filter(s => {
+        if (!s.isActive || s.status !== 'active') return false;
+        // Check if service is approved (handle different approval status formats)
+        if (s.approvalStatus && 
+            s.approvalStatus !== 'approved' && 
+            s.approvalStatus !== 'APPROVED') return false;
+        if (s.isApproved === false) return false;
+        if (excludeServiceId && s.id === excludeServiceId) return false;
+        return true;
+      }).slice(0, 5)
+    : [];
+
+  const displayServices = filteredServices.length > 0 ? filteredServices : allOtherServices;
+
+  // Always show the section, even if loading or no services
+  if (isLoading) {
+    return (
+      <div className="bg-white rounded-2xl p-6">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+          You may also like
+        </h2>
+        <div className="flex items-center justify-center py-8">
+          <div className="text-gray-500">Loading related services...</div>
+        </div>
+      </div>
+    );
+  }
+
+  // Helper function to format price safely
+  const formatPrice = (price: string | number, currency = '$') => {
+    const numPrice = typeof price === 'string' ? parseFloat(price) : price;
+    return isNaN(numPrice) ? `${currency}0.00` : `${currency}${numPrice.toFixed(2)}`;
+  };
+
+  if (error) {
+    return (
+      <div className="bg-white rounded-2xl p-6">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+          You may also like
+        </h2>
+        <div className="text-center py-8">
+          <div className="text-gray-500">Unable to load related services</div>
+        </div>
+      </div>
+    );
+  }
+
+  if (displayServices.length === 0) {
+    return (
+      <div className="bg-white rounded-2xl p-6">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-6">
+          You may also like
+        </h2>
+        <div className="text-center py-8">
+          <div className="text-gray-500">No related services available</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-white rounded-2xl p-6">
       <h2 className="text-2xl font-semibold text-gray-900 mb-6">
         You may also like
       </h2>
-      {isLoading && <div>Loading services...</div>}
-      {error && <div className="text-red-500">Failed to load services.</div>}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        {filteredServices.map((service, index) => (
-          <div
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        {displayServices.map((service, index) => (
+          <Link
             key={service.id || index}
-            className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow"
+            href={`/services/${service.id}`}
+            className="bg-white rounded-xl overflow-hidden border border-gray-200 hover:shadow-lg transition-shadow block"
           >
             <div className="aspect-[4/3] overflow-hidden">
               <img
-                src={service.featuredImage || "/service1.png"}
+                src={service.featuredImage || service.images?.[0] || "/service1.png"}
                 alt={service.name}
                 className="w-full h-full object-cover"
               />
             </div>
             <div className="p-4">
-              <p className="text-xs text-gray-500 mb-1">{service.category?.name || "Category"}</p>
-              <h3 className="font-semibold text-gray-900 mb-2">{service.name}</h3>
+              <p className="text-xs text-gray-500 mb-1">{service.category?.name || "Service"}</p>
+              <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2">{service.name}</h3>
               <div className="flex items-start gap-2 mb-3">
-                <svg width="24" height="25" viewBox="0 0 24 25" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <g clipPath="url(#clip0_155_2696)">
-                    <path d="M23.9426 17.7459L11.9996 24.9119L0.0566406 17.7459L5.72064 14.3479L7.19864 15.7929L3.94364 17.7459L12.0006 22.5799L20.0576 17.7459L16.8016 15.7929L18.2796 14.3479L23.9446 17.7469L23.9426 17.7459ZM7.05764 12.8579C4.32164 10.1209 4.32164 5.67988 7.04964 2.95088C8.37164 1.62888 10.1306 0.900879 11.9996 0.900879C13.8686 0.900879 15.6276 1.62888 16.9486 2.95088C18.2706 4.27288 18.9996 6.03088 18.9996 7.90088C18.9996 9.77088 18.2706 11.5279 16.9486 12.8509L11.9996 17.6919L7.05764 12.8579ZM8.46364 11.4359L11.9996 14.8939L15.5426 11.4279C16.4796 10.4909 16.9996 9.23588 16.9996 7.89988C16.9996 6.56388 16.4786 5.30888 15.5346 4.36388C14.5906 3.41888 13.3356 2.89988 11.9996 2.89988C10.6636 2.89988 9.40764 3.41988 8.46364 4.36388C6.51464 6.31388 6.51464 9.48588 8.46364 11.4349V11.4359ZM11.9996 10.8909C13.6566 10.8909 14.9996 9.54788 14.9996 7.89088C14.9996 6.23388 13.6566 4.89088 11.9996 4.89088C10.3426 4.89088 8.99964 6.23388 8.99964 7.89088C8.99964 9.54788 10.3426 10.8909 11.9996 10.8909Z" fill="#757575" />
-                  </g>
-                  <defs>
-                    <clipPath id="clip0_155_2696">
-                      <rect width="24" height="24" fill="white" transform="translate(0 0.899902)" />
-                    </clipPath>
-                  </defs>
+                <svg className="w-4 h-4 text-gray-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                <p className="text-xs text-gray-600 leading-relaxed">{service.provider?.businessName || "Location"}</p>
+                <p className="text-xs text-gray-600 leading-relaxed truncate">
+                  {service.providerBusinessName || service.provider?.businessName || "Available"}
+                </p>
               </div>
-              <div className="flex items-center gap-1">
-                {[...Array(5)].map((_, i) => (
-                  <svg
-                    key={i}
-                    className={`w-4 h-4 ${i < Math.round(service.averageRating || 0) ? "fill-yellow-400" : "fill-gray-200"}`}
-                    viewBox="0 0 20 20"
-                  >
-                    <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
-                  </svg>
-                ))}
-                <span className="text-xs text-gray-600 ml-1">({service.totalReviews || 0})</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1">
+                  {[...Array(5)].map((_, i) => (
+                    <svg
+                      key={i}
+                      className={`w-3 h-3 ${i < Math.round(service.averageRating || 0) ? "fill-yellow-400" : "fill-gray-200"}`}
+                      viewBox="0 0 20 20"
+                    >
+                      <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z" />
+                    </svg>
+                  ))}
+                  <span className="text-xs text-gray-600 ml-1">({service.totalReviews || 0})</span>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-semibold text-[#E89B8B]">
+                    {formatPrice(service.basePrice, service.currency)}
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
-      {/* Pagination can be added here if needed */}
+      
+      {/* View More Button */}
+      {Array.isArray(services) && services.length > 5 && (
+        <div className="text-center mt-4">
+          <Link 
+            href="/services" 
+            className="inline-block bg-[#E89B8B] text-white px-6 py-2 rounded-lg font-semibold hover:bg-[#D4876F] transition-colors"
+          >
+            View More Services
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

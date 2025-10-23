@@ -4,34 +4,16 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
+import { getServiceSlug } from '@/utils/serviceHelpers';
+import { createServiceUrl } from '@/utils/slugify';
 import Footer from "../components/footer";
 import Navbar from "../components/navbar";
 import ServiceHero from "../services/service-hero";
 import { QRTIntegration } from "@/utils/qrtIntegration";
-
-interface Service {
-  id: string;
-  name: string;
-  description: string;
-  shortDescription: string;
-  categoryId: string;
-  category: {
-    id: string;
-    name: string;
-    slug: string;
-  };
-  serviceType: string;
-  pricingType: string;
-  basePrice: number;
-  durationMinutes: number;
-  isActive: boolean;
-  status: string;
-  images: string[];
-  createdAt: string;
-}
+import { Service } from '@/store/api/servicesApi';
 
 interface Shop {
-  id: number;
+  id: string;
   category: string;
   name: string;
   image: string;
@@ -149,7 +131,7 @@ function ServicesPage() {
       }
       
       return {
-        id: parseInt(service.id) || Math.random() * 1000,
+        id: service.id, // Keep original service ID
         category: service.category?.name || 'Service',
         name: service.name,
         image: imageUrl,
@@ -698,8 +680,13 @@ function ServicesPage() {
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                  {currentShops.map((shop) => (
-                    <Link key={shop.id} href={`/services/${shop.id}`} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
+                  {currentShops.map((shop) => {
+                    // Find the original service to get slug
+                    const originalService = services.find(s => s.id === shop.id);
+                    const serviceSlug = originalService ? getServiceSlug(originalService) : shop.id;
+                    
+                    return (
+                      <Link key={shop.id} href={createServiceUrl(serviceSlug)} className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 flex flex-col h-full">
                     
                     {/* Image Container */}
                     <div className="relative h-48 overflow-hidden bg-gray-100">
@@ -792,7 +779,8 @@ function ServicesPage() {
                       </button>
                     </div>
                   </Link>
-                  ))}
+                    )
+                  })}
                 </div>
               )}
 

@@ -3,6 +3,8 @@
 import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { useGetServicesQuery } from '@/store/api/servicesApi'
+import { getServiceSlug, transformServicesWithSlugs } from '@/utils/serviceHelpers'
+import { createServiceUrl } from '@/utils/slugify'
 // Removed external badge mapping import
 
 const TopRatedBusinesses = () => {
@@ -33,6 +35,7 @@ const TopRatedBusinesses = () => {
       if (!current || rating > current.rating) {
         byProvider.set(provId, {
           id: provId,
+          serviceId: s?.id, // Add the actual service ID
           name: s?.provider?.businessName || s?.provider?.name || 'Provider',
           service: s?.shortDescription || s?.name || '—',
           location: s?.displayLocation || s?.provider?.city || '',
@@ -46,11 +49,16 @@ const TopRatedBusinesses = () => {
     return Array.from(byProvider.values()).sort((a, b) => (b.rating || 0) - (a.rating || 0)).slice(0, 6)
   }, [services])
 
-  const BusinessCard = ({ business }: { business: any }) => (
-    <div 
-      className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer hover:scale-105"
-      onClick={() => router.push(`/services/${business.id}`)}
-    >
+  const BusinessCard = ({ business }: { business: any }) => {
+    // Find the full service object to get slug
+    const fullService = services.find(s => s.id === business.serviceId)
+    const serviceSlug = fullService ? getServiceSlug(fullService) : business.serviceId
+    
+    return (
+      <div 
+        className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-all duration-300 cursor-pointer hover:scale-105"
+        onClick={() => router.push(createServiceUrl(serviceSlug))}
+      >
       {/* Image */}
       <div className="relative h-48 overflow-hidden">
         <img
@@ -93,7 +101,8 @@ const TopRatedBusinesses = () => {
         </div>
       </div>
     </div>
-  )
+    )
+  }
 
   return (
     <section className="py-16 bg-white">

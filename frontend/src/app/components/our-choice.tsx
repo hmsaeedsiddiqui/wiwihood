@@ -39,7 +39,10 @@ function OurChoice() {
   }, [activeServices])
 
   const ServiceCard = ({ service }: { service: typeof services[0] }) => (
-    <div className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 border border-gray-100">
+    <div 
+      className="bg-white rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-300 border border-gray-100 cursor-pointer"
+      onClick={() => router.push(`/services/${service.id}`)}
+    >
       {/* Image */}
       <div className="relative h-64 overflow-hidden">
         <img 

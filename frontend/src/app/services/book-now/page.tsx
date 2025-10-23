@@ -1,12 +1,78 @@
 'use client'
-import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
+import { useDispatch } from 'react-redux'
 import Navbar from '@/app/components/navbar'
+import { useGetServicesQuery } from '@/store/api/servicesApi'
+import { setSelectedService } from '@/store/slices/bookingSlice'
+import { findServiceBySlug, getServiceSlug, transformServicesWithSlugs } from '@/utils/serviceHelpers'
 
 function BookNow() {
   const router = useRouter()
-  const [selectedServices, setSelectedServices] = useState<number[]>([])
-  const [selectedCategory, setSelectedCategory] = useState('Haircut')
+  const dispatch = useDispatch()
+  const searchParams = useSearchParams()
+  const serviceSlug = searchParams?.get('service') || searchParams?.get('serviceId') // Support both for backward compatibility
+  
+  const [selectedServices, setSelectedServices] = useState<string[]>([])
+  const [selectedCategory, setSelectedCategory] = useState<string>('')
+
+  // Fetch services from API
+  const { data: services = [], isLoading, error } = useGetServicesQuery({ 
+    isActive: true, 
+    status: 'active' 
+  })
+
+  // Filter active and approved services and add slugs
+  const activeServices = transformServicesWithSlugs(
+    services.filter(service => 
+      service.isActive && 
+      (service.status === 'active') &&
+      (!service.approvalStatus || service.approvalStatus === 'approved' || service.approvalStatus === 'APPROVED')
+    )
+  )
+
+  // Get unique categories
+  const serviceCategories = Array.from(
+    new Set(activeServices.map(service => service.category?.name).filter(Boolean))
+  )
+
+  // Set initial category and service if provided via URL
+  useEffect(() => {
+    if (serviceSlug && activeServices.length > 0) {
+      // Try to find by slug first, then fallback to ID for backward compatibility
+      let foundService = findServiceBySlug(activeServices, serviceSlug)
+      if (!foundService) {
+        foundService = activeServices.find(s => s.id === serviceSlug) || null
+      }
+      
+      if (foundService) {
+        setSelectedServices([foundService.id])
+        setSelectedCategory(foundService.category?.name || '')
+        // Convert to booking slice format
+        const bookingService = {
+          id: foundService.id,
+          name: foundService.name,
+          description: foundService.description,
+          basePrice: foundService.basePrice,
+          duration: foundService.durationMinutes,
+          isActive: foundService.isActive,
+          categoryId: foundService.categoryId,
+          providerId: foundService.providerId,
+          imageUrl: foundService.featuredImage,
+          createdAt: foundService.createdAt,
+          updatedAt: foundService.updatedAt
+        }
+        dispatch(setSelectedService(bookingService))
+      }
+    } else if (activeServices.length > 0 && !selectedCategory) {
+      setSelectedCategory(serviceCategories[0] || '')
+    }
+  }, [serviceSlug, activeServices, serviceCategories, selectedCategory, dispatch])
+
+  // Filter services by category
+  const filteredServices = selectedCategory 
+    ? activeServices.filter(service => service.category?.name === selectedCategory)
+    : activeServices
 
   const handleBack = () => {
     router.back()
@@ -17,21 +83,76 @@ function BookNow() {
   }
 
   const handleContinue = () => {
-    router.push('/services/select-time')
+    if (selectedServices.length > 0) {
+      // Store selected services in booking slice
+      const selectedServiceObjects = activeServices.filter(s => selectedServices.includes(s.id))
+      if (selectedServiceObjects.length > 0) {
+        const firstService = selectedServiceObjects[0]
+        // Convert to booking slice format
+        const bookingService = {
+          id: firstService.id,
+          name: firstService.name,
+          description: firstService.description,
+          basePrice: firstService.basePrice,
+          duration: firstService.durationMinutes,
+          isActive: firstService.isActive,
+          categoryId: firstService.categoryId,
+          providerId: firstService.providerId,
+          imageUrl: firstService.featuredImage,
+          createdAt: firstService.createdAt,
+          updatedAt: firstService.updatedAt
+        }
+        dispatch(setSelectedService(bookingService))
+      }
+      router.push(`/services/select-time?serviceIds=${selectedServices.join(',')}`)
+    }
   }
 
-  // Categories will come from API - no hardcoded data
-  const serviceCategories: string[] = []
-
-  // Services will come from API - no hardcoded data
-  const services: any[] = []
-
-  const toggleService = (serviceId: number) => {
+  const toggleService = (serviceId: string) => {
     if (selectedServices.includes(serviceId)) {
       setSelectedServices(selectedServices.filter(id => id !== serviceId))
     } else {
       setSelectedServices([...selectedServices, serviceId])
     }
+  }
+
+  // Calculate total price
+  const totalPrice = selectedServices.reduce((total, serviceId) => {
+    const service = activeServices.find(s => s.id === serviceId)
+    return total + (service ? parseFloat(service.basePrice.toString()) : 0)
+  }, 0)
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[60vh] pt-20">
+          <div className="text-center">
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#E89B8B]"></div>
+            <p className="mt-4 text-gray-600">Loading services...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[60vh] pt-20">
+          <div className="text-center">
+            <p className="text-red-600">Failed to load services. Please try again.</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-[#E89B8B] text-white rounded-lg hover:bg-[#D4876F]"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -92,14 +213,21 @@ function BookNow() {
               </div>
 
               {/* Service Items */}
-              <div className="space-y-4">
-                {services.map((service) => (
-                  <div key={service.id} className=" bg-white border border-gray-200 rounded-xl p-6 hover:border-gray-300 transition-colors">
+              <div className="space-y-4 max-h-96 overflow-y-auto">
+                {filteredServices.map((service) => (
+                  <div key={service.id} className="bg-white border border-gray-200 rounded-xl p-6 hover:border-gray-300 transition-colors">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <h3 className="font-semibold text-gray-900 text-lg mb-2">{service.name}</h3>
-                        <p className="text-gray-600 text-sm mb-1">{service.duration}</p>
-                        <p className="font-bold text-gray-900">{service.price}</p>
+                        <p className="text-gray-600 text-sm mb-1">
+                          {service.durationMinutes} minutes • {service.serviceType}
+                        </p>
+                        <p className="font-bold text-gray-900">
+                          {service.currency || 'AED'} {service.basePrice}
+                        </p>
+                        {service.shortDescription && (
+                          <p className="text-gray-500 text-sm mt-1">{service.shortDescription}</p>
+                        )}
                       </div>
                       
                       <button
@@ -110,12 +238,11 @@ function BookNow() {
                             : 'border-gray-300 hover:border-[#E89B8B]'
                         }`}
                       >
-                        {selectedServices.includes(service.id) && (
+                        {selectedServices.includes(service.id) ? (
                           <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M12 6v12m6-6H6" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                           </svg>
-                        )}
-                        {!selectedServices.includes(service.id) && (
+                        ) : (
                           <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                           </svg>
@@ -130,38 +257,59 @@ function BookNow() {
 
           {/* Right Column - Salon Info & Booking Summary */}
           <div className="space-y-6">
-            {/* Salon Info */}
+            {/* Booking Summary */}
             <div className="bg-[#FFF8F1] h-[495px] rounded-2xl p-6">
-              <div className="flex items-start space-x-4 mb-6">
-                <div className="w-16 h-16 bg-gray-200 rounded-xl flex-shrink-0"></div>
-                <div className="flex-1">
-                  <h2 className="font-bold text-gray-900 text-lg mb-1">Luxio Nail Ladies Salon</h2>
-                  <div className="flex items-center mb-2">
-                    <div className="flex text-yellow-400 mr-2">
-                      {[...Array(5)].map((_, i) => (
-                        <svg key={i} className={`w-4 h-4 ${i < 4 ? 'fill-current' : 'fill-gray-200'}`} viewBox="0 0 20 20">
-                          <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
-                        </svg>
-                      ))}
-                    </div>
-                    <span className="text-sm text-gray-600 font-medium">4.0 (1,704)</span>
+              {selectedServices.length > 0 && (
+                <div className="flex items-start space-x-4 mb-6">
+                  <div className="w-16 h-16 bg-gray-200 rounded-xl flex-shrink-0 overflow-hidden">
+                    {activeServices.find(s => s.id === selectedServices[0])?.featuredImage && (
+                      <img 
+                        src={activeServices.find(s => s.id === selectedServices[0])?.featuredImage} 
+                        alt="Service"
+                        className="w-full h-full object-cover"
+                      />
+                    )}
                   </div>
-                  <p className="text-sm text-gray-600">Arezzo Tower, Shop 8 Exit 33, Dubai Media City, Dubai</p>
+                  <div className="flex-1">
+                    <h2 className="font-bold text-gray-900 text-lg mb-1">
+                      {activeServices.find(s => s.id === selectedServices[0])?.providerBusinessName || 'Service Provider'}
+                    </h2>
+                    <div className="flex items-center mb-2">
+                      <div className="flex text-yellow-400 mr-2">
+                        {[...Array(5)].map((_, i) => (
+                          <svg key={i} className={`w-4 h-4 ${i < 4 ? 'fill-current' : 'fill-gray-200'}`} viewBox="0 0 20 20">
+                            <path d="M10 15l-5.878 3.09 1.123-6.545L.489 6.91l6.572-.955L10 0l2.939 5.955 6.572.955-4.756 4.635 1.123 6.545z"/>
+                          </svg>
+                        ))}
+                      </div>
+                      <span className="text-sm text-gray-600 font-medium">
+                        {activeServices.find(s => s.id === selectedServices[0])?.averageRating || 4.0} 
+                        ({activeServices.find(s => s.id === selectedServices[0])?.totalReviews || 0})
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600">
+                      {activeServices.find(s => s.id === selectedServices[0])?.displayLocation || 'Location not specified'}
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
               
               <div className="border-t border-gray-200 pt-4">
                 {selectedServices.length > 0 ? (
                   <div className="space-y-3 mb-4">
                     {selectedServices.map((serviceId) => {
-                      const service = services.find(s => s.id === serviceId)
+                      const service = activeServices.find(s => s.id === serviceId)
                       return service ? (
                         <div key={serviceId} className="flex items-center justify-between">
                           <div>
                             <h4 className="font-medium text-gray-900">{service.name}</h4>
-                            <p className="text-sm text-gray-500">{service.duration} with very professional</p>
+                            <p className="text-sm text-gray-500">
+                              {service.durationMinutes} mins • {service.serviceType}
+                            </p>
                           </div>
-                          <span className="font-semibold text-gray-900">{service.price}</span>
+                          <span className="font-semibold text-gray-900">
+                            {service.currency || 'AED'} {service.basePrice}
+                          </span>
                         </div>
                       ) : null
                     })}
@@ -174,11 +322,8 @@ function BookNow() {
                   <span className="font-semibold text-gray-900">Total</span>
                   <span className="font-bold text-lg">
                     {selectedServices.length > 0 
-                      ? `AED ${selectedServices.reduce((total, serviceId) => {
-                          const service = services.find(s => s.id === serviceId)
-                          return total + (service ? parseInt(service.price.replace('AED ', '')) : 0)
-                        }, 0)}`
-                      : 'free'
+                      ? `AED ${totalPrice.toFixed(2)}`
+                      : 'AED 0.00'
                     }
                   </span>
                 </div>

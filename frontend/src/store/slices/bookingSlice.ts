@@ -11,21 +11,21 @@ interface User {
 }
 
 interface Service {
-  id: number
+  id: string
   name: string
   description?: string
   basePrice: number
   duration: number
   isActive: boolean
-  categoryId: number
-  providerId: number
+  categoryId: string
+  providerId: string
   imageUrl?: string
   createdAt: string
   updatedAt: string
 }
 
 interface Provider {
-  id: number
+  id: string
   businessName: string
   businessDescription?: string
   businessAddress?: string
@@ -43,15 +43,15 @@ interface Provider {
 }
 
 interface Booking {
-  id: number
+  id: string
   startTime: string
   endTime: string
   totalPrice: number
   status: string
   notes?: string
-  customerId: number
+  customerId: string
   customer: User
-  serviceId: number
+  serviceId: string
   service: Service
   createdAt: string
   updatedAt: string
@@ -407,12 +407,12 @@ const bookingSlice = createSlice({
       .addCase(cancelBooking.fulfilled, (state, action) => {
         const bookingId = action.payload
         state.myBookings = state.myBookings.map(booking => 
-          booking.id === parseInt(bookingId) 
+          booking.id === bookingId 
             ? { ...booking, status: BookingStatus.CANCELLED }
             : booking
         )
         state.upcomingBookings = state.upcomingBookings.filter(
-          booking => booking.id !== parseInt(bookingId)
+          booking => booking.id !== bookingId
         )
       })
       .addCase(cancelBooking.rejected, (state, action) => {

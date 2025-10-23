@@ -1,6 +1,12 @@
 import React from "react";
+import type { Service } from "@/store/api/servicesApi";
 
-const reviews = [
+interface ReviewProps {
+  service: Service;
+}
+
+// Fallback reviews for now - ideally these would come from the API
+const fallbackReviews = [
   {
     name: "Sarah Lee",
     rating: 5,
@@ -29,16 +35,19 @@ const reviews = [
   },
 ];
 
-function Review() {
-  // Calculate average rating dynamically
-  const averageRating =
-    reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length;
+function Review({ service }: ReviewProps) {
+  // Use service data if available, otherwise fallback
+  const reviews = fallbackReviews; // In a real app, this would come from the API
+  const averageRating = service.averageRating || (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length);
+  const totalReviews = service.totalReviews || reviews.length;
 
   return (
-    <div className="bg-[#FFF8F1] rounded-2xl p-6 w-[915px] mt-10">
+    <div className="bg-[#FFF8F1] rounded-2xl p-6 max-w-4xl mt-10">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-semibold text-gray-900">Reviews</h2>
+        <h2 className="text-2xl font-semibold text-gray-900">
+          Reviews for {service.name}
+        </h2>
       </div>
 
       {/* Overall Rating */}
@@ -49,7 +58,7 @@ function Review() {
         <span className="text-lg font-semibold text-gray-900">
           {averageRating.toFixed(1)}
         </span>
-        <span className="text-gray-500">({reviews.length} reviews)</span>
+        <span className="text-gray-500">({totalReviews} reviews)</span>
       </div>
 
       {/* Reviews Grid */}
