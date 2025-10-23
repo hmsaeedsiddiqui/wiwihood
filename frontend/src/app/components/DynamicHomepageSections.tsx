@@ -1,26 +1,56 @@
 "use client"
 
-import React from 'react'
+import React, { useMemo } from 'react'
 import { useRouter } from 'next/navigation'
-import { 
-  useGetTopRatedServicesQuery, 
-  useGetPopularServicesQuery, 
-  useGetBestSellerServicesQuery, 
-  useGetHotDealServicesQuery, 
-  useGetNewServicesQuery 
-} from '@/store/api/servicesApi'
+import { useGetServicesQuery } from '@/store/api/servicesApi'
 import { getServiceSlug } from '@/utils/serviceHelpers'
 import { createServiceUrl } from '@/utils/slugify'
 
 const DynamicHomepageSections = () => {
   const router = useRouter()
 
-  // Fetch data for each section from backend
-  const { data: topRatedServices = [], isLoading: loadingTopRated } = useGetTopRatedServicesQuery({ limit: 6 })
-  const { data: popularServices = [], isLoading: loadingPopular } = useGetPopularServicesQuery({ limit: 6 })
-  const { data: bestSellerServices = [], isLoading: loadingBestSeller } = useGetBestSellerServicesQuery({ limit: 6 })
-  const { data: hotDealServices = [], isLoading: loadingHotDeal } = useGetHotDealServicesQuery({ limit: 6 })
-  const { data: newServices = [], isLoading: loadingNew } = useGetNewServicesQuery({ limit: 6 })
+  // Fetch all active services from backend
+  const { data: allServices = [], isLoading } = useGetServicesQuery({ 
+    isActive: true, 
+    status: 'active' 
+  })
+
+  // Client-side filtering based on badges and criteria
+  const servicesSections = useMemo(() => {
+    if (!allServices.length) return {}
+
+    // Helper function to filter services by badge keywords
+    const filterByBadge = (services: any[], keywords: string[], limit = 6) => {
+      const filtered = services.filter(service => {
+        const badge = (service.adminAssignedBadge || '').toLowerCase()
+        return keywords.some(keyword => badge.includes(keyword.toLowerCase()))
+      })
+      return filtered.slice(0, limit)
+    }
+
+    // Helper function to get recent services (by creation date)
+    const getRecentServices = (services: any[], limit = 6) => {
+      return services
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, limit)
+    }
+
+    // Helper function to get services by total bookings (best sellers)
+    const getBestSellers = (services: any[], limit = 6) => {
+      return services
+        .filter(service => service.totalBookings > 0)
+        .sort((a, b) => (b.totalBookings || 0) - (a.totalBookings || 0))
+        .slice(0, limit)
+    }
+
+    return {
+      topRated: filterByBadge(allServices, ['top rated', 'top-rated', 'highly rated', 'excellent'], 6),
+      popular: filterByBadge(allServices, ['popular', 'trending', 'most popular', 'premium'], 6),
+      bestSeller: getBestSellers(allServices, 6),
+      hotDeal: filterByBadge(allServices, ['hot deal', 'hot-deal', 'deal', 'discount', 'promo', 'sale'], 6),
+      new: getRecentServices(allServices, 6)
+    }
+  }, [allServices])
 
   // Service card component
   const ServiceCard = ({ service, onClick }: { service: any; onClick: () => void }) => (
@@ -152,40 +182,40 @@ const DynamicHomepageSections = () => {
       {/* Top Rated Services */}
       <ServiceSection
         title="Top-Rated Services"
-        services={topRatedServices}
-        isLoading={loadingTopRated}
+        services={servicesSections.topRated || []}
+        isLoading={isLoading}
         viewAllType="top-rated"
       />
 
       {/* Popular This Week */}
       <ServiceSection
         title="Popular This Week"
-        services={popularServices}
-        isLoading={loadingPopular}
+        services={servicesSections.popular || []}
+        isLoading={isLoading}
         viewAllType="popular"
       />
 
       {/* Best Sellers */}
       <ServiceSection
         title="Best Sellers"
-        services={bestSellerServices}
-        isLoading={loadingBestSeller}
+        services={servicesSections.bestSeller || []}
+        isLoading={isLoading}
         viewAllType="best-seller"
       />
 
       {/* Hot Deals */}
       <ServiceSection
         title="Hot Deals"
-        services={hotDealServices}
-        isLoading={loadingHotDeal}
+        services={servicesSections.hotDeal || []}
+        isLoading={isLoading}
         viewAllType="hot-deal"
       />
 
       {/* New on Wiwihood */}
       <ServiceSection
         title="New on Wiwihood"
-        services={newServices}
-        isLoading={loadingNew}
+        services={servicesSections.new || []}
+        isLoading={isLoading}
         viewAllType="new"
       />
     </div>

@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { getServiceSlug } from '@/utils/serviceHelpers';
@@ -23,17 +23,60 @@ function ServicesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
 
-  // Prepare API filters based on query parameters
+  // Fetch all active services from API (without type filtering since backend doesn't support it)
   const apiFilters = {
     isActive: true,
     status: 'active' as const,
-    ...(categoryParam && { category: categoryParam }),
-    ...(typeParam && { type: typeParam as any })
+    ...(categoryParam && { category: categoryParam })
   };
 
   // Fetch services and categories from API
-  const { data: services = [], isLoading, error } = useGetServicesQuery(apiFilters);
+  const { data: allServices = [], isLoading, error } = useGetServicesQuery(apiFilters);
   const { data: categories = [] } = useGetCategoriesQuery({ isActive: true });
+
+  // Client-side filtering for type-based queries
+  const services = useMemo(() => {
+    if (!typeParam) return allServices;
+
+    switch (typeParam) {
+      case 'top-rated':
+        return allServices.filter(service => {
+          const badge = (service.adminAssignedBadge || '').toLowerCase();
+          return ['top rated', 'top-rated', 'highly rated', 'excellent'].some(keyword => 
+            badge.includes(keyword)
+          );
+        });
+      
+      case 'popular':
+        return allServices.filter(service => {
+          const badge = (service.adminAssignedBadge || '').toLowerCase();
+          return ['popular', 'trending', 'most popular', 'premium'].some(keyword => 
+            badge.includes(keyword)
+          );
+        });
+      
+      case 'best-seller':
+        return allServices
+          .filter(service => service.totalBookings > 0)
+          .sort((a, b) => (b.totalBookings || 0) - (a.totalBookings || 0));
+      
+      case 'hot-deal':
+        return allServices.filter(service => {
+          const badge = (service.adminAssignedBadge || '').toLowerCase();
+          return ['hot deal', 'hot-deal', 'deal', 'discount', 'promo', 'sale'].some(keyword => 
+            badge.includes(keyword)
+          );
+        });
+      
+      case 'new':
+        return allServices
+          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+          .slice(0, 50); // Limit new services to recent 50
+      
+      default:
+        return allServices;
+    }
+  }, [allServices, typeParam]);
 
   // Update breadcrumb based on parameters
   useEffect(() => {
