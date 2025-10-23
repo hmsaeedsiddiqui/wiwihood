@@ -56,7 +56,7 @@ function ServicesPage() {
         });
       
       case 'best-seller':
-        return allServices
+        return [...allServices] // Create a copy to avoid mutating the original array
           .filter(service => service.totalBookings > 0)
           .sort((a, b) => (b.totalBookings || 0) - (a.totalBookings || 0));
       
@@ -69,7 +69,7 @@ function ServicesPage() {
         });
       
       case 'new':
-        return allServices
+        return [...allServices] // Create a copy to avoid mutating the original array
           .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
           .slice(0, 50); // Limit new services to recent 50
       

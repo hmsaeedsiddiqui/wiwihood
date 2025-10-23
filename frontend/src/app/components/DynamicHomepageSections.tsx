@@ -30,14 +30,14 @@ const DynamicHomepageSections = () => {
 
     // Helper function to get recent services (by creation date)
     const getRecentServices = (services: any[], limit = 6) => {
-      return services
+      return [...services] // Create a copy to avoid mutating the original array
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
         .slice(0, limit)
     }
 
     // Helper function to get services by total bookings (best sellers)
     const getBestSellers = (services: any[], limit = 6) => {
-      return services
+      return [...services] // Create a copy to avoid mutating the original array
         .filter(service => service.totalBookings > 0)
         .sort((a, b) => (b.totalBookings || 0) - (a.totalBookings || 0))
         .slice(0, limit)
