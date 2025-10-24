@@ -1,82 +1,225 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useDispatch, useSelector } from 'react-redux'
 import Navbar from '@/app/components/navbar'
 import { useGetServicesQuery } from '@/store/api/servicesApi'
-import { useGetAvailableTimeSlotsQuery } from '@/store/api/bookingsApi'
+import { useGetAvailableTimeSlotsQuery, useCheckAvailabilityMutation } from '@/store/api/bookingsApi'
 import { setSelectedDate, setSelectedTimeSlot } from '@/store/slices/bookingSlice'
 import { RootState } from '@/store'
-import { getServiceSlug } from '@/utils/serviceHelpers'
+import { getServiceSlug, findServiceBySlug, transformServicesWithSlugs } from '@/utils/serviceHelpers'
 
 function SelectTime() {
   const router = useRouter()
   const dispatch = useDispatch()
   const searchParams = useSearchParams()
+  
+  // Get service IDs from URL or fallback methods
   const serviceIds = searchParams?.get('serviceIds')?.split(',') || []
+  const serviceSlug = searchParams?.get('service')
+  const serviceId = searchParams?.get('serviceId')
   
   const [selectedTime, setSelectedTime] = useState('')
   const [selectedStaff, setSelectedStaff] = useState('Any Professional')
-  const [selectedDate, setSelectedDateLocal] = useState('')
+  const [selectedDateLocal, setSelectedDateLocal] = useState('')
   const [currentMonth, setCurrentMonth] = useState(new Date())
+  const [dateAvailability, setDateAvailability] = useState<{[key: string]: boolean}>({})
+  const [isCheckingAvailability, setIsCheckingAvailability] = useState(false)
 
   // Get booking state from Redux
   const bookingState = useSelector((state: RootState) => state.booking)
 
   // Fetch service details
-  const { data: allServices = [] } = useGetServicesQuery({ isActive: true, status: 'active' })
-  const selectedServices = allServices.filter(service => serviceIds.includes(service.id))
+  const { data: allServices = [], isLoading: servicesLoading } = useGetServicesQuery({ 
+    isActive: true, 
+    status: 'active' 
+  })
+
+  // Transform services with slugs for better matching
+  const transformedServices = useMemo(() => {
+    return transformServicesWithSlugs(allServices.filter(service => service.isActive))
+  }, [allServices])
+
+  // Find services using multiple methods
+  const selectedServices = useMemo(() => {
+    let services: any[] = []
+    
+    // Method 1: Find by service IDs
+    if (serviceIds.length > 0) {
+      services = transformedServices.filter(service => serviceIds.includes(service.id))
+    }
+    
+    // Method 2: Find by slug (from book-now navigation)
+    if (services.length === 0 && serviceSlug) {
+      const foundService = findServiceBySlug(transformedServices, serviceSlug)
+      if (foundService) {
+        services = [foundService]
+      }
+    }
+    
+    // Method 3: Find by single service ID
+    if (services.length === 0 && serviceId) {
+      const foundService = transformedServices.find(s => s.id === serviceId)
+      if (foundService) {
+        services = [foundService]
+      }
+    }
+    
+    // Method 4: Use Redux state as fallback
+    if (services.length === 0 && bookingState.selectedService) {
+      const foundService = transformedServices.find(s => s.id === bookingState.selectedService?.id)
+      if (foundService) {
+        services = [foundService]
+      }
+    }
+    
+    return services
+  }, [serviceIds, serviceSlug, serviceId, transformedServices, bookingState.selectedService])
+
   const primaryService = selectedServices[0]
 
-  // Generate next 7 days
+  // Check availability mutation
+  const [checkAvailability] = useCheckAvailabilityMutation()
+
+  // Generate next 30 days with availability checking
   const generateDates = () => {
     const dates = []
     const today = new Date()
-    for (let i = 0; i < 7; i++) {
+    const maxAdvanceBookingDays = primaryService?.maxAdvanceBookingDays || 30
+    const minAdvanceHours = primaryService?.minAdvanceBookingHours || 2
+    
+    for (let i = 0; i < maxAdvanceBookingDays; i++) {
       const date = new Date(today)
       date.setDate(today.getDate() + i)
+      const dateStr = date.toISOString().split('T')[0]
+      
+      // Check if date is too early based on min advance booking
+      const isDateAvailable = () => {
+        if (i === 0) {
+          // For today, check if we have enough advance notice
+          const now = new Date()
+          const minBookingTime = new Date(now.getTime() + (minAdvanceHours * 60 * 60 * 1000))
+          return date.getTime() >= minBookingTime.getTime()
+        }
+        return true
+      }
+      
       dates.push({
         date: date.getDate(),
         day: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        fullDate: date.toISOString().split('T')[0],
-        available: true,
-        selected: selectedDate === date.toISOString().split('T')[0]
+        fullDate: dateStr,
+        available: isDateAvailable() && (dateAvailability[dateStr] !== false),
+        selected: selectedDateLocal === dateStr,
+        month: date.toLocaleDateString('en-US', { month: 'short' }),
+        year: date.getFullYear()
       })
     }
     return dates
   }
 
-  const [dates, setDates] = useState(generateDates())
+  const [dates, setDates] = useState<any[]>([])
 
-  // Set initial date to today if not selected
+  // Check availability for multiple dates
+  const checkDateAvailability = async (datesToCheck: string[]) => {
+    if (!primaryService) return
+    
+    setIsCheckingAvailability(true)
+    const availabilityMap: {[key: string]: boolean} = {}
+    
+    try {
+      // Check availability for each date
+      const promises = datesToCheck.map(async (dateStr) => {
+        try {
+          const result = await checkAvailability({
+            providerId: primaryService.providerId,
+            serviceId: primaryService.id,
+            date: dateStr
+          }).unwrap()
+          
+          availabilityMap[dateStr] = result.available
+        } catch (error) {
+          // If check fails, assume unavailable
+          availabilityMap[dateStr] = false
+        }
+      })
+      
+      await Promise.all(promises)
+      setDateAvailability(prev => ({ ...prev, ...availabilityMap }))
+    } catch (error) {
+      console.error('Error checking date availability:', error)
+    } finally {
+      setIsCheckingAvailability(false)
+    }
+  }
+
+  // Set initial date and check availability
   useEffect(() => {
-    if (!selectedDate) {
+    if (primaryService && !selectedDateLocal) {
       const today = new Date().toISOString().split('T')[0]
       setSelectedDateLocal(today)
       dispatch(setSelectedDate(today))
     }
-  }, [selectedDate, dispatch])
+  }, [primaryService, selectedDateLocal, dispatch])
 
-  // Update dates when selectedDate changes
+  // Generate dates when primary service is available
   useEffect(() => {
-    setDates(generateDates())
-  }, [selectedDate])
+    if (primaryService) {
+      const generatedDates = generateDates()
+      setDates(generatedDates)
+      
+      // Check availability for the first week
+      const datesToCheck = generatedDates.slice(0, 7).map(d => d.fullDate)
+      checkDateAvailability(datesToCheck)
+    }
+  }, [primaryService, selectedDateLocal, dateAvailability])
+
+  // Update dates when dateAvailability changes
+  useEffect(() => {
+    if (primaryService) {
+      setDates(generateDates())
+    }
+  }, [dateAvailability, primaryService])
 
   // Fetch available time slots for the selected date and service
-  const { data: availabilityData, isLoading: isLoadingSlots } = useGetAvailableTimeSlotsQuery(
+  const { data: availabilityData, isLoading: isLoadingSlots, error: timeSlotsError } = useGetAvailableTimeSlotsQuery(
     {
       providerId: primaryService?.providerId || '',
       serviceId: primaryService?.id || '',
-      date: selectedDate || new Date().toISOString().split('T')[0]
+      date: selectedDateLocal || new Date().toISOString().split('T')[0]
     },
     {
-      skip: !primaryService || !selectedDate
+      skip: !primaryService || !selectedDateLocal
     }
   )
 
   const timeSlots = availabilityData?.timeSlots || []
+  
+  // Generate default time slots if API doesn't return any
+  const defaultTimeSlots = [
+    '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
+    '12:00', '12:30', '13:00', '13:30', '14:00', '14:30',
+    '15:00', '15:30', '16:00', '16:30', '17:00', '17:30',
+    '18:00', '18:30', '19:00', '19:30', '20:00'
+  ]
+  
+  const availableTimeSlots = timeSlots.length > 0 ? timeSlots : defaultTimeSlots
 
-  const staffMembers = ['Any Professional'] // For now, we'll keep this simple
+  // Dynamic staff members based on service data
+  const staffMembers = useMemo(() => {
+    const baseStaff = ['Any Professional']
+    
+    // Add staff from service provider data if available
+    if (primaryService?.provider?.staff) {
+      return [...baseStaff, ...primaryService.provider.staff.map((staff: any) => staff.name || staff)]
+    }
+    
+    // Add generic staff options based on service type
+    if (primaryService?.serviceType === 'appointment') {
+      return [...baseStaff, 'Senior Specialist', 'Junior Specialist']
+    }
+    
+    return baseStaff
+  }, [primaryService])
 
   const handleBack = () => {
     // Get the slug for the first selected service
@@ -94,17 +237,27 @@ function SelectTime() {
   }
 
   const handleContinue = () => {
-    if (selectedTime && selectedDate) {
+    if (selectedTime && selectedDateLocal && selectedServices.length > 0) {
       dispatch(setSelectedTimeSlot(selectedTime))
-      dispatch(setSelectedDate(selectedDate))
-      router.push(`/services/confirm-appointment?serviceIds=${serviceIds.join(',')}&date=${selectedDate}&time=${encodeURIComponent(selectedTime)}`)
+      dispatch(setSelectedDate(selectedDateLocal))
+      
+      // Create service IDs array from selected services
+      const serviceIdsArray = selectedServices.map(s => s.id)
+      router.push(`/services/confirm-appointment?serviceIds=${serviceIdsArray.join(',')}&date=${selectedDateLocal}&time=${encodeURIComponent(selectedTime)}`)
     }
   }
 
   const handleDateSelect = (dateInfo: any) => {
+    if (!dateInfo.available) return
+    
     setSelectedDateLocal(dateInfo.fullDate)
     dispatch(setSelectedDate(dateInfo.fullDate))
     setSelectedTime('') // Reset time when date changes
+    
+    // Check availability for this specific date if not already checked
+    if (dateAvailability[dateInfo.fullDate] === undefined) {
+      checkDateAvailability([dateInfo.fullDate])
+    }
   }
 
   const handleTimeSelect = (time: string) => {
@@ -120,19 +273,53 @@ function SelectTime() {
     total + service.durationMinutes, 0
   )
 
-  if (!primaryService) {
+  // Loading state
+  if (servicesLoading) {
     return (
       <div className="min-h-screen bg-white">
         <Navbar />
         <div className="flex items-center justify-center min-h-[60vh] pt-20">
           <div className="text-center">
-            <p className="text-red-600">No service selected. Please go back and select a service.</p>
-            <button 
-              onClick={() => router.push('/services')} 
-              className="mt-4 px-4 py-2 bg-[#E89B8B] text-white rounded-lg hover:bg-[#D4876F]"
-            >
-              Browse Services
-            </button>
+            <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-[#E89B8B]"></div>
+            <p className="mt-4 text-gray-600">Loading service details...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // No service found
+  if (!primaryService) {
+    return (
+      <div className="min-h-screen bg-white">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[60vh] pt-20">
+          <div className="text-center max-w-md">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h2 className="text-xl font-bold text-gray-900 mb-2">Service Not Found</h2>
+            <p className="text-gray-600 mb-4">
+              The service you're trying to book could not be found or is no longer available.
+            </p>
+            <div className="space-y-3">
+              <button 
+                onClick={() => router.push('/services')} 
+                className="block w-full bg-[#E89B8B] text-white px-6 py-3 rounded-lg font-semibold hover:bg-[#D4876F] transition-colors"
+              >
+                Browse All Services
+              </button>
+              <button 
+                onClick={() => router.back()} 
+                className="block w-full bg-gray-200 text-gray-700 px-6 py-3 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Go Back
+              </button>
+              <div className="text-sm text-gray-500 mt-4">
+                <p>Debug info:</p>
+                <p>Service IDs: {serviceIds.join(', ') || 'None'}</p>
+                <p>Service Slug: {serviceSlug || 'None'}</p>
+                <p>Available Services: {transformedServices.length}</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -142,6 +329,15 @@ function SelectTime() {
   return (
     <div className="min-h-screen bg-white">
         <Navbar />
+      <style jsx global>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
       <div className="container mx-auto px-4 py-6">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
@@ -193,7 +389,9 @@ function SelectTime() {
       ))}
     </select>
 
-    <span className="text-sm text-gray-500">September 2025</span>
+    <span className="text-sm text-gray-500">
+      {currentMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+    </span>
   </div>
 
   {/* Right side: navigation + calendar */}
@@ -217,53 +415,97 @@ function SelectTime() {
 </div>
 
 
-              {/* Date Selection - Small view */}
-              <div className="grid grid-cols-7 gap-3 mb-8">
-                {dates.map((dateItem) => (
-                  <div key={dateItem.fullDate} className="flex flex-col items-center">
-                    <button
-                      onClick={() => handleDateSelect(dateItem)}
-                      className={`w-10 h-10 rounded-xl text-sm font-semibold transition-all duration-200 mb-1 ${
-                        dateItem.selected
-                          ? 'bg-[#E89B8B] text-white ring-2 ring-[#E89B8B] ring-opacity-30'
-                          : dateItem.available
-                          ? 'text-gray-700 hover:bg-gray-100 border border-gray-200'
-                          : 'text-gray-300 cursor-not-allowed border border-gray-100 bg-gray-50'
-                      }`}
-                      disabled={!dateItem.available}
-                    >
-                      {dateItem.date}
-                    </button>
-                    <span className="text-xs text-gray-500 font-medium">{dateItem.day}</span>
-                  </div>
-                ))}
+              {/* Date Selection - Scrollable view */}
+              <div className="mb-8">
+                <div className="flex overflow-x-auto pb-2 space-x-3 scrollbar-hide">
+                  {dates.slice(0, 14).map((dateItem) => (
+                    <div key={dateItem.fullDate} className="flex flex-col items-center flex-shrink-0">
+                      <button
+                        onClick={() => handleDateSelect(dateItem)}
+                        className={`w-12 h-12 rounded-xl text-sm font-semibold transition-all duration-200 mb-1 relative ${
+                          dateItem.selected
+                            ? 'bg-[#E89B8B] text-white ring-2 ring-[#E89B8B] ring-opacity-30 shadow-lg'
+                            : dateItem.available
+                            ? 'text-gray-700 hover:bg-gray-100 border border-gray-200 hover:border-[#E89B8B]'
+                            : 'text-gray-300 cursor-not-allowed border border-gray-100 bg-gray-50'
+                        }`}
+                        disabled={!dateItem.available}
+                        title={!dateItem.available ? 'Not available' : `Select ${dateItem.day}, ${dateItem.month} ${dateItem.date}`}
+                      >
+                        {dateItem.date}
+                        {!dateItem.available && (
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="w-0.5 h-8 bg-gray-400 rotate-45"></div>
+                          </div>
+                        )}
+                        {isCheckingAvailability && dateAvailability[dateItem.fullDate] === undefined && (
+                          <div className="absolute -top-1 -right-1 w-3 h-3">
+                            <div className="w-3 h-3 bg-[#E89B8B] rounded-full animate-pulse"></div>
+                          </div>
+                        )}
+                      </button>
+                      <span className="text-xs text-gray-500 font-medium whitespace-nowrap">
+                        {dateItem.day}
+                      </span>
+                      <span className="text-xs text-gray-400 whitespace-nowrap">
+                        {dateItem.month}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                {dates.length > 14 && (
+                  <button
+                    onClick={() => {
+                      // Load more dates
+                      const moreDates = generateDates()
+                      setDates(moreDates.slice(0, dates.length + 7))
+                    }}
+                    className="text-sm text-[#E89B8B] hover:text-[#D4876F] font-medium mt-2"
+                  >
+                    Show more dates →
+                  </button>
+                )}
               </div>
 
               {/* Time Slots List */}
               <div className="space-y-3">
-                {isLoadingSlots ? (
+                {!selectedDateLocal ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">Please select a date first</p>
+                  </div>
+                ) : isLoadingSlots ? (
                   <div className="text-center py-8">
                     <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#E89B8B]"></div>
                     <p className="mt-2 text-gray-500">Loading available times...</p>
                   </div>
-                ) : timeSlots.length > 0 ? (
-                  timeSlots.map((time) => (
-                    <button
-                      key={time}
-                      onClick={() => handleTimeSelect(time)}
-                      className={`w-full p-4 rounded-xl text-left font-medium transition-all duration-200 ${
-                        selectedTime === time
-                          ? 'bg-[#E89B8B] text-white ring-2 ring-[#E89B8B] ring-opacity-30'
-                          : 'bg-white border border-gray-200 text-gray-700 hover:border-[#E89B8B] hover:bg-gray-50'
-                      }`}
-                    >
-                      {time}
-                    </button>
-                  ))
+                ) : availableTimeSlots.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3">
+                    {availableTimeSlots.map((time) => (
+                      <button
+                        key={time}
+                        onClick={() => handleTimeSelect(time)}
+                        className={`p-3 rounded-lg text-center font-medium transition-all duration-200 ${
+                          selectedTime === time
+                            ? 'bg-[#E89B8B] text-white ring-2 ring-[#E89B8B] ring-opacity-30 shadow-lg'
+                            : 'bg-white border border-gray-200 text-gray-700 hover:border-[#E89B8B] hover:bg-gray-50'
+                        }`}
+                      >
+                        {time}
+                      </button>
+                    ))}
+                  </div>
                 ) : (
                   <div className="text-center py-8">
-                    <p className="text-gray-500">No available time slots for this date.</p>
-                    <p className="text-sm text-gray-400 mt-1">Please select a different date.</p>
+                    <div className="text-gray-400 text-4xl mb-3">⏰</div>
+                    <p className="text-gray-500 mb-2">No available time slots</p>
+                    <p className="text-sm text-gray-400">
+                      Please select a different date or try again later.
+                    </p>
+                    {timeSlotsError && (
+                      <p className="text-xs text-red-500 mt-2">
+                        Error loading time slots. Using default times.
+                      </p>
+                    )}
                   </div>
                 )}
               </div>
@@ -308,13 +550,13 @@ function SelectTime() {
               
               {/* Selected Date & Time */}
               <div className="border-t border-gray-200 pt-4 mb-4">
-                {selectedDate && (
+                {selectedDateLocal && (
                   <div className="flex items-center space-x-2 mb-3">
                     <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
                     </svg>
                     <span className="font-medium text-gray-900">
-                      {new Date(selectedDate).toLocaleDateString('en-US', { 
+                      {new Date(selectedDateLocal).toLocaleDateString('en-US', { 
                         weekday: 'long', 
                         year: 'numeric', 
                         month: 'long', 
@@ -361,14 +603,17 @@ function SelectTime() {
               
               <button 
                 onClick={handleContinue}
-                disabled={!selectedTime || !selectedDate}
+                disabled={!selectedTime || !selectedDateLocal}
                 className={`w-full py-3 rounded-xl font-semibold transition-colors ${
-                  selectedTime && selectedDate
-                    ? 'bg-[#E89B8B] text-white hover:bg-[#D4876F]'
+                  selectedTime && selectedDateLocal
+                    ? 'bg-[#E89B8B] text-white hover:bg-[#D4876F] shadow-lg hover:shadow-xl'
                     : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                 }`}
               >
-                Continue
+                {selectedTime && selectedDateLocal 
+                  ? 'Continue to Confirmation' 
+                  : 'Select Date and Time'
+                }
               </button>
             </div>
           </div>
