@@ -36,18 +36,18 @@ import {
 import { CloudinaryImage } from '@/components/cloudinary/CloudinaryImage';
 import { toast } from 'react-hot-toast';
 import {
-  useGetAllAdminServicesQuery,
-  useApproveAdminServiceMutation,
-  useBulkAdminServiceActionMutation,
-  useAssignAdminBadgeMutation,
-  useToggleAdminServiceStatusMutation,
-  useGetAdminServiceStatsQuery,
-  useGetAdminAvailableBadgesQuery,
-  useExportAdminServicesDataMutation,
-  useDeleteAdminServiceMutation,
-  useSetAdminServicePendingMutation,
+  useGetAllServicesQuery as useGetAllAdminServicesQuery,
+  useApproveServiceMutation as useApproveAdminServiceMutation,
+  useBulkServiceActionMutation as useBulkAdminServiceActionMutation,
+  useAssignBadgeMutation as useAssignAdminBadgeMutation,
+  useToggleServiceStatusMutation as useToggleAdminServiceStatusMutation,
+  useGetServiceStatsQuery as useGetAdminServiceStatsQuery,
+  useGetAvailableBadgesQuery as useGetAdminAvailableBadgesQuery,
+  useExportServicesDataMutation as useExportAdminServicesDataMutation,
+  useDeleteServiceMutation as useDeleteAdminServiceMutation,
+  useSetServicePendingMutation as useSetAdminServicePendingMutation,
   AdminServiceFilters
-} from '@/store/api/servicesApi';
+} from '@/store/api/adminServicesApi';
 
 // Fallback icon map for known badges (optional visuals)
 const badgeIconMap: Record<string, any> = {
@@ -79,6 +79,10 @@ export default function AdminServicesPage() {
       if (!isAdmin) {
         // Prevent provider/customer tokens from hammering admin APIs
         router.replace('/auth/admin/login');
+      } else {
+        // Clear any stale state when admin logs in
+        setStatusChangingIds(new Set());
+        setTogglingIds(new Set());
       }
     } catch {
       setIsAuthorized(false);
@@ -131,86 +135,24 @@ export default function AdminServicesPage() {
   const [itemsPerPage] = useState(10);
   const [isSlowLoading, setIsSlowLoading] = useState(false);
 
-  // Per-row loading states
-  const [approvingIds, setApprovingIds] = useState<Set<string>>(new Set());
-  const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
+  // Per-row loading states (simplified)
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
-  const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
-  // Optimistic approvals to instantly reflect UI
-  const [locallyApprovedIds, setLocallyApprovedIds] = useState<Set<string>>(new Set());
-  // Track status changes (pending/approve/reject)
   const [statusChangingIds, setStatusChangingIds] = useState<Set<string>>(new Set());
-  // Local status overrides to reflect selection immediately
-  const [statusOverrides, setStatusOverrides] = useState<Map<string, 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED'>>(new Map());
-  // Local active overrides to reflect activation state immediately (e.g., when moving to pending => deactivate)
-  const [activeOverrides, setActiveOverrides] = useState<Map<string, boolean>>(new Map());
 
-  // Derive robust statistics with multiple fallbacks and apply local overrides when present
+  // Simplified statistics - trust the backend data
   const stats = useMemo(() => {
     const api = statsData as any | undefined;
     const listStats = (servicesData as any)?.stats as any | undefined;
-    const list = services;
 
-    const toUpper = (v: any) => (v ?? '').toString().toUpperCase();
-    const normalizeStatus = (raw: string) => {
-      const s = (raw || '').toString().replace('-', '_').toUpperCase();
-      if (s === 'APPROVED' || s === 'REJECTED' || s === 'PENDING_APPROVAL') return s;
-      return '';
-    };
-
-    const deriveBaseStatus = (s: any): 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' => {
-      const fromApi = normalizeStatus((s?.approvalStatus as string) || '');
-      if (fromApi) return fromApi as any;
-      // Fallback: if API doesn't send approvalStatus but has isApproved boolean
-      if (s?.isApproved === true) return 'APPROVED';
-      if (s?.isApproved === false) return 'PENDING_APPROVAL'; // avoid assuming REJECTED without explicit status
-      return 'PENDING_APPROVAL';
-    };
-
-    const getEffectiveStatus = (s: any): 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' => {
-      if (statusOverrides.has(s.id)) return statusOverrides.get(s.id)!;
-      return deriveBaseStatus(s);
-    };
-
-    const countsFromList = (applyOverrides: boolean) => {
-      let pending = 0, approved = 0, rejected = 0, active = 0, inactive = 0;
-      for (const s of list) {
-        const baseStatus = deriveBaseStatus(s as any);
-        const effStatus = applyOverrides ? getEffectiveStatus(s as any) : baseStatus;
-        const isApproved = effStatus === 'APPROVED';
-        const rawActive = !!(s as any).isActive;
-        const effActive = applyOverrides && activeOverrides.has((s as any).id)
-          ? (activeOverrides.get((s as any).id) as boolean)
-          : rawActive;
-
-        if (effStatus === 'PENDING_APPROVAL') pending++;
-        else if (effStatus === 'APPROVED') approved++;
-        else if (effStatus === 'REJECTED') rejected++;
-        if (isApproved && effActive) active++; // only approved can be active
-      }
-      const total = typeof servicesData?.total === 'number' ? servicesData!.total : list.length;
-      inactive = Math.max(0, total - active);
-      return { pending, approved, rejected, active, inactive, total };
-    };
-
-    const hasLocalOverrides = statusOverrides.size > 0 || activeOverrides.size > 0 || statusChangingIds.size > 0;
-    const listDerivedWithOverrides = countsFromList(true);
-    const listDerived = countsFromList(false);
-
-    // If there are local overrides (optimistic UI), prefer locally derived counts for immediacy
-    if (hasLocalOverrides) {
-      return listDerivedWithOverrides;
-    }
-
-    const total = (api?.total ?? listStats?.total ?? (typeof servicesData?.total === 'number' ? servicesData!.total : listDerived.total) ?? 0) as number;
-    const pending = (api?.pending ?? listStats?.pending ?? listDerived.pending ?? 0) as number;
-    const approved = (api?.approved ?? listStats?.approved ?? listDerived.approved ?? 0) as number;
-    const rejected = (api?.rejected ?? listStats?.rejected ?? listDerived.rejected ?? 0) as number;
-    const active = (api?.active ?? listStats?.active ?? listDerived.active ?? 0) as number;
-    const inactive = (api?.inactive ?? listStats?.inactive ?? listDerived.inactive ?? Math.max(0, total - active)) as number;
+    const total = (api?.total ?? listStats?.total ?? servicesData?.total ?? 0) as number;
+    const pending = (api?.pending ?? listStats?.pending ?? 0) as number;
+    const approved = (api?.approved ?? listStats?.approved ?? 0) as number;
+    const rejected = (api?.rejected ?? listStats?.rejected ?? 0) as number;
+    const active = (api?.active ?? listStats?.active ?? 0) as number;
+    const inactive = (api?.inactive ?? listStats?.inactive ?? Math.max(0, total - active)) as number;
 
     return { total, pending, approved, rejected, active, inactive };
-  }, [statsData, servicesData, services, statusOverrides, activeOverrides, statusChangingIds]);
+  }, [statsData, servicesData]);
 
   // Watchdog: if loading takes > 8s, show a helpful hint
   useEffect(() => {
@@ -287,59 +229,24 @@ export default function AdminServicesPage() {
 
   const handleApproveService = async (service: any, approved: boolean, badge?: string, rating?: number, comments?: string) => {
     try {
-      // Disallow approving a rejected service
-      const effectiveStatus = (statusOverrides.get(service.id) || service.approvalStatus || '').toString().toUpperCase();
-      if (effectiveStatus === 'REJECTED' && approved) {
-        toast.error('Rejected service cannot be approved.');
-        return;
-      }
       // Build payload carefully to satisfy backend validators
       const approvalData: any = { isApproved: approved };
       if (comments && comments.trim().length > 0) approvalData.adminComments = comments.trim();
       if (badge && badge.trim().length > 0) approvalData.adminAssignedBadge = badge;
       if (typeof rating === 'number' && rating >= 1) approvalData.adminQualityRating = rating;
-      // Optimistic local update for stats and row view
-      setStatusOverrides(prev => { const m = new Map(prev); m.set(service.id, approved ? 'APPROVED' : 'REJECTED'); return m; });
-      setActiveOverrides(prev => { const m = new Map(prev); m.set(service.id, approved ? true : false); return m; });
-      if (approved) setLocallyApprovedIds(prev => new Set(prev).add(service.id));
 
       await approveAdminService({ serviceId: service.id, approvalData }).unwrap();
-      const refreshed = await refetchServices();
+      
+      // Refresh data to reflect backend state
+      await refetchServices();
       refetchStats();
-      // Clear overrides if backend reflects the change
-      try {
-        const expectedBackend = approved ? 'APPROVED' : 'REJECTED';
-        const list = (refreshed as any)?.data?.services || servicesData?.services || [];
-        const updated = list.find((s: any) => s.id === service.id);
-        const norm = (v: string) => (v || '').toString().replace('-', '_').toUpperCase();
-        const updatedStatus = norm(updated?.approvalStatus || (updated?.isApproved === true ? 'APPROVED' : 'PENDING_APPROVAL'));
-        if (updated && updatedStatus === expectedBackend) {
-          setStatusOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
-          setActiveOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
-        } else {
-          // Gentle retry
-          setTimeout(async () => {
-            const retry = await refetchServices();
-            const list2 = (retry as any)?.data?.services || servicesData?.services || [];
-            const updated2 = list2.find((s: any) => s.id === service.id);
-            const updated2Status = norm(updated2?.approvalStatus || (updated2?.isApproved === true ? 'APPROVED' : 'PENDING_APPROVAL'));
-            if (updated2 && updated2Status === expectedBackend) {
-              setStatusOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
-              setActiveOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
-            }
-          }, 600);
-        }
-      } catch {}
+      
       setShowApprovalModal(false);
       setSelectedService(null);
       toast.success(approved ? 'Service approved and activated' : 'Service rejected');
     } catch (error) {
       console.error('Failed to approve/reject service:', error);
       toast.error('Failed to update service status.');
-      // Rollback optimistic update on failure
-      setStatusOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
-      setActiveOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
-      setLocallyApprovedIds(prev => { const next = new Set(prev); next.delete(service.id); return next; });
     }
   };
 
@@ -443,98 +350,38 @@ export default function AdminServicesPage() {
 
   // Handle status select changes per service
   const handleChangeServiceStatus = async (service: any, nextStatus: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED') => {
-    // Disallow changing a rejected service back to pending/approved per requirement
-    const currentEffective = (statusOverrides.get(service.id) || (service.approvalStatus || '')).toString().toUpperCase();
-    if (currentEffective === 'REJECTED' && nextStatus !== 'REJECTED') {
-      toast.error('Rejected service cannot be moved to Pending or Approved.');
-      return;
-    }
-    // Disallow changing an approved service back to pending/rejected per requirement
-    if (currentEffective === 'APPROVED' && nextStatus !== 'APPROVED') {
-      toast.error('Approved service cannot be moved to Pending or Rejected.');
-      return;
-    }
     if (statusChangingIds.has(service.id)) return;
-    // Reflect selection immediately in UI
-    setStatusOverrides(prev => {
-      const m = new Map(prev);
-      m.set(service.id, nextStatus);
-      return m;
-    });
-  // For status selection: Pending/Rejected => inactive view; Approved => keep existing active state (do not auto-activate)
-  const prevActive = activeOverrides.has(service.id) ? (activeOverrides.get(service.id) as boolean) : service.isActive;
-  const nextActiveByStatus = nextStatus === 'APPROVED' ? prevActive : false;
-  setActiveOverrides(prev => { const n = new Map(prev); n.set(service.id, nextActiveByStatus); return n; });
+    
+    // Set loading state
     setStatusChangingIds(prev => {
       const s = new Set(prev);
       s.add(service.id);
       return s;
     });
+    
     try {
       if (nextStatus === 'PENDING_APPROVAL') {
         // Move back to pending
         await setAdminServicePending(service.id).unwrap();
-        // Ensure local approved override is cleared
-        setLocallyApprovedIds(prev => { const n = new Set(prev); n.delete(service.id); return n; });
         toast.success('Moved to pending');
       } else if (nextStatus === 'APPROVED') {
-        // Approve (do not force activation; toggle controls active state)
+        // Approve and activate the service
         await approveAdminService({ serviceId: service.id, approvalData: { isApproved: true } }).unwrap();
-        toast.success('Approved');
+        toast.success('Service approved and activated');
       } else if (nextStatus === 'REJECTED') {
         // Reject
-        setLocallyApprovedIds(prev => { const n = new Set(prev); n.delete(service.id); return n; });
         await approveAdminService({ serviceId: service.id, approvalData: { isApproved: false } }).unwrap();
-        toast.success('Rejected');
+        toast.success('Service rejected');
       }
-      // Refresh data and stats after mutation
-      const refreshed = await refetchServices();
+      
+      // Refresh data after successful operation
+      await refetchServices();
       refetchStats();
-      // Only clear overrides if backend reflects the requested status
-      try {
-        const expectedBackend = (nextStatus || '').toString().replace('-', '_').toUpperCase();
-        const list = (refreshed as any)?.data?.services || servicesData?.services || [];
-        const updated = list.find((s: any) => s.id === service.id);
-        const norm = (v: string) => (v || '').toString().replace('-', '_').toUpperCase();
-        const updatedStatus = norm(updated?.approvalStatus || (updated?.isApproved === true ? 'APPROVED' : 'PENDING_APPROVAL'));
-        if (updated && updatedStatus === expectedBackend) {
-          setStatusOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
-          setActiveOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
-        } else {
-          // Keep overrides so UI doesn't incorrectly revert; surface a soft warning
-          toast.custom((t) => (
-            <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-3 py-2 rounded shadow-sm">
-              Awaiting server confirmation…
-            </div>
-          ), { duration: 2000 });
-          // Try one gentle follow-up refetch after a short delay
-          setTimeout(async () => {
-            const retry = await refetchServices();
-            const list2 = (retry as any)?.data?.services || servicesData?.services || [];
-            const updated2 = list2.find((s: any) => s.id === service.id);
-            const updated2Status = norm(updated2?.approvalStatus || (updated2?.isApproved === true ? 'APPROVED' : 'PENDING_APPROVAL'));
-            if (updated2 && updated2Status === expectedBackend) {
-              setStatusOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
-              setActiveOverrides(prev => { const m = new Map(prev); m.delete(service.id); return m; });
-            }
-          }, 600);
-        }
-      } catch {
-        // On any parsing issue, do not clear overrides to avoid wrong UI
-      }
+      
     } catch (error: any) {
-      // Rollback optimistic approval on error
-      // no need to mutate locallyApprovedIds; we compute from effectiveStatus only
-      // Revert override on error
-      setStatusOverrides(prev => {
-        const m = new Map(prev);
-        m.delete(service.id);
-        return m;
-      });
-      // Rollback active override
-      setActiveOverrides(prev => { const n = new Map(prev); n.set(service.id, prevActive); return n; });
       const msg = error?.data?.message || error?.message || 'Failed to update status';
       toast.error(msg);
+      console.error('Status change error:', error);
     } finally {
       setStatusChangingIds(prev => { const n = new Set(prev); n.delete(service.id); return n; });
     }
@@ -782,16 +629,12 @@ export default function AdminServicesPage() {
                   </tr>
                 )}
                 {!servicesLoading && !servicesError && services.map((service) => {
+                  // Simplified status logic - trust the backend data
                   const normalizeStatus = (raw: string) => (raw || '').toString().replace('-', '_').toUpperCase();
                   const apiStatus = normalizeStatus(service.approvalStatus || '');
-                  const baseStatus: 'PENDING_APPROVAL' | 'APPROVED' | 'REJECTED' = apiStatus
-                    ? (apiStatus as any)
-                    : (service.isApproved === true ? 'APPROVED' : 'PENDING_APPROVAL');
-                  const effectiveStatus = statusOverrides.get(service.id) || baseStatus;
+                  const effectiveStatus = apiStatus || (service.isApproved === true ? 'APPROVED' : 'PENDING_APPROVAL');
                   const isApprovedNow = (effectiveStatus === 'APPROVED');
-                  // If not approved, force inactive display
-                  const baseActive = activeOverrides.has(service.id) ? (activeOverrides.get(service.id) as boolean) : service.isActive;
-                  const effectiveActive = isApprovedNow ? baseActive : false;
+                  const effectiveActive = service.isActive;
                   return (
                   <tr key={service.id} className="hover:bg-gray-50 transition-colors">
                     <td className="py-4 px-6">
@@ -898,9 +741,9 @@ export default function AdminServicesPage() {
                           className={`px-2 py-1 border rounded-md text-xs ${statusChangingIds.has(service.id) ? 'opacity-60 cursor-not-allowed' : ''}`}
                           title="Change approval status"
                         >
-                          <option value="PENDING_APPROVAL" disabled={['REJECTED','APPROVED'].includes(effectiveStatus)} title={['REJECTED','APPROVED'].includes(effectiveStatus) ? 'Disabled in current status' : undefined}>Pending</option>
-                          <option value="REJECTED" disabled={['REJECTED','APPROVED'].includes(effectiveStatus)} title={['REJECTED','APPROVED'].includes(effectiveStatus) ? 'Disabled in current status' : undefined}>Rejected</option>
-                          <option value="APPROVED" disabled={effectiveStatus === 'REJECTED'} title={effectiveStatus === 'REJECTED' ? 'Disabled for rejected services' : undefined}>Approved</option>
+                          <option value="PENDING_APPROVAL">Pending</option>
+                          <option value="APPROVED">Approved</option>
+                          <option value="REJECTED">Rejected</option>
                         </select>
 
                         {/* Delete button */}
@@ -924,21 +767,21 @@ export default function AdminServicesPage() {
                             onClick={async () => {
                               if (!isApprovedNow) return;
                               if (togglingIds.has(service.id)) return;
-                              const prevActive = effectiveActive;
-                              const nextActive = !prevActive;
-                              // Optimistic active toggle
-                              setActiveOverrides(prev => { const n = new Map(prev); n.set(service.id, nextActive); return n; });
+                              
                               setTogglingIds(prev => { const s = new Set(prev); s.add(service.id); return s; });
+                              
                               try {
                                 const res = await toggleAdminServiceStatus(service.id).unwrap();
+                                
+                                // Refresh data to reflect backend state
                                 await refetchServices();
                                 refetchStats();
+                                
                                 toast.success(res?.service?.isActive ? 'Service activated' : 'Service deactivated');
                               } catch (error: any) {
                                 const msg = error?.data?.message || 'Failed to toggle service status.';
                                 toast.error(msg);
-                                // Rollback optimistic toggle
-                                setActiveOverrides(prev => { const n = new Map(prev); n.set(service.id, prevActive); return n; });
+                                console.error('Toggle error:', error);
                               } finally {
                                 setTogglingIds(prev => { const n = new Set(prev); n.delete(service.id); return n; });
                               }
@@ -1209,18 +1052,14 @@ function ServiceApprovalModal({
             </button>
             <button
               onClick={handleReject}
-              disabled={(service?.approvalStatus || '').toString().toUpperCase() === 'APPROVED'}
-              className={`px-6 py-2 rounded-lg transition-colors flex items-center gap-2 ${ (service?.approvalStatus || '').toString().toUpperCase() === 'APPROVED' ? 'bg-red-400 cursor-not-allowed text-white' : 'bg-red-600 hover:bg-red-700 text-white'}`}
-              title={(service?.approvalStatus || '').toString().toUpperCase() === 'APPROVED' ? 'Disabled for approved services' : undefined}
+              className="px-6 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors flex items-center gap-2"
             >
               <X className="w-4 h-4" />
               Reject Service
             </button>
             <button
               onClick={handleApprove}
-              disabled={(service?.approvalStatus || '').toString().toUpperCase() === 'REJECTED'}
-              className={`px-6 py-2 rounded-lg transition-colors flex items-center gap-2 ${ (service?.approvalStatus || '').toString().toUpperCase() === 'REJECTED' ? 'bg-green-400 cursor-not-allowed text-white' : 'bg-green-600 hover:bg-green-700 text-white'}`}
-              title={(service?.approvalStatus || '').toString().toUpperCase() === 'REJECTED' ? 'Disabled for rejected services' : undefined}
+              className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors flex items-center gap-2"
             >
               <Check className="w-4 h-4" />
               Approve & Activate

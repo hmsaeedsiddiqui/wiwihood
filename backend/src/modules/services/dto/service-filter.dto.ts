@@ -52,4 +52,14 @@ export class ServiceFilterDto {
   @IsOptional()
   @IsString()
   pricingType?: string;
+
+  @ApiPropertyOptional({ example: 'beauty-wellness', description: 'Filter by category name/slug' })
+  @IsOptional()
+  @IsString()
+  category?: string;
+
+  @ApiPropertyOptional({ example: 'top-rated', description: 'Filter by badge type (top-rated, best-seller, etc.)' })
+  @IsOptional()
+  @IsString()
+  type?: string;
 }

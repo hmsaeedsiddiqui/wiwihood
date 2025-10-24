@@ -161,6 +161,7 @@ export interface ServiceFilterRequest {
   search?: string
   categoryId?: string
   category?: string  // Category name filter
+  type?: string      // Badge type filter (top-rated, best-seller, etc.)
   providerId?: string
   minPrice?: number
   maxPrice?: number

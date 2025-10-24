@@ -1,6 +1,6 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1';
 
 // Admin Service Types
 export interface AdminServiceFilters {
@@ -18,7 +18,7 @@ export interface AdminServiceFilters {
 }
 
 export interface AdminApprovalData {
-  approved: boolean;
+  isApproved: boolean;
   adminComments?: string;
   adminAssignedBadge?: string;
   adminQualityRating?: number;
@@ -96,7 +96,7 @@ export const adminServicesApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_BASE_URL}/admin/services`,
     prepareHeaders: (headers) => {
-      const token = localStorage.getItem('accessToken');
+      const token = localStorage.getItem('adminToken') || localStorage.getItem('accessToken');
       if (token) {
         headers.set('authorization', `Bearer ${token}`);
       }
@@ -188,6 +188,18 @@ export const adminServicesApi = createApi({
       invalidatesTags: ['AdminService', 'ServiceStats'],
     }),
 
+    // Set service to pending
+    setServicePending: builder.mutation<
+      { success: boolean; message: string; service: AdminService },
+      string
+    >({
+      query: (serviceId) => ({
+        url: `${serviceId}/pending`,
+        method: 'PUT',
+      }),
+      invalidatesTags: ['AdminService', 'ServiceStats'],
+    }),
+
     // Bulk actions
     bulkServiceAction: builder.mutation<
       { success: boolean; message: string },
@@ -240,6 +252,7 @@ export const {
   useAssignBadgeMutation,
   useToggleServiceStatusMutation,
   useDeleteServiceMutation,
+  useSetServicePendingMutation,
   useBulkServiceActionMutation,
   useGetAvailableBadgesQuery,
   useGetPendingCountQuery,

@@ -75,6 +75,8 @@ export class ServicesController {
   })
   @ApiQuery({ name: 'search', required: false, description: 'Search term' })
   @ApiQuery({ name: 'categoryId', required: false, description: 'Category ID filter' })
+  @ApiQuery({ name: 'category', required: false, description: 'Category name/slug filter' })
+  @ApiQuery({ name: 'type', required: false, description: 'Badge type filter (top-rated, best-seller, etc.)' })
   @ApiQuery({ name: 'providerId', required: false, description: 'Provider ID filter' })
   @ApiQuery({ name: 'minPrice', required: false, description: 'Minimum price filter' })
   @ApiQuery({ name: 'maxPrice', required: false, description: 'Maximum price filter' })
@@ -94,11 +96,9 @@ export class ServicesController {
     });
     
     try {
-      // Direct repository query bypassing problematic service methods
-      console.log('🔍 [ServicesController] Fetching services directly from repository...');
+      console.log('🔍 [ServicesController] Implementing strict visibility rules...');
       
-      // Query database directly with joins for provider business name
-      // Only show services that are approved and active (visible on homepage)
+      // CORE VISIBILITY RULE: Services must be BOTH active AND approved to appear anywhere
       const queryBuilder = this.serviceRepository
         .createQueryBuilder('service')
         .leftJoinAndSelect('service.provider', 'provider')
@@ -108,7 +108,38 @@ export class ServicesController {
         .andWhere('service.approvalStatus = :approvalStatus', { approvalStatus: 'approved' })
         .orderBy('service.createdAt', 'DESC');
 
-      // Apply additional filters if provided
+      // BADGE/TYPE FILTERING: When type is set, return services where badge matches type
+      if (filters.type) {
+        console.log('🏷️ [ServicesController] Filtering by badge type:', filters.type);
+        
+        // Convert URL-friendly type to actual badge name (match exact badge names in database)
+        const typeMap: { [key: string]: string } = {
+          'new-on-vividhood': 'New on vividhood',
+          'popular': 'Popular',
+          'hot-deal': 'Hot Deal',
+          'best-seller': 'Best Seller',
+          'limited-time': 'Limited Time',
+          'premium': 'Premium',
+          'top-rated': 'Top Rated'
+        };
+        
+        const badgeName = typeMap[filters.type] || filters.type;
+        queryBuilder.andWhere('service.adminAssignedBadge = :badge', { badge: badgeName });
+      }
+
+      // CATEGORY FILTERING: When category is set, return services where category matches
+      if (filters.category) {
+        console.log('📂 [ServicesController] Filtering by category:', filters.category);
+        queryBuilder.andWhere(
+          '(category.name ILIKE :categoryName OR category.slug = :categorySlug)',
+          { 
+            categoryName: `%${filters.category}%`,
+            categorySlug: filters.category 
+          }
+        );
+      }
+
+      // Apply other filters
       if (filters.categoryId) {
         queryBuilder.andWhere('service.categoryId = :categoryId', { categoryId: filters.categoryId });
       }
@@ -134,7 +165,18 @@ export class ServicesController {
 
       const services = await queryBuilder.getMany();
       
-      console.log('🔍 [ServicesController] Direct query returned', services.length, 'services');
+      console.log('✅ [ServicesController] Query returned', services.length, 'approved & active services');
+      
+      // Log visibility rule enforcement
+      if (filters.type) {
+        console.log('🏷️ [ServicesController] Badge filtering applied - showing services with badge:', filters.type);
+      }
+      if (filters.category) {
+        console.log('📂 [ServicesController] Category filtering applied - showing services in category:', filters.category);
+      }
+      if (!filters.type && !filters.category) {
+        console.log('📋 [ServicesController] No specific filtering - showing all approved & active services');
+      }
       
       // Transform services to include computed fields
       const transformedServices = services.map(service => ({
@@ -149,20 +191,21 @@ export class ServicesController {
         )
       }));
       
-      let filteredServices = transformedServices;
+      console.log('🔍 [ServicesController] Returning', transformedServices.length, 'services after visibility rules');
       
-      console.log('🔍 [ServicesController] Returning', filteredServices.length, 'transformed services');
-      
-      if (filteredServices.length > 0) {
+      if (transformedServices.length > 0) {
         console.log('🔍 [ServicesController] Sample service:', {
-          name: filteredServices[0].name,
-          adminAssignedBadge: filteredServices[0].adminAssignedBadge,
-          providerBusinessName: filteredServices[0].providerBusinessName,
-          featuredImage: filteredServices[0].featuredImage
+          name: transformedServices[0].name,
+          adminAssignedBadge: transformedServices[0].adminAssignedBadge,
+          hasValidBadge: !!transformedServices[0].adminAssignedBadge,
+          providerBusinessName: transformedServices[0].providerBusinessName,
+          isActive: transformedServices[0].isActive,
+          isApproved: transformedServices[0].isApproved,
+          approvalStatus: transformedServices[0].approvalStatus
         });
       }
       
-      res.json(filteredServices);
+      res.json(transformedServices);
       
     } catch (error) {
       console.error('🔍 [ServicesController] Error fetching services:', error);

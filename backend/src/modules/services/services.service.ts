@@ -148,15 +148,22 @@ export class ServicesService {
   }
 
   /**
-   * Find services by provider
+   * Find services by provider - enforce visibility rules for public endpoints
    */
   async findByProvider(providerId: string): Promise<Service[]> {
     try {
-      return await this.serviceRepository.find({
-        where: { providerId },
-        relations: ['provider', 'category'],
-        order: { createdAt: 'DESC' }
-      });
+      const queryBuilder = this.serviceRepository
+        .createQueryBuilder('service')
+        .leftJoinAndSelect('service.provider', 'provider')
+        .leftJoinAndSelect('service.category', 'category')
+        .where('service.providerId = :providerId', { providerId })
+        // VISIBILITY RULE: Only show approved and active services
+        .andWhere('service.isActive = :isActive', { isActive: true })
+        .andWhere('service.isApproved = :isApproved', { isApproved: true })
+        .andWhere('service.approvalStatus = :approvalStatus', { approvalStatus: ServiceStatus.APPROVED })
+        .orderBy('service.createdAt', 'DESC');
+
+      return await queryBuilder.getMany();
     } catch (error) {
       console.error('Error finding services by provider:', error);
       return [];

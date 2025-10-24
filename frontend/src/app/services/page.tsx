@@ -23,70 +23,37 @@ function ServicesPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
 
-  // Fetch all active services from API (without type filtering since backend doesn't support it)
-  const apiFilters = {
-    isActive: true,
-    status: 'active' as const,
-    ...(categoryParam && { category: categoryParam })
-  };
+  // Build API filters based on query parameters - backend enforces visibility rules
+  const apiFilters: any = {};
+  
+  if (categoryParam) {
+    apiFilters.category = categoryParam;
+  }
+  
+  if (typeParam) {
+    apiFilters.type = typeParam;
+  }
 
-  // Fetch services and categories from API
-  const { data: allServices = [], isLoading, error } = useGetServicesQuery(apiFilters);
+  // Fetch services and categories from API - backend automatically filters for approved + active services
+  const { data: services = [], isLoading, error } = useGetServicesQuery(apiFilters);
   const { data: categories = [] } = useGetCategoriesQuery({ isActive: true });
 
-  // Client-side filtering for type-based queries
-  const services = useMemo(() => {
-    if (!typeParam) return allServices;
-
-    switch (typeParam) {
-      case 'top-rated':
-        return allServices.filter(service => {
-          const badge = (service.adminAssignedBadge || '').toLowerCase();
-          return ['top rated', 'top-rated', 'highly rated', 'excellent'].some(keyword => 
-            badge.includes(keyword)
-          );
-        });
-      
-      case 'popular':
-        return allServices.filter(service => {
-          const badge = (service.adminAssignedBadge || '').toLowerCase();
-          return ['popular', 'trending', 'most popular', 'premium'].some(keyword => 
-            badge.includes(keyword)
-          );
-        });
-      
-      case 'best-seller':
-        return [...allServices] // Create a copy to avoid mutating the original array
-          .filter(service => service.totalBookings > 0)
-          .sort((a, b) => (b.totalBookings || 0) - (a.totalBookings || 0));
-      
-      case 'hot-deal':
-        return allServices.filter(service => {
-          const badge = (service.adminAssignedBadge || '').toLowerCase();
-          return ['hot deal', 'hot-deal', 'deal', 'discount', 'promo', 'sale'].some(keyword => 
-            badge.includes(keyword)
-          );
-        });
-      
-      case 'new':
-        return [...allServices] // Create a copy to avoid mutating the original array
-          .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-          .slice(0, 50); // Limit new services to recent 50
-      
-      default:
-        return allServices;
-    }
-  }, [allServices, typeParam]);
+  // No client-side filtering needed - backend handles all visibility rules:
+  // - Only approved + active services are returned
+  // - Badge filtering is done server-side when type param is provided
+  // - Category filtering is done server-side when category param is provided
 
   // Update breadcrumb based on parameters
   useEffect(() => {
     if (typeParam) {
       const typeLabels = {
-        'top-rated': 'Top-Rated Services',
+        'new-on-vividhood': 'New on Wiwihood',
         'popular': 'Popular This Week',
-        'best-seller': 'Best Sellers',
         'hot-deal': 'Hot Deals',
-        'new': 'New on Wiwihood'
+        'best-seller': 'Best Sellers',
+        'limited-time': 'Limited Time',
+        'premium': 'Premium',
+        'top-rated': 'Top Rated'
       };
       setBreadcrumb(typeLabels[typeParam as keyof typeof typeLabels] || 'Services');
     } else if (categoryParam) {

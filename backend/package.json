@@ -4,7 +4,6 @@
   "description": "Vivihood - Full-stack beauty & wellness marketplace backend. Complete NestJS API with Stripe payments, Google Maps, SMS notifications, i18n support, and PWA capabilities. Similar to Fresha.com platform.",
   "author": "Vivihood Team",
   "private": true,
-
   "license": "MIT",
   "scripts": {
     "build": "nest build",
@@ -65,6 +64,7 @@
     "speakeasy": "^2.0.0",
     "swagger-ui-express": "^5.0.1",
     "typeorm": "^0.3.20",
+    "uuid": "^13.0.0",
     "zustand": "^5.0.8"
   },
   "devDependencies": {
