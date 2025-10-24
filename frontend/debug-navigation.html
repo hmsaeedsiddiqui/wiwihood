@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Service Navigation</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .debug-section { background: #f5f5f5; padding: 15px; margin: 10px 0; border-left: 4px solid #007acc; }
+        .success { background: #e8f5e8; border-left-color: #28a745; }
+        .error { background: #fce8e8; border-left-color: #dc3545; }
+        .warning { background: #fff3cd; border-left-color: #ffc107; }
+        button { background: #E89B8B; color: white; padding: 10px 20px; border: none; border-radius: 5px; cursor: pointer; margin: 5px; }
+        button:hover { background: #D4876F; }
+        pre { background: white; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Service Navigation Debug Tool</h1>
+    
+    <div class="debug-section">
+        <h3>Test API Endpoints</h3>
+        <button onclick="testServicesAPI()">Test Services API</button>
+        <button onclick="testSpecificService()">Test Service Detail</button>
+        <button onclick="simulateNavigation()">Simulate Book Now Navigation</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api/v1';
+        
+        function log(message, type = 'info') {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `debug-section ${type}`;
+            div.innerHTML = `<pre>${typeof message === 'object' ? JSON.stringify(message, null, 2) : message}</pre>`;
+            results.appendChild(div);
+        }
+        
+        async function testServicesAPI() {
+            log('🔄 Testing Services API...');
+            try {
+                const response = await fetch(`${API_BASE}/services?isActive=true&status=active`);
+                const data = await response.json();
+                
+                if (response.ok) {
+                    log(`✅ Services API Success: Found ${data.length} services`, 'success');
+                    
+                    // Show first few services with their slugs
+                    const serviceDetails = data.slice(0, 3).map(service => ({
+                        id: service.id,
+                        name: service.name,
+                        slug: service.slug || generateSlug(service.name, service.providerBusinessName, service.id),
+                        isActive: service.isActive,
+                        status: service.status,
+                        approvalStatus: service.approvalStatus
+                    }));
+                    
+                    log(serviceDetails, 'success');
+                } else {
+                    log(`❌ Services API Error: ${response.status} - ${data.message}`, 'error');
+                }
+            } catch (error) {
+                log(`❌ Network Error: ${error.message}`, 'error');
+            }
+        }
+        
+        async function testSpecificService() {
+            const serviceId = prompt('Enter service ID or slug to test:') || 'test-service';
+            log(`🔄 Testing specific service: ${serviceId}`);
+            
+            try {
+                // Try both ID and slug endpoints
+                const endpoints = [
+                    `${API_BASE}/services/${serviceId}`,
+                    `${API_BASE}/services/slug/${serviceId}`
+                ];
+                
+                for (const endpoint of endpoints) {
+                    try {
+                        const response = await fetch(endpoint);
+                        const data = await response.json();
+                        
+                        if (response.ok) {
+                            log(`✅ Found service via ${endpoint}:`, 'success');
+                            log({
+                                id: data.id,
+                                name: data.name,
+                                slug: data.slug,
+                                basePrice: data.basePrice,
+                                providerId: data.providerId
+                            }, 'success');
+                            return;
+                        }
+                    } catch (e) {
+                        // Continue to next endpoint
+                    }
+                }
+                
+                log(`❌ Service not found with ID/slug: ${serviceId}`, 'error');
+            } catch (error) {
+                log(`❌ Error testing service: ${error.message}`, 'error');
+            }
+        }
+        
+        function simulateNavigation() {
+            log('🔄 Simulating Book Now navigation...', 'warning');
+            
+            // Sample service data
+            const sampleService = {
+                id: 'service-123',
+                name: 'Professional Hair Styling',
+                providerBusinessName: 'Beauty Salon Dubai',
+                providerId: 'provider-456'
+            };
+            
+            const serviceSlug = generateSlug(sampleService.name, sampleService.providerBusinessName, sampleService.id);
+            const bookNowUrl = `/services/book-now?service=${serviceSlug}&serviceId=${sampleService.id}&provider=${sampleService.providerId}`;
+            
+            log('Generated URL:', 'warning');
+            log(bookNowUrl, 'warning');
+            
+            log('URL Parameters:', 'warning');
+            log({
+                service: serviceSlug,
+                serviceId: sampleService.id,
+                provider: sampleService.providerId
+            }, 'warning');
+            
+            // Test URL parsing
+            const url = new URL(window.location.origin + bookNowUrl);
+            const params = new URLSearchParams(url.search);
+            
+            log('Parsed Parameters:', 'warning');
+            log({
+                service: params.get('service'),
+                serviceId: params.get('serviceId'),
+                provider: params.get('provider')
+            }, 'warning');
+        }
+        
+        // Utility function to generate slug (matching frontend logic)
+        function generateSlug(name, businessName, id) {
+            const cleanName = name.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-');
+            const cleanBusiness = businessName ? businessName.toLowerCase().replace(/[^a-z0-9\s]/g, '').replace(/\s+/g, '-') : '';
+            const shortId = id.slice(-4);
+            
+            return cleanBusiness ? `${cleanName}-${cleanBusiness}-${shortId}` : `${cleanName}-${shortId}`;
+        }
+        
+        // Auto-run basic test
+        window.addEventListener('load', () => {
+            log('🚀 Debug tool loaded. Click buttons above to test navigation flow.');
+        });
+    </script>
+</body>
+</html>

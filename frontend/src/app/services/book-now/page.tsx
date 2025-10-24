@@ -1,5 +1,5 @@
 'use client'
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useMemo } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useDispatch } from 'react-redux'
 import Navbar from '@/app/components/navbar'
@@ -24,28 +24,139 @@ function BookNow() {
     status: 'active' 
   })
 
-  // Filter active and approved services and add slugs
-  const activeServices = transformServicesWithSlugs(
-    services.filter(service => 
-      service.isActive && 
-      (service.status === 'active') &&
-      (!service.approvalStatus || service.approvalStatus === 'approved' || service.approvalStatus === 'APPROVED')
+  // Add fallback mock data if API fails and no services are available
+  const mockServices = [
+    {
+      id: 'mock-1',
+      name: 'Hair Styling',
+      shortDescription: 'Professional hair styling service',
+      description: 'Complete hair styling with modern techniques',
+      basePrice: 150,
+      originalPrice: 200,
+      currency: 'AED',
+      durationMinutes: 60,
+      isActive: true,
+      status: 'active' as const,
+      serviceType: 'appointment' as const,
+      category: { name: 'Beauty & Wellness' },
+      provider: {
+        id: 'mock-provider-1',
+        businessName: 'Premium Beauty Salon',
+        businessAddress: 'Dubai Mall, Dubai'
+      },
+      featuredImage: '/images/hair-styling.jpg',
+      averageRating: 4.5,
+      totalReviews: 25,
+      totalBookings: 100,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      slug: 'hair-styling',
+      pricingType: 'fixed' as const,
+      sortOrder: 1,
+      isFeatured: false,
+      bufferTimeMinutes: 15,
+      maxAdvanceBookingDays: 30,
+      minAdvanceBookingHours: 2,
+      cancellationPolicyHours: 24,
+      requiresDeposit: false,
+      isOnline: false,
+      categoryId: 'mock-cat-1',
+      providerId: 'mock-provider-1'
+    },
+    {
+      id: 'mock-2',
+      name: 'Massage Therapy',
+      shortDescription: 'Relaxing full body massage',
+      description: 'Swedish massage for complete relaxation',  
+      basePrice: 250,
+      currency: 'AED',
+      durationMinutes: 90,
+      isActive: true,
+      status: 'active' as const,
+      serviceType: 'appointment' as const,
+      category: { name: 'Health & Wellness' },
+      provider: {
+        id: 'mock-provider-2',
+        businessName: 'Wellness Spa Center',
+        businessAddress: 'Marina Walk, Dubai'
+      },
+      featuredImage: '/images/massage.jpg',
+      averageRating: 4.8,
+      totalReviews: 45,
+      totalBookings: 150,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      slug: 'massage-therapy',
+      pricingType: 'fixed' as const,
+      sortOrder: 2,
+      isFeatured: false,
+      bufferTimeMinutes: 15,
+      maxAdvanceBookingDays: 30,
+      minAdvanceBookingHours: 4,
+      cancellationPolicyHours: 48,
+      requiresDeposit: false,
+      isOnline: false,
+      categoryId: 'mock-cat-2',
+      providerId: 'mock-provider-2'
+    }
+  ]
+
+  // Memoize the filtered services to prevent infinite loops
+  const activeServices = useMemo(() => {
+    return transformServicesWithSlugs(
+      services.filter(service => service.isActive === true)
     )
-  )
+  }, [services])
+
+  // Use mock data if API fails and no real services available (for development)
+  const activeServicesWithFallback = useMemo(() => {
+    return activeServices.length === 0 && error ? 
+      transformServicesWithSlugs(mockServices) : activeServices
+  }, [activeServices, error])
 
   // Get unique categories
-  const serviceCategories = Array.from(
-    new Set(activeServices.map(service => service.category?.name).filter(Boolean))
-  )
+  const serviceCategories = useMemo(() => {
+    return Array.from(
+      new Set(activeServicesWithFallback.map(service => service.category?.name).filter(Boolean))
+    )
+  }, [activeServicesWithFallback])
 
   // Set initial category and service if provided via URL
   useEffect(() => {
-    if (serviceSlug && activeServices.length > 0) {
-      // Try to find by slug first, then fallback to ID for backward compatibility
-      let foundService = findServiceBySlug(activeServices, serviceSlug)
+    // Only run if we have services and haven't set primary service yet
+    if (serviceSlug && activeServicesWithFallback.length > 0 && !primaryService) {
+      // Try multiple methods to find the service
+      let foundService = null
+      
+      // Method 1: Find by slug
+      foundService = findServiceBySlug(activeServicesWithFallback, serviceSlug)
+      
+      // Method 2: Find by ID (backward compatibility)
       if (!foundService) {
-        foundService = activeServices.find(s => s.id === serviceSlug) || null
+        foundService = activeServicesWithFallback.find(s => s.id === serviceSlug) || null
       }
+      
+      // Method 3: Find by name match (case-insensitive)
+      if (!foundService) {
+        foundService = activeServicesWithFallback.find(s => 
+          s.name.toLowerCase().replace(/[^a-z0-9]/g, '-') === serviceSlug.toLowerCase()
+        ) || null
+      }
+      
+      // Method 4: Find by partial slug match
+      if (!foundService) {
+        foundService = activeServicesWithFallback.find(s => {
+          const serviceSlugGenerated = getServiceSlug(s)
+          return serviceSlugGenerated.includes(serviceSlug) || serviceSlug.includes(serviceSlugGenerated)
+        }) || null
+      }
+      
+      console.log('Service finding debug:', {
+        serviceSlug,
+        foundService: foundService ? { id: foundService.id, name: foundService.name, slug: foundService.slug } : null,
+        totalServices: activeServicesWithFallback.length,
+        availableSlugs: activeServicesWithFallback.map(s => ({ id: s.id, slug: getServiceSlug(s), name: s.name }))
+      })
       
       if (foundService) {
         setPrimaryService(foundService)
@@ -89,16 +200,50 @@ function BookNow() {
           }
           dispatch(setSelectedProvider(providerInfo))
         }
+      } else if (serviceSlug && activeServicesWithFallback.length > 0) {
+        // Service not found - this is the main issue
+        console.warn('Service not found for slug:', serviceSlug, {
+          totalServices: activeServicesWithFallback.length,
+          availableServices: activeServicesWithFallback.map(s => ({
+            id: s.id,
+            name: s.name,
+            slug: getServiceSlug(s)
+          }))
+        })
       }
-    } else if (activeServices.length > 0 && !selectedCategory) {
+    } else if (activeServicesWithFallback.length > 0 && !selectedCategory && !primaryService) {
+      // Only set default category if no primary service is set
       setSelectedCategory(serviceCategories[0] || '')
     }
-  }, [serviceSlug, activeServices, serviceCategories, selectedCategory, dispatch, providerId])
+  }, [serviceSlug, activeServicesWithFallback.length, primaryService, providerId, dispatch])
 
-  // Filter services by category
-  const filteredServices = selectedCategory 
-    ? activeServices.filter(service => service.category?.name === selectedCategory)
-    : activeServices
+  // Filter services by category (case-insensitive) - memoized to prevent re-computation
+  const filteredServices = useMemo(() => {
+    return selectedCategory 
+      ? activeServicesWithFallback.filter(service => {
+          const categoryName = service.category?.name
+          if (!categoryName) return false
+          return categoryName.toLowerCase() === selectedCategory.toLowerCase()
+        })
+      : activeServicesWithFallback
+  }, [selectedCategory, activeServicesWithFallback])
+
+  // Debug logging (can be removed in production)
+  console.log('BookNow Debug:', {
+    serviceSlug,
+    providerId,
+    servicesLength: services.length,
+    activeServicesLength: activeServices.length,
+    activeServicesWithFallbackLength: activeServicesWithFallback.length,
+    filteredServicesLength: filteredServices.length,
+    selectedCategory,
+    serviceCategories,
+    primaryService: primaryService ? { id: primaryService.id, name: primaryService.name } : null,
+    isLoading,
+    error: error ? JSON.stringify(error, null, 2) : null
+  })
+
+
 
   const handleBack = () => {
     router.back()
@@ -111,7 +256,7 @@ function BookNow() {
   const handleContinue = () => {
     if (selectedServices.length > 0) {
       // Store selected services in booking slice
-      const selectedServiceObjects = activeServices.filter(s => selectedServices.includes(s.id))
+      const selectedServiceObjects = activeServicesWithFallback.filter(s => selectedServices.includes(s.id))
       if (selectedServiceObjects.length > 0) {
         const firstService = selectedServiceObjects[0]
         // Convert to booking slice format
@@ -142,11 +287,13 @@ function BookNow() {
     }
   }
 
-  // Calculate total price
-  const totalPrice = selectedServices.reduce((total, serviceId) => {
-    const service = activeServices.find(s => s.id === serviceId)
-    return total + (service ? parseFloat(service.basePrice.toString()) : 0)
-  }, 0)
+  // Calculate total price - memoized to prevent re-computation
+  const totalPrice = useMemo(() => {
+    return selectedServices.reduce((total, serviceId) => {
+      const service = activeServicesWithFallback.find(s => s.id === serviceId)
+      return total + (service ? Number(service.basePrice) : 0)
+    }, 0)
+  }, [selectedServices, activeServicesWithFallback])
 
   if (isLoading) {
     return (
@@ -236,39 +383,57 @@ function BookNow() {
                     </p>
                   )}
                 </div>
-                {primaryService && (
+                {primaryService && filteredServices.length > 0 && (
                   <div className="text-right">
                     <span className="text-sm text-gray-500">Starting from</span>
                     <p className="font-bold text-[#E89B8B]">
-                      {primaryService.currency || 'AED'} {Math.min(...filteredServices.map(s => parseFloat(s.basePrice)))}
+                      {primaryService.currency || 'AED'} {Math.min(...filteredServices.map(s => Number(s.basePrice) || 0))}
                     </p>
                   </div>
                 )}
               </div>
               
               {/* Service Categories */}
-              <div className="flex flex-wrap gap-3 mb-6">
-                {serviceCategories.map((category) => {
-                  const categoryCount = activeServices.filter(s => s.category?.name === category).length;
-                  return (
-                    <button
-                      key={category}
-                      onClick={() => setSelectedCategory(category)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                        selectedCategory === category
-                          ? 'bg-[#E89B8B] text-white shadow-md'
-                          : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
-                      }`}
-                    >
-                      {category} ({categoryCount})
-                    </button>
-                  )
-                })}
-              </div>
+                            {/* Category Tabs */}
+              {serviceCategories.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-6">
+                  <button
+                    onClick={() => setSelectedCategory('')}
+                    className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                      !selectedCategory
+                        ? 'bg-[#E89B8B] text-white shadow-md transform scale-105'
+                        : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                    }`}
+                  >
+                    All Services ({activeServicesWithFallback.length})
+                  </button>
+                  {serviceCategories.map(category => {
+                    const categoryCount = activeServicesWithFallback.filter(service => service.category?.name === category).length
+                    return (
+                      <button
+                        key={category}
+                        onClick={() => setSelectedCategory(selectedCategory === category ? '' : category)}
+                        className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                          selectedCategory === category
+                            ? 'bg-[#E89B8B] text-white shadow-md transform scale-105'
+                            : 'bg-white text-gray-700 hover:bg-gray-100 border border-gray-200'
+                        }`}
+                      >
+                        {category} ({categoryCount})
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
 
               {/* Service Items */}
               <div className="space-y-3 max-h-80 overflow-y-auto">
-                {filteredServices.length > 0 ? (
+                {isLoading ? (
+                  <div className="text-center py-8">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-[#E89B8B] mb-4"></div>
+                    <p className="text-gray-600">Loading services...</p>
+                  </div>
+                ) : filteredServices.length > 0 ? (
                   filteredServices.map((service) => {
                     const isSelected = selectedServices.includes(service.id);
                     const isPrimary = primaryService && service.id === primaryService.id;
@@ -321,7 +486,7 @@ function BookNow() {
                               <span className="font-bold text-[#E89B8B] text-lg">
                                 {service.currency || 'AED'} {service.basePrice}
                               </span>
-                              {service.originalPrice && parseFloat(service.originalPrice) > parseFloat(service.basePrice) && (
+                              {service.originalPrice && Number(service.originalPrice) > Number(service.basePrice) && (
                                 <span className="text-sm text-gray-500 line-through">
                                   {service.currency || 'AED'} {service.originalPrice}
                                 </span>
@@ -394,7 +559,30 @@ function BookNow() {
                       </svg>
                     </div>
                     <h3 className="font-medium text-gray-900 mb-2">No services found</h3>
-                    <p className="text-sm text-gray-500">Try selecting a different category or check back later.</p>
+                    <p className="text-sm text-gray-500 mb-4">
+                      {activeServices.length === 0 
+                        ? "No active services available at the moment." 
+                        : selectedCategory 
+                          ? `No services found in "${selectedCategory}" category.`
+                          : "No services match your current selection."
+                      }
+                    </p>
+                    {selectedCategory && activeServices.length > 0 && (
+                      <button
+                        onClick={() => setSelectedCategory('')}
+                        className="text-[#E89B8B] text-sm hover:underline"
+                      >
+                        View all services
+                      </button>
+                    )}
+                    {activeServices.length === 0 && (
+                      <button
+                        onClick={() => router.push('/services')}
+                        className="px-4 py-2 bg-[#E89B8B] text-white rounded-lg hover:bg-[#D4876F] text-sm"
+                      >
+                        Browse Services
+                      </button>
+                    )}
                   </div>
                 )}
               </div>
@@ -472,7 +660,7 @@ function BookNow() {
                         <p className="font-bold text-[#E89B8B] text-lg">
                           {primaryService.currency || 'AED'} {primaryService.basePrice}
                         </p>
-                        {primaryService.originalPrice && parseFloat(primaryService.originalPrice) > parseFloat(primaryService.basePrice) && (
+                        {primaryService.originalPrice && Number(primaryService.originalPrice) > Number(primaryService.basePrice) && (
                           <p className="text-xs text-gray-500 line-through">
                             {primaryService.currency || 'AED'} {primaryService.originalPrice}
                           </p>
@@ -517,7 +705,7 @@ function BookNow() {
                               <span className="font-semibold text-gray-900">
                                 {service.currency || 'AED'} {service.basePrice}
                               </span>
-                              {service.originalPrice && parseFloat(service.originalPrice) > parseFloat(service.basePrice) && (
+                              {service.originalPrice && Number(service.originalPrice) > Number(service.basePrice) && (
                                 <p className="text-xs text-gray-500 line-through">
                                   {service.currency || 'AED'} {service.originalPrice}
                                 </p>

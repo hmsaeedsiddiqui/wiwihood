@@ -41,6 +41,12 @@ function ServiceDetailPage() {
     if (service) {
       // Pass both slug and service ID for better compatibility
       const serviceSlug = getServiceSlug(service);
+      console.log('Navigating to book-now with:', {
+        service: service.name,
+        slug: serviceSlug,
+        id: service.id,
+        providerId: service.providerId
+      });
       router.push(`/services/book-now?service=${serviceSlug}&serviceId=${service.id}&provider=${service.providerId}`);
     }
   };
