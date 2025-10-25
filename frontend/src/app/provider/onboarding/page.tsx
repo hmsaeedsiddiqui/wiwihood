@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, Clock, DollarSign, MapPin, Store, CheckCircle, ArrowRight, ArrowLeft } from "lucide-react";
 import axios from "axios";
@@ -45,6 +45,7 @@ const BusinessOnboarding = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [isExistingUser, setIsExistingUser] = useState(false);
 
   const [formData, setFormData] = useState<BusinessOnboardingData>({
     businessName: "",
@@ -72,6 +73,30 @@ const BusinessOnboarding = () => {
       sunday: { start: "10:00", end: "14:00", isOpen: false }
     }
   });
+
+  // Check if user is already logged in and pre-populate form
+  useEffect(() => {
+    const token = localStorage.getItem("providerToken");
+    const providerData = localStorage.getItem("provider");
+    
+    if (token && providerData) {
+      try {
+        const user = JSON.parse(providerData);
+        setIsExistingUser(true);
+        setFormData(prev => ({
+          ...prev,
+          email: user.email || "",
+          firstName: user.firstName || "",
+          lastName: user.lastName || "",
+          phone: user.phone || ""
+        }));
+        // Skip to business details step since user is already registered
+        setCurrentStep(2);
+      } catch (e) {
+        console.error("Failed to parse provider data:", e);
+      }
+    }
+  }, []);
 
   const steps = [
     { number: 1, title: "Basic Information", icon: Store },
@@ -136,24 +161,35 @@ const BusinessOnboarding = () => {
     setError("");
 
     try {
-      // Step 1: Register user account
-      const userResponse = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/register`,
-        {
-          email: formData.email,
-          password: formData.password,
-          firstName: formData.firstName,
-          lastName: formData.lastName,
-          phone: formData.phone,
-          userRole: 'provider'
-        },
-        { withCredentials: true }
-      );
+      // Check if user is already authenticated
+      const existingToken = localStorage.getItem("providerToken");
+      let token = existingToken;
 
-      if (userResponse.data && userResponse.data.accessToken) {
-        const token = userResponse.data.accessToken;
-        localStorage.setItem("providerToken", token);
+      // If no existing token, try to register new user
+      if (!token) {
+        const userResponse = await axios.post(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/auth/register`,
+          {
+            email: formData.email,
+            password: formData.password,
+            firstName: formData.firstName,
+            lastName: formData.lastName,
+            phone: formData.phone,
+            userRole: 'provider'
+          },
+          { withCredentials: true }
+        );
 
+        if (userResponse.data && userResponse.data.accessToken) {
+          token = userResponse.data.accessToken;
+          localStorage.setItem("providerToken", token);
+        } else {
+          throw new Error("Registration failed - no token received");
+        }
+      }
+
+      // If we have a token, continue with business profile creation
+      if (token) {
         // Step 2: Create business profile
         const businessResponse = await axios.post(
           `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/providers`,
@@ -201,7 +237,22 @@ const BusinessOnboarding = () => {
       }
     } catch (err: any) {
       console.error('Onboarding error:', err);
-      setError(err.response?.data?.message || "Setup failed. Please try again.");
+      
+      let errorMessage = "Setup failed. Please try again.";
+      
+      // Handle specific error cases
+      if (err.response?.status === 409) {
+        // User already exists
+        errorMessage = "An account with this email already exists. Please log in first, then complete your business setup.";
+        // Redirect to login page after 3 seconds
+        setTimeout(() => {
+          router.push('/auth/provider/login');
+        }, 3000);
+      } else if (err.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -210,7 +261,19 @@ const BusinessOnboarding = () => {
   const renderStep1 = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Let's start with your basic information</h3>
+        {isExistingUser ? (
+          <>
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <p className="text-green-800">
+                Welcome back! We found your account. Let's complete your business profile setup.
+              </p>
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-4">Confirm your information</h3>
+          </>
+        ) : (
+          <h3 className="text-xl font-semibold text-gray-900 mb-4">Let's start with your basic information</h3>
+        )}
+        
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">First Name *</label>
@@ -221,6 +284,7 @@ const BusinessOnboarding = () => {
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="John"
               required
+              disabled={isExistingUser}
             />
           </div>
           <div>
@@ -232,6 +296,7 @@ const BusinessOnboarding = () => {
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Smith"
               required
+              disabled={isExistingUser}
             />
           </div>
         </div>
@@ -245,6 +310,7 @@ const BusinessOnboarding = () => {
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="john@example.com"
               required
+              disabled={isExistingUser}
             />
           </div>
           <div>
@@ -256,20 +322,30 @@ const BusinessOnboarding = () => {
               className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="+1 (555) 123-4567"
               required
+              disabled={isExistingUser}
             />
           </div>
         </div>
-        <div className="mt-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
-          <input
-            type="password"
-            value={formData.password}
-            onChange={(e) => handleInputChange('password', e.target.value)}
-            className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            placeholder="Enter a secure password"
-            required
-          />
-        </div>
+        {!isExistingUser && (
+          <div className="mt-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">Password *</label>
+            <input
+              type="password"
+              value={formData.password}
+              onChange={(e) => handleInputChange('password', e.target.value)}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Enter a secure password"
+              required
+            />
+          </div>
+        )}
+        {isExistingUser && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-blue-800 text-sm">
+              Since you're already registered, you can skip to setting up your business details.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

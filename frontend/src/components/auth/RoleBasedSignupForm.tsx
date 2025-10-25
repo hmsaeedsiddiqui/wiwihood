@@ -98,6 +98,12 @@ export default function RoleBasedSignupForm({
         errorMessage = Array.isArray(err.data.message) ? err.data.message.join(', ') : err.data.message
       }
       
+      // Special handling for "user already exists" error
+      if (errorMessage.toLowerCase().includes('already exists') || 
+          errorMessage.toLowerCase().includes('user with this email')) {
+        errorMessage = `An account with email "${formData.email}" already exists. Please use a different email or try logging in instead.`
+      }
+      
       setError(errorMessage)
     }
   }
@@ -143,6 +149,16 @@ export default function RoleBasedSignupForm({
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
             {error}
+            {error.toLowerCase().includes('already exists') && (
+              <div className="mt-2">
+                <a 
+                  href={`/auth/${role}/login`}
+                  className="text-orange-600 hover:text-orange-800 font-medium underline"
+                >
+                  Go to login page instead
+                </a>
+              </div>
+            )}
           </div>
         )}
 
