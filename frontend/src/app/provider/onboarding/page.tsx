@@ -19,6 +19,7 @@ interface BusinessOnboardingData {
   address: string;
   city: string;
   state: string;
+  country: string;
   postalCode: string;
   
   // Services
@@ -59,6 +60,7 @@ const BusinessOnboarding = () => {
     address: "",
     city: "",
     state: "",
+    country: "UAE",
     postalCode: "",
     services: [
       { name: "", description: "", price: 0, duration: 60, category: "hair-services" }
@@ -115,6 +117,11 @@ const BusinessOnboarding = () => {
   ];
 
   const handleInputChange = (field: string, value: any) => {
+    // Validate country field length (max 100 characters as per backend)
+    if (field === 'country' && typeof value === 'string' && value.length > 100) {
+      return; // Don't update if too long
+    }
+    
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -189,52 +196,55 @@ const BusinessOnboarding = () => {
       }
 
       // If we have a token, continue with business profile creation
-      if (token) {
-        // Step 2: Create business profile
-        const businessResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/providers`,
-          {
-            businessName: formData.businessName,
-            providerType: formData.businessType,
-            description: formData.description,
-            address: formData.address,
-            city: formData.city,
-            state: formData.state,
-            postalCode: formData.postalCode,
-            phone: formData.phone
-          },
-          {
-            headers: { Authorization: `Bearer ${token}` },
-            withCredentials: true
-          }
-        );
-
-        // Step 3: Create services
-        for (const service of formData.services) {
-          if (service.name && service.price > 0) {
-            await axios.post(
-              `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/services`,
-              {
-                name: service.name,
-                description: service.description,
-                basePrice: service.price,
-                durationMinutes: service.duration,
-                categoryId: service.category,
-                serviceType: "appointment",
-                pricingType: "fixed",
-                isActive: true
-              },
-              {
-                headers: { Authorization: `Bearer ${token}` },
-                withCredentials: true
-              }
-            );
-          }
-        }
-
-        // Success - redirect to dashboard
-        router.push('/provider/dashboard');
+      if (!token) {
+        throw new Error("No authentication token available");
       }
+
+      // Step 2: Create business profile
+      const businessResponse = await axios.post(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/providers`,
+        {
+          businessName: formData.businessName,
+          providerType: formData.businessType,
+          description: formData.description,
+          address: formData.address,
+          city: formData.city,
+          state: formData.state,
+          country: formData.country,
+          postalCode: formData.postalCode,
+          phone: formData.phone
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true
+        }
+      );
+
+      // Step 3: Create services
+      for (const service of formData.services) {
+        if (service.name && service.price > 0) {
+          await axios.post(
+            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/services`,
+            {
+              name: service.name,
+              description: service.description,
+              basePrice: service.price,
+              durationMinutes: service.duration,
+              categoryId: service.category,
+              serviceType: "appointment",
+              pricingType: "fixed",
+              isActive: true
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+              withCredentials: true
+            }
+          );
+        }
+      }
+
+      // Success - redirect to dashboard
+      router.push('/provider/dashboard');
     } catch (err: any) {
       console.error('Onboarding error:', err);
       
@@ -398,7 +408,7 @@ const BusinessOnboarding = () => {
               required
             />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">City *</label>
               <input
@@ -406,19 +416,41 @@ const BusinessOnboarding = () => {
                 value={formData.city}
                 onChange={(e) => handleInputChange('city', e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="New York"
+                placeholder="Dubai"
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">State</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">State/Region</label>
               <input
                 type="text"
                 value={formData.state}
                 onChange={(e) => handleInputChange('state', e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="NY"
+                placeholder="Dubai Emirate"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Country *</label>
+              <select
+                value={formData.country}
+                onChange={(e) => handleInputChange('country', e.target.value)}
+                className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                required
+              >
+                <option value="UAE">United Arab Emirates</option>
+                <option value="Saudi Arabia">Saudi Arabia</option>
+                <option value="Qatar">Qatar</option>
+                <option value="Kuwait">Kuwait</option>
+                <option value="Bahrain">Bahrain</option>
+                <option value="Oman">Oman</option>
+                <option value="Egypt">Egypt</option>
+                <option value="Jordan">Jordan</option>
+                <option value="Lebanon">Lebanon</option>
+                <option value="Pakistan">Pakistan</option>
+                <option value="India">India</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Postal Code</label>
@@ -427,7 +459,7 @@ const BusinessOnboarding = () => {
                 value={formData.postalCode}
                 onChange={(e) => handleInputChange('postalCode', e.target.value)}
                 className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="10001"
+                placeholder="12345"
               />
             </div>
           </div>
@@ -585,7 +617,7 @@ const BusinessOnboarding = () => {
             <h4 className="font-semibold text-gray-900 mb-2">Business Information</h4>
             <p><strong>Name:</strong> {formData.businessName}</p>
             <p><strong>Type:</strong> {formData.businessType}</p>
-            <p><strong>Address:</strong> {formData.address}, {formData.city}, {formData.state} {formData.postalCode}</p>
+            <p><strong>Address:</strong> {formData.address}, {formData.city}, {formData.state ? formData.state + ', ' : ''}{formData.country} {formData.postalCode}</p>
             <p><strong>Contact:</strong> {formData.email} | {formData.phone}</p>
           </div>
           <div>
