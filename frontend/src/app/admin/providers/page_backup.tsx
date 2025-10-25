@@ -47,6 +47,7 @@ export default function AdminProviders() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedProvider, setSelectedProvider] = useState<any>(null);
   const limit = 10;
 
   // RTK Query hooks
@@ -122,6 +123,15 @@ export default function AdminProviders() {
     }
   };
 
+  const getVerificationColor = (status: string) => {
+    switch (status) {
+      case 'verified': return 'bg-green-100 text-green-800';
+      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'rejected': return 'bg-red-100 text-red-800';
+      default: return 'bg-gray-100 text-gray-800';
+    }
+  };
+
   // Show loading state if no data and still loading
   if (isLoading && providers.length === 0) {
     return (
@@ -174,6 +184,17 @@ export default function AdminProviders() {
 
   const handleViewFullProfile = (providerId: string) => {
     router.push(`/admin/providers/${providerId}`);
+  };
+
+  const handleVerificationChange = async (providerId: string, newVerification: string) => {
+    try {
+      // This would be implemented when verification API is available
+      console.log(`Updating verification for ${providerId} to ${newVerification}`);
+      alert(`Verification status would be updated to ${newVerification}`);
+    } catch (error) {
+      console.error('Failed to update verification:', error);
+      alert('Failed to update verification status');
+    }
   };
 
   const handleExportProviders = () => {
@@ -239,9 +260,246 @@ export default function AdminProviders() {
       
     } catch (error) {
       console.error('Export failed:', error);
-      alert('Failed to export providers. Please try again.');
+            alert('Failed to export providers. Please try again.');
     }
   };
+
+  // Mock categories since AdminUser doesn't have category field  
+  const categories = ['Cleaning', 'Maintenance', 'Repairs', 'Other'];
+
+  return (
+    }
+  };
+
+  // Mock categories since AdminUser doesn't have category field
+  const categories = ['Cleaning', 'Maintenance', 'Repairs', 'Other'];
+    <div className="fixed inset-0 bg-black/40 bg-opacity-50 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-xl max-w-5xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">Provider Details - {provider.id}</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 cursor-pointer hover:text-gray-600 text-2xl"
+            >
+              ×
+            </button>
+          </div>
+        </div>
+        
+        <div className="p-6">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Business Information */}
+            <div className="lg:col-span-2 space-y-6">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Business Information</h3>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Business Name</label>
+                      <p className="text-gray-900 font-medium">{provider.businessName}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Owner Name</label>
+                      <p className="text-gray-900">{provider.ownerName}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Category</label>
+                      <p className="text-gray-900">{provider.category}</p>
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Join Date</label>
+                      <p className="text-gray-900">{provider.joinDate}</p>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Address</label>
+                    <p className="text-gray-900">{provider.address}</p>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Working Hours</label>
+                    <p className="text-gray-900">{provider.workingHours}</p>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Contact Information</h3>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <div className="flex items-center">
+                    <Mail className="h-4 w-4 text-gray-400 mr-3" />
+                    <span className="text-gray-900">{provider.email}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Phone className="h-4 w-4 text-gray-400 mr-3" />
+                    <span className="text-gray-900">{provider.phone}</span>
+                  </div>
+                  <div className="flex items-center">
+                    <MapPin className="h-4 w-4 text-gray-400 mr-3" />
+                    <span className="text-gray-900">{provider.address}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Services Offered</h3>
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <div className="flex flex-wrap gap-2 pb-2">
+                    {provider.services.map((service: string, index: number) => (
+                      <span key={index} className="px-3 py-1  bg-blue-100 text-blue-800 text-sm rounded-full">
+                        {service}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Document Verification</h3>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Business License:</span>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getVerificationColor(provider.documents.businessLicense)}`}>
+                      {provider.documents.businessLicense}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Insurance:</span>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getVerificationColor(provider.documents.insurance)}`}>
+                      {provider.documents.insurance}
+                    </span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-600">Certifications:</span>
+                    <span className={`px-2 py-1 text-xs font-medium rounded-full ${getVerificationColor(provider.documents.certifications)}`}>
+                      {provider.documents.certifications}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Status and Actions */}
+            <div className="space-y-6">
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Status & Performance</h3>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-4">
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Current Status</label>
+                    <span className={`block mt-1 px-2 py-1 text-xs font-medium rounded-full w-fit ${getStatusColor(provider.status)}`}>
+                      {provider.status}
+                    </span>
+                  </div>
+                  
+                  <div>
+                    <label className="text-sm font-medium text-gray-600">Verification</label>
+                    <span className={`block mt-1 px-2 py-1 text-xs font-medium rounded-full w-fit ${getVerificationColor(provider.verification)}`}>
+                      {provider.verification}
+                    </span>
+                  </div>
+
+                  {provider.rating > 0 && (
+                    <div>
+                      <label className="text-sm font-medium text-gray-600">Rating</label>
+                      <div className="flex items-center mt-1">
+                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                        <span className="ml-1 text-gray-900 font-medium">{provider.rating}</span>
+                        <span className="ml-1 text-gray-600 text-sm">({provider.totalReviews} reviews)</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Business Stats</h3>
+                <div className="bg-gray-50 rounded-lg p-4 space-y-3">
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Bookings:</span>
+                    <span className="font-medium text-gray-900">{(provider.totalBookings || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Total Earnings:</span>
+                    <span className="font-medium text-gray-900">${(provider.totalEarnings || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Reviews:</span>
+                    <span className="font-medium text-gray-900">{provider.totalReviews}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <h3 className="text-lg font-medium text-gray-900 mb-4">Actions</h3>
+                <div className="space-y-2">
+                  {provider.status === 'pending' && (
+                    <>
+                      <button 
+                        onClick={() => handleStatusChange(provider.id, 'active')}
+                        className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+                      >
+                        Approve Provider
+                      </button>
+                      <button 
+                        onClick={() => handleStatusChange(provider.id, 'suspended')}
+                        className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      >
+                        Reject Provider
+                      </button>
+                    </>
+                  )}
+                  
+                  {provider.status === 'active' && (
+                    <button 
+                      onClick={() => handleStatusChange(provider.id, 'suspended')}
+                      className="w-full px-4 py-2 cursor-pointer bg-red-600 mb-4 text-white rounded-lg hover:bg-red-700"
+                    >
+                      Suspend Provider
+                    </button>
+                  )}
+                  
+                  {provider.status === 'suspended' && (
+                    <button 
+                      onClick={() => handleStatusChange(provider.id, 'active')}
+                      className="w-full px-4 py-2  bg-green-600 text-white rounded-lg hover:bg-green-700"
+                    >
+                      Reactivate Provider
+                    </button>
+                  )}
+
+                  {provider.verification === 'pending' && (
+                    <>
+                      <button 
+                        onClick={() => handleVerificationChange(provider.id, 'verified')}
+                        className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                      >
+                        Verify Documents
+                      </button>
+                      <button 
+                        onClick={() => handleVerificationChange(provider.id, 'rejected')}
+                        className="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      >
+                        Reject Verification
+                      </button>
+                    </>
+                  )}
+
+                  <button className="w-full px-4 py-2 mb-4 cursor-pointer bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                    Send Message
+                  </button>
+                  <button className="w-full px-4 py-2 mb-4 cursor-pointer bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                    View Full Profile
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   // Mock categories since AdminUser doesn't have category field  
   const categories = ['Cleaning', 'Maintenance', 'Repairs', 'Other'];

@@ -112,7 +112,7 @@ export class User {
   updatedAt: Date;
 
   // Relationships
-  @OneToMany(() => OAuthAccount, (oauthAccount) => oauthAccount.user)
+  @OneToMany(() => OAuthAccount, (oauthAccount) => oauthAccount.user, { cascade: true })
   oauthAccounts: OAuthAccount[];
 
   @OneToOne(() => Provider, (provider) => provider.user)
@@ -125,7 +125,7 @@ export class User {
   // @OneToMany(() => Review, (review) => review.customer)
   // reviews: Review[];
 
-  @OneToMany(() => Favorite, (favorite) => favorite.user)
+  @OneToMany(() => Favorite, (favorite) => favorite.user, { cascade: true })
   favorites: Favorite[];
 
   // @OneToMany(() => Notification, (notification) => notification.user)
@@ -137,7 +137,7 @@ export class User {
   // @OneToMany(() => CalendarAccount, (calendar) => calendar.user)
   // calendarAccounts: CalendarAccount[];
 
-  @ManyToMany(() => Role, (role) => role.users)
+  @ManyToMany(() => Role, (role) => role.users, { cascade: true })
   @JoinTable({
     name: 'user_roles',
     joinColumn: { name: 'userId', referencedColumnName: 'id' },
@@ -145,10 +145,10 @@ export class User {
   })
   roles: Role[];
 
-  @OneToMany(() => CartItem, (cartItem) => cartItem.user)
+  @OneToMany(() => CartItem, (cartItem) => cartItem.user, { cascade: true })
   cartItems: CartItem[];
 
-  @OneToMany(() => PaymentMethod, (paymentMethod) => paymentMethod.user)
+  @OneToMany(() => PaymentMethod, (paymentMethod) => paymentMethod.user, { cascade: true })
   paymentMethods: PaymentMethod[];
 
   // Virtual properties

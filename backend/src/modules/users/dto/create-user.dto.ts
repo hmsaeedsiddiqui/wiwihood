@@ -99,4 +99,48 @@ export class CreateUserDto {
   @IsOptional()
   @IsBoolean()
   isPhoneVerified?: boolean;
+
+  @ApiProperty({
+    description: 'User address',
+    example: '123 Main Street',
+    required: false,
+    maxLength: 500,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  address?: string;
+
+  @ApiProperty({
+    description: 'User city',
+    example: 'New York',
+    required: false,
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  city?: string;
+
+  @ApiProperty({
+    description: 'User country',
+    example: 'United States',
+    required: false,
+    maxLength: 100,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  country?: string;
+
+  @ApiProperty({
+    description: 'User postal code',
+    example: '10001',
+    required: false,
+    maxLength: 20,
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(20)
+  postalCode?: string;
 }

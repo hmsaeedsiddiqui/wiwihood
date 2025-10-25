@@ -18,6 +18,7 @@ import { userApi } from './api/userApi'
 import { providersApi } from './api/providersApi'
 import { adminCategoriesApi } from './api/adminCategoriesApi'
 import { adminServicesApi } from './api/adminServicesApi'
+import { adminUsersApi } from './api/adminUsersApi'
 import { bookingsApi } from './api/bookingsApi'
 import { stripeApi } from './api/stripeApi'
 
@@ -38,6 +39,7 @@ const rootReducer = combineReducers({
   [providersApi.reducerPath]: providersApi.reducer,
   [adminCategoriesApi.reducerPath]: adminCategoriesApi.reducer,
   [adminServicesApi.reducerPath]: adminServicesApi.reducer,
+  [adminUsersApi.reducerPath]: adminUsersApi.reducer,
   [bookingsApi.reducerPath]: bookingsApi.reducer,
   [stripeApi.reducerPath]: stripeApi.reducer,
 })
@@ -57,6 +59,7 @@ export const store = configureStore({
       providersApi.middleware, 
       adminCategoriesApi.middleware, 
       adminServicesApi.middleware,
+      adminUsersApi.middleware,
       bookingsApi.middleware,
       stripeApi.middleware
     ),

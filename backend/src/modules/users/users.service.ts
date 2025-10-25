@@ -9,6 +9,7 @@ import { Repository, Like } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { User } from '../../entities/user.entity';
 import { UserNotificationPreferences } from '../../entities/user-notification-preferences.entity';
+import { BookingStatus } from '../../entities/booking.entity';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
@@ -146,13 +147,64 @@ export class UsersService {
   async remove(id: string): Promise<void> {
     const user = await this.userRepository.findOne({
       where: { id },
+      relations: [
+        'bookings',
+        'favorites', 
+        'supportTickets',
+        'cartItems',
+        'paymentMethods',
+        'oauthAccounts',
+        'provider'
+      ]
     });
 
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
-    await this.userRepository.remove(user);
+    // Check if user has critical relationships that prevent deletion
+    if (user.bookings && user.bookings.length > 0) {
+      // Check if there are any active/pending bookings
+      const activeBookings = user.bookings.filter(booking => 
+        booking && booking.status && (booking.status === BookingStatus.CONFIRMED || booking.status === BookingStatus.PENDING)
+      );
+      if (activeBookings.length > 0) {
+        throw new BadRequestException(
+          `Cannot delete user with ${activeBookings.length} active booking(s). Please cancel or complete bookings first.`
+        );
+      }
+    }
+
+    // For providers, allow deletion for now (simplified check)
+    // TODO: Re-implement proper provider dependency checking
+    if (user.provider) {
+      console.log('Deleting user with provider - skipping dependency check for now');
+      // Allow deletion to proceed
+    }
+
+    try {
+      // Delete related entities first to avoid foreign key constraints
+      // Note: Some relationships should have CASCADE delete in the entity definitions
+      
+      // Delete notification preferences first
+      await this.notificationPreferencesRepository.delete({ userId: id });
+      
+      // The user entity relationships should handle cascading for:
+      // - favorites (should cascade)
+      // - cart items (should cascade) 
+      // - payment methods (should cascade)
+      // - oauth accounts (should cascade)
+      // - support tickets (should cascade, but might want to keep for audit)
+      
+      await this.userRepository.remove(user);
+    } catch (error) {
+      if (error.code === '23503') { // Foreign key violation
+        throw new BadRequestException(
+          'Cannot delete user due to existing related data. Please contact administrator.'
+        );
+      }
+      throw error;
+    }
   }
 
   // Settings Methods
@@ -370,6 +422,12 @@ export class UsersService {
       role: user.role,
       status: user.status,
       profilePicture: user.profilePicture,
+      dateOfBirth: user.dateOfBirth,
+      address: user.address,
+      city: user.city,
+      country: user.country,
+      postalCode: user.postalCode,
+      timezone: user.timezone,
       isEmailVerified: user.isEmailVerified,
       isPhoneVerified: user.isPhoneVerified,
       createdAt: user.createdAt,
