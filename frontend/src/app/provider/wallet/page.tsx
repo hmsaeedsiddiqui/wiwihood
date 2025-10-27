@@ -11,7 +11,13 @@ import {
   Download,
   Filter,
   Search,
-  MoreHorizontal
+  MoreHorizontal,
+  Plus,
+  ArrowUpRight,
+  Users,
+  Clock,
+  CheckCircle,
+  XCircle
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -19,36 +25,178 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { toast } from 'react-hot-toast'
 import { 
   useGetProviderGiftCardSalesQuery,
-  useGetProviderGiftCardStatsQuery 
+  useGetProviderGiftCardStatsQuery,
+  useCreateGiftCardMutation
 } from '@/store/api/giftCardsApi'
+
+interface CreateGiftCardModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onSuccess: () => void;
+}
+
+const CreateGiftCardModal: React.FC<CreateGiftCardModalProps> = ({ isOpen, onClose, onSuccess }) => {
+  const [formData, setFormData] = useState({
+    amount: '',
+    recipientEmail: '',
+    recipientName: '',
+    personalMessage: '',
+    purchaserEmail: 'provider@wiwihood.com', // Provider's email
+    purchaserName: 'Provider Account'
+  });
+
+  const [createGiftCard, { isLoading: isCreating }] = useCreateGiftCardMutation();
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    try {
+      await createGiftCard({
+        amount: parseFloat(formData.amount),
+        purchaserEmail: formData.purchaserEmail,
+        purchaserName: formData.purchaserName,
+        recipientEmail: formData.recipientEmail,
+        recipientName: formData.recipientName,
+        personalMessage: formData.personalMessage,
+        paymentIntentId: `pi_provider_${Date.now()}` // Mock payment for provider creation
+      }).unwrap();
+      
+      toast.success('Gift card created successfully!');
+      onSuccess();
+      onClose();
+      setFormData({
+        amount: '',
+        recipientEmail: '',
+        recipientName: '',
+        personalMessage: '',
+        purchaserEmail: 'provider@wiwihood.com',
+        purchaserName: 'Provider Account'
+      });
+    } catch (error: any) {
+      toast.error(error?.data?.message || 'Failed to create gift card');
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 bg-black bg-opacity-50 flex items-center justify-center p-4">
+      <div className="bg-white rounded-lg max-w-md w-full max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-bold text-gray-900">Create Gift Card</h2>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <XCircle className="h-6 w-6" />
+            </button>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Gift Card Amount *
+              </label>
+              <div className="relative">
+                <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  type="number"
+                  min="10"
+                  max="1000"
+                  step="0.01"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                  className="pl-9"
+                  placeholder="0.00"
+                  required
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Recipient Email *
+              </label>
+              <Input
+                type="email"
+                value={formData.recipientEmail}
+                onChange={(e) => setFormData({ ...formData, recipientEmail: e.target.value })}
+                placeholder="customer@example.com"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Recipient Name
+              </label>
+              <Input
+                type="text"
+                value={formData.recipientName}
+                onChange={(e) => setFormData({ ...formData, recipientName: e.target.value })}
+                placeholder="Customer Name"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Personal Message
+              </label>
+              <textarea
+                value={formData.personalMessage}
+                onChange={(e) => setFormData({ ...formData, personalMessage: e.target.value })}
+                placeholder="Thank you for your business! Enjoy your gift card."
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                rows={3}
+              />
+            </div>
+
+            <div className="flex gap-3 mt-6">
+              <Button
+                type="submit"
+                disabled={isCreating || !formData.amount || !formData.recipientEmail}
+                className="flex-1"
+              >
+                {isCreating ? 'Creating...' : 'Create Gift Card'}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onClose}
+                className="flex-1"
+              >
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function WalletPage() {
   const [dateRange, setDateRange] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [showCreateModal, setShowCreateModal] = useState(false)
 
-  const { data: giftCardStats, isLoading: isLoadingStats } = useGetProviderGiftCardStatsQuery({
+  const { data: giftCardStats, isLoading: isLoadingStats, refetch: refetchStats } = useGetProviderGiftCardStatsQuery({
     period: dateRange
   })
   
-  const { data: giftCardSales, isLoading: isLoadingSales } = useGetProviderGiftCardSalesQuery({
+  const { data: giftCardSales, isLoading: isLoadingSales, refetch: refetchSales } = useGetProviderGiftCardSalesQuery({
     page: 1,
     limit: 100
   })
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: 'USD'
-    }).format(amount)
-  }
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active': return 'bg-green-100 text-green-800'
-      case 'redeemed': return 'bg-blue-100 text-blue-800'
-      case 'partially_redeemed': return 'bg-yellow-100 text-yellow-800'
+  const handleGiftCardSuccess = () => {
+    refetchStats();
+    refetchSales();
+  };
       case 'canceled': return 'bg-red-100 text-red-800'
       case 'expired': return 'bg-gray-100 text-gray-800'
       default: return 'bg-gray-100 text-gray-800'
