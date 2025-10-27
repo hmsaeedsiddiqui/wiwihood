@@ -259,7 +259,9 @@ export const useRoleBasedLogin = () => {
         markProviderAsRegistered()
         
         toast.success(`Welcome back, ${authResult.user.firstName}!`)
-        router.push('/provider/dashboard')
+        
+        // Check if onboarding is complete before redirecting
+        await checkProviderOnboardingStatus(authResult.accessToken)
       } else if (userRole === 'customer') {
         localStorage.setItem('accessToken', authResult.accessToken)
         localStorage.setItem('user', JSON.stringify(authResult.user))
@@ -423,6 +425,47 @@ export const useAuthStatus = () => {
 
   return state
 }
+
+// Helper function to check provider onboarding status
+const checkProviderOnboardingStatus = async (token: string) => {
+  try {
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/providers/me`,
+      {
+        headers: { 
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include'
+      }
+    );
+
+    if (response.ok) {
+      const provider = await response.json();
+      const requiredFields = ['businessName', 'address', 'city', 'country'];
+      const missingFields = requiredFields.filter(field => !provider[field]);
+
+      if (missingFields.length === 0) {
+        // Onboarding complete, go to dashboard
+        window.location.href = '/provider/dashboard';
+      } else {
+        // Onboarding incomplete, go to onboarding
+        window.location.href = '/provider/onboarding';
+      }
+    } else if (response.status === 404) {
+      // No provider profile exists yet (404), go to onboarding
+      console.log('No provider profile found (404), redirecting to onboarding');
+      window.location.href = '/provider/onboarding';
+    } else {
+      // Other error, go to onboarding
+      console.log('Error checking provider profile:', response.status);
+      window.location.href = '/provider/onboarding';
+    }
+  } catch (error) {
+    // Error checking profile, go to onboarding to be safe
+    window.location.href = '/provider/onboarding';
+  }
+};
 
 // Aliases for backward compatibility
 export const useLogin = useRoleBasedLogin

@@ -370,16 +370,10 @@ const SettingsPage = () => {
 
   // --- Render Profile Settings (Optimized for Mobile) ---
   const renderProfileSettings = () => (
-    <div className="flex flex-col gap-6">
-      <h2 className={`${isMobile ? 'text-xl' : 'text-2xl'} font-semibold text-slate-800 m-0`}>
-        Profile Settings
-      </h2>
-
+    <div className="space-y-6">
       {/* Business Logo */}
-      <div className={`bg-white rounded-xl border border-slate-200 ${isMobile ? 'p-4' : 'p-6'}`}>
-        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-slate-800 mb-4`}>
-          Business Logo
-        </h3>
+      <div className="border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4">Business Logo</h3>
         <div className={`flex ${isMobile ? 'flex-col items-start gap-4' : 'flex-row items-center gap-5'}`}>
           {providerProfile?.logo ? (
             <img 
@@ -404,7 +398,7 @@ const SettingsPage = () => {
               <button 
                 onClick={() => logoInputRef.current?.click()}
                 disabled={uploadLogoLoading}
-                className="bg-green-500 text-white px-4 py-2 rounded-md border-none text-sm font-medium cursor-pointer disabled:opacity-50 flex items-center gap-2"
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg border-none text-sm font-medium cursor-pointer disabled:opacity-50 flex items-center gap-2 hover:bg-blue-700 transition-colors"
               >
                 {uploadLogoLoading ? (
                   <>
@@ -421,7 +415,7 @@ const SettingsPage = () => {
               {providerProfile?.logo && (
                 <button 
                   onClick={handleRemoveLogo}
-                  className="bg-transparent text-red-500 px-4 py-2 rounded-md border border-red-200 text-sm font-medium cursor-pointer hover:bg-red-50 flex items-center gap-2"
+                  className="border border-gray-300 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors flex items-center gap-2"
                 >
                   <X className="h-4 w-4" />
                   Remove
@@ -492,16 +486,15 @@ const SettingsPage = () => {
       </div>
 
       {/* Personal Information */}
-      <div className={`bg-white rounded-xl border border-slate-200 ${isMobile ? 'p-4' : 'p-6'}`}>
-        <h3 className={`${isMobile ? 'text-base' : 'text-lg'} font-semibold text-slate-800 mb-5`}>
+      <div className="border border-gray-200 rounded-lg p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-5">
           Personal Information
         </h3>
-        {/* Change grid to single column on mobile */}
-        <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-5`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* First Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              First Name
+              First Name *
             </label>
             <input
               type="text"
@@ -510,14 +503,14 @@ const SettingsPage = () => {
                 ...prev, 
                 ownerName: `${e.target.value} ${userProfile?.lastName || ''}`
               }))}
-              className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm outline-none`}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter first name"
             />
           </div>
           {/* Last Name */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2">
-              Last Name
+              Last Name *
             </label>
             <input
               type="text"
@@ -526,7 +519,7 @@ const SettingsPage = () => {
                 ...prev, 
                 ownerName: `${userProfile?.firstName || ''} ${e.target.value}`
               }))}
-              className={`w-full ${isMobile ? 'px-2.5 py-2' : 'px-3 py-2.5'} rounded-md border border-slate-200 text-sm outline-none`}
+              className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               placeholder="Enter last name"
             />
           </div>
@@ -917,122 +910,108 @@ const SettingsPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Enhanced Header */}
-      <div className="bg-gradient-to-r from-orange-500 via-pink-500 to-purple-600 relative overflow-hidden">
-        <div className="absolute inset-0 bg-black/10"></div>
-        <div className="relative max-w-7xl mx-auto px-6 py-8">
-          <div className="text-white">
-            <h1 className="text-4xl font-bold mb-2 drop-shadow-lg flex items-center">
-              <Settings className="mr-3 h-10 w-10" />
-              Settings
-            </h1>
-            <p className="text-white/90 text-lg">Manage your account settings and preferences</p>
-          </div>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+      {/* Header matching onboarding style */}
+      <div className="py-8 px-4">
+        <div className="max-w-4xl mx-auto text-center mb-8">
+          <h1 className="text-3xl font-bold text-gray-900 mb-2">Provider Settings</h1>
+          <p className="text-gray-600">Manage your business profile and account settings</p>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div className="max-w-4xl mx-auto px-4">
 
-        {/* Enhanced Main Content Grid */}
-        <div className={`grid ${isMobile ? 'grid-cols-1 gap-6' : 'grid-cols-[320px_1fr] gap-8'}`}>
-          
-          {/* Enhanced Settings Navigation */}
-          <div className="bg-white rounded-2xl shadow-lg border border-gray-100 h-fit p-6">
-            <h3 className="text-lg font-bold text-gray-900 mb-6">Settings Menu</h3>
-            <nav className={`flex ${isMobile ? 'flex-row gap-2 overflow-x-auto pb-2' : 'flex-col gap-2'}`}>
-              {settingSections.map(section => {
-                const IconComponent = section.icon;
-                return (
-                  <button
-                    key={section.id}
-                    onClick={() => setActiveSection(section.id)}
-                    className={`flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-all font-medium ${
-                      activeSection === section.id
-                        ? 'bg-gradient-to-r from-orange-500 to-pink-600 text-white shadow-lg'
-                        : 'text-gray-700 hover:bg-gray-50 hover:text-orange-600'
-                    } ${isMobile ? 'min-w-max' : 'w-full'}`}
-                  >
-                    <IconComponent className="h-5 w-5" />
-                    <span className={isMobile ? 'text-sm' : 'text-base'}>{section.label}</span>
-                  </button>
-                );
-              })}
-            </nav>
+        {/* Navigation Tabs - Onboarding Style */}
+        <div className="flex justify-center mb-8">
+          <div className="bg-white rounded-lg shadow-lg p-2 flex space-x-2">
+            {settingSections.map(section => {
+              const IconComponent = section.icon;
+              return (
+                <button
+                  key={section.id}
+                  onClick={() => setActiveSection(section.id)}
+                  className={`flex items-center space-x-2 px-6 py-3 rounded-lg text-sm font-medium transition-all ${
+                    activeSection === section.id
+                      ? 'bg-blue-600 text-white shadow-md'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-blue-600'
+                  }`}
+                >
+                  <IconComponent className="h-4 w-4" />
+                  <span className={isMobile ? 'hidden' : 'inline'}>{section.label}</span>
+                </button>
+              );
+            })}
           </div>
+        </div>
 
-          {/* Enhanced Settings Content */}
-          <div className="relative">
-            {/* Provider Setup Notice */}
-            {!providerProfile && !providerLoading && (
-              <div className="mb-6 bg-orange-50 border border-orange-200 rounded-xl p-4">
-                <div className="flex items-center">
-                  <div className="text-orange-600 mr-3">🚀</div>
-                  <div>
-                    <p className="text-orange-700 font-medium">Complete Your Provider Setup</p>
-                    <p className="text-orange-600 text-sm">
-                      No provider profile found. Fill in your business information and click "Save Changes" to create your provider profile.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-           
-
-            {profileError && (
-              <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4">
-                <div className="flex items-center">
-                  <AlertTriangle className="h-5 w-5 text-red-600 mr-3" />
-                  <div>
-                    <p className="text-red-700 font-medium">Profile Loading Error</p>
-                    <p className="text-red-600 text-sm">
-                      Failed to load profile data. Please try again.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {showSaveSuccess && (
-              <div className="mb-6 bg-green-50 border border-green-200 rounded-xl p-4">
-                <div className="flex items-center">
-                  <div className="text-green-600 mr-3">✅</div>
-                  <p className="text-green-700">Settings saved successfully!</p>
-                </div>
-              </div>
-            )}
-
-            {renderSection()}
-            
-            {/* Enhanced Save Button Bar */}
-            <div className="mt-8 flex justify-end gap-4 bg-white rounded-xl border border-gray-100 p-6">
-              <button 
-                className="px-6 py-3 text-gray-600 bg-gray-100 rounded-xl hover:bg-gray-200 transition-colors font-medium"
-                onClick={refetchProfile}
-              >
-                <RefreshCw className="mr-2 h-4 w-4" />
-                Refresh
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={updateLoading || updateProviderLoading || createProviderLoading || validationErrors.website !== ''}
-                className="px-8 py-3 bg-gradient-to-r from-orange-500 to-pink-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold flex items-center disabled:opacity-50"
-              >
-                {(updateLoading || updateProviderLoading || createProviderLoading) ? (
-                  <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
-                    Saving...
-                  </>
-                ) : (
-                  <>
-                    <Save className="mr-2 h-4 w-4" />
-                    Save Changes
-                  </>
-                )}
-              </button>
+        {/* Settings Content - Onboarding Card Style */}
+        <div className="bg-white rounded-lg shadow-lg p-8 mb-8">
+          <div className="mb-6">
+            <h2 className="text-2xl font-semibold text-gray-900">{
+              activeSection === 'profile' ? 'Profile Settings' :
+              activeSection === 'account' ? 'Account & Security' :
+              activeSection === 'notifications' ? 'Notification Preferences' : 'Settings'
+            }</h2>
+            <div className="text-sm text-gray-500 mt-1">
+              {activeSection === 'profile' ? 'Manage your business profile and contact information' :
+               activeSection === 'account' ? 'Update your password and security settings' :
+               activeSection === 'notifications' ? 'Configure your notification preferences' : 'Manage your settings'}
             </div>
           </div>
+
+          {/* Provider Setup Notice */}
+          {!providerProfile && !providerLoading && activeSection === 'profile' && (
+            <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+              <p className="text-orange-800">
+                🚀 <strong>Complete Your Provider Setup:</strong> Fill in your business information and click "Save Changes" to create your provider profile.
+              </p>
+            </div>
+          )}
+
+          {profileError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+              <p className="text-red-800">
+                ❌ <strong>Profile Loading Error:</strong> Failed to load profile data. Please try again.
+              </p>
+            </div>
+          )}
+
+          {showSaveSuccess && (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <p className="text-green-800">✅ Settings saved successfully!</p>
+            </div>
+          )}
+
+          {renderSection()}
+        </div>
+
+        {/* Navigation Buttons - Onboarding Style */}
+        <div className="flex justify-between items-center">
+          <button
+            onClick={refetchProfile}
+            className="flex items-center px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Refresh Data
+          </button>
+
+          <button
+            onClick={handleSave}
+            disabled={updateLoading || updateProviderLoading || createProviderLoading || validationErrors.website !== ''}
+            className="flex items-center px-8 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            {(updateLoading || updateProviderLoading || createProviderLoading) ? (
+              <>
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4 mr-2" />
+                Save Changes
+              </>
+            )}
+          </button>
         </div>
       </div>
     </div>

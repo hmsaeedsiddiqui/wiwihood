@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Calendar, Clock, DollarSign, User, Bell, MapPin, Star, TrendingUp, Package, Eye } from "lucide-react";
 import QRTIntegration from "@/utils/qrtIntegration";
+import axios from "axios";
 
 interface Appointment {
   id: string;
@@ -38,6 +39,65 @@ export default function ProviderDashboard() {
   const [loading, setLoading] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [onboardingCheck, setOnboardingCheck] = useState(true);
+
+  // Check if onboarding is complete before allowing dashboard access
+  useEffect(() => {
+    const checkOnboardingStatus = async () => {
+      try {
+        const token = localStorage.getItem("providerToken");
+        if (!token) {
+          router.push('/auth/provider/login');
+          return;
+        }
+
+        // Check if provider profile exists
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/providers/me`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true
+          }
+        );
+
+        if (!response.data) {
+          // No provider profile found, redirect to onboarding
+          router.push('/provider/onboarding');
+          return;
+        }
+
+        // Check if provider has minimum required data for dashboard access
+        const provider = response.data;
+        const requiredFields = ['businessName', 'address', 'city', 'country'];
+        const missingFields = requiredFields.filter(field => !provider[field]);
+
+        if (missingFields.length > 0) {
+          // Incomplete profile, redirect to onboarding
+          console.log('Incomplete provider profile, redirecting to onboarding');
+          router.push('/provider/onboarding');
+          return;
+        }
+
+        // Onboarding is complete, allow dashboard access
+        setOnboardingCheck(false);
+        
+      } catch (error: any) {
+        console.error('Error checking onboarding status:', error);
+        
+        // Check if it's a 404 error (no provider profile exists yet)
+        if (error.response?.status === 404) {
+          console.log('No provider profile found (404), redirecting to onboarding');
+          router.push('/provider/onboarding');
+        } else {
+          // Other errors, redirect to onboarding to be safe
+          console.log('Other error occurred, redirecting to onboarding:', error.message);
+          router.push('/provider/onboarding');
+        }
+      }
+    };
+
+    checkOnboardingStatus();
+  }, [router]);
 
   // Action Handlers for Business Dashboard
   const handleAddToCalendar = async () => {
@@ -183,6 +243,19 @@ export default function ProviderDashboard() {
     .filter(apt => apt.status === 'confirmed' || apt.status === 'pending')
     .sort((a, b) => new Date(`${a.date} ${a.time}`).getTime() - new Date(`${b.date} ${b.time}`).getTime())
     .slice(0, 5);
+
+  // Show loading while checking onboarding status
+  if (onboardingCheck) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center">
+        <div className="text-center bg-white p-8 rounded-2xl shadow-xl">
+          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold text-gray-900 mb-2">Checking Profile Status</h2>
+          <p className="text-gray-600">Please wait while we verify your setup...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

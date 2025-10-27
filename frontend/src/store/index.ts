@@ -21,6 +21,7 @@ import { adminServicesApi } from './api/adminServicesApi'
 import { adminUsersApi } from './api/adminUsersApi'
 import { bookingsApi } from './api/bookingsApi'
 import { stripeApi } from './api/stripeApi'
+import { formsApi } from './api/forms'
 
 // Root reducer combining all slices
 const rootReducer = combineReducers({  
@@ -42,6 +43,7 @@ const rootReducer = combineReducers({
   [adminUsersApi.reducerPath]: adminUsersApi.reducer,
   [bookingsApi.reducerPath]: bookingsApi.reducer,
   [stripeApi.reducerPath]: stripeApi.reducer,
+  [formsApi.reducerPath]: formsApi.reducer,
 })
 
 // Configure store
@@ -61,7 +63,8 @@ export const store = configureStore({
       adminServicesApi.middleware,
       adminUsersApi.middleware,
       bookingsApi.middleware,
-      stripeApi.middleware
+      stripeApi.middleware,
+      formsApi.middleware
     ),
   devTools: process.env.NODE_ENV !== 'production',
 })

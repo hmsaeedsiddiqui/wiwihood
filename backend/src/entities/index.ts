@@ -49,3 +49,9 @@ export { RecurringBooking, RecurringBookingException } from './recurring-booking
 export { Staff } from './staff.entity';
 export { StaffAvailability } from './staff-availability.entity';
 export { ExternalCalendarIntegration } from './external-calendar-integration.entity';
+
+// Forms entities
+export { FormTemplate } from './form-template.entity';
+export { FormField } from './form-field.entity';
+export { FormSubmission } from './form-submission.entity';
+export { FormResponse } from './form-response.entity';

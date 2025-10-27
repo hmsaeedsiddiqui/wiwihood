@@ -44,6 +44,7 @@ import { PromotionsModule } from './modules/promotions/promotions.module';
 import { StaffModule } from './modules/staff/staff.module';
 import { TimeBlocksModule } from './modules/time-blocks/time-blocks.module';
 import { RecurringAppointmentsModule } from './modules/recurring-appointments/recurring-appointments.module';
+import { FormsModule } from './modules/forms/forms.module';
 
 @Module({
   imports: [
@@ -108,6 +109,7 @@ import { RecurringAppointmentsModule } from './modules/recurring-appointments/re
     StaffModule, // Register StaffModule
     TimeBlocksModule, // Register TimeBlocksModule
     RecurringAppointmentsModule, // Register RecurringAppointmentsModule
+    FormsModule, // Register FormsModule
   ],
   controllers: [AppController, PaymentController],
   providers: [AppService, PaymentService],

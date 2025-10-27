@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Calendar, Clock, DollarSign, MapPin, Store, CheckCircle, ArrowRight, ArrowLeft } from "lucide-react";
+import { Store, CheckCircle, ArrowRight, ArrowLeft, MapPin } from "lucide-react";
 import axios from "axios";
 
 interface BusinessOnboardingData {
@@ -21,24 +21,6 @@ interface BusinessOnboardingData {
   state: string;
   country: string;
   postalCode: string;
-  
-  // Services
-  services: Array<{
-    name: string;
-    description: string;
-    price: number;
-    duration: number;
-    category: string;
-  }>;
-  
-  // Availability
-  workingHours: {
-    [key: string]: {
-      start: string;
-      end: string;
-      isOpen: boolean;
-    };
-  };
 }
 
 const BusinessOnboarding = () => {
@@ -61,19 +43,7 @@ const BusinessOnboarding = () => {
     city: "",
     state: "",
     country: "UAE",
-    postalCode: "",
-    services: [
-      { name: "", description: "", price: 0, duration: 60, category: "hair-services" }
-    ],
-    workingHours: {
-      monday: { start: "09:00", end: "17:00", isOpen: true },
-      tuesday: { start: "09:00", end: "17:00", isOpen: true },
-      wednesday: { start: "09:00", end: "17:00", isOpen: true },
-      thursday: { start: "09:00", end: "17:00", isOpen: true },
-      friday: { start: "09:00", end: "17:00", isOpen: true },
-      saturday: { start: "09:00", end: "15:00", isOpen: true },
-      sunday: { start: "10:00", end: "14:00", isOpen: false }
-    }
+    postalCode: ""
   });
 
   // Check if user is already logged in and pre-populate form
@@ -98,22 +68,46 @@ const BusinessOnboarding = () => {
         console.error("Failed to parse provider data:", e);
       }
     }
+
+    // Check if onboarding is already complete
+    checkOnboardingComplete();
   }, []);
+
+  const checkOnboardingComplete = async () => {
+    try {
+      const token = localStorage.getItem("providerToken");
+      if (!token) return;
+
+      // Check if provider profile exists and is complete
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/providers/me`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true
+        }
+      );
+
+      if (response.data) {
+        const provider = response.data;
+        const requiredFields = ['businessName', 'address', 'city', 'country'];
+        const missingFields = requiredFields.filter(field => !provider[field]);
+
+        if (missingFields.length === 0) {
+          // Onboarding is complete, redirect to dashboard
+          console.log('Onboarding already complete, redirecting to dashboard');
+          router.push('/provider/dashboard');
+        }
+      }
+    } catch (error) {
+      // If error checking, continue with onboarding
+      console.log('Could not verify onboarding status, continuing with onboarding');
+    }
+  };
 
   const steps = [
     { number: 1, title: "Basic Information", icon: Store },
     { number: 2, title: "Business Details", icon: MapPin },
-    { number: 3, title: "Services Catalog", icon: DollarSign },
-    { number: 4, title: "Availability Calendar", icon: Calendar },
-    { number: 5, title: "Review & Complete", icon: CheckCircle }
-  ];
-
-  const categories = [
-    { id: "hair-services", name: "Hair Services" },
-    { id: "beauty-services", name: "Beauty Services" },
-    { id: "wellness", name: "Wellness & Spa" },
-    { id: "fitness", name: "Fitness & Training" },
-    { id: "home-services", name: "Home Services" }
+    { number: 3, title: "Review & Complete", icon: CheckCircle }
   ];
 
   const handleInputChange = (field: string, value: any) => {
@@ -125,38 +119,8 @@ const BusinessOnboarding = () => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleServiceChange = (index: number, field: string, value: any) => {
-    const updatedServices = [...formData.services];
-    updatedServices[index] = { ...updatedServices[index], [field]: value };
-    setFormData(prev => ({ ...prev, services: updatedServices }));
-  };
-
-  const addService = () => {
-    setFormData(prev => ({
-      ...prev,
-      services: [...prev.services, { name: "", description: "", price: 0, duration: 60, category: "hair-services" }]
-    }));
-  };
-
-  const removeService = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      services: prev.services.filter((_, i) => i !== index)
-    }));
-  };
-
-  const handleWorkingHoursChange = (day: string, field: string, value: any) => {
-    setFormData(prev => ({
-      ...prev,
-      workingHours: {
-        ...prev.workingHours,
-        [day]: { ...prev.workingHours[day], [field]: value }
-      }
-    }));
-  };
-
   const nextStep = () => {
-    if (currentStep < 5) setCurrentStep(currentStep + 1);
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
   };
 
   const prevStep = () => {
@@ -170,7 +134,7 @@ const BusinessOnboarding = () => {
     try {
       // Check if user is already authenticated
       const existingToken = localStorage.getItem("providerToken");
-      let token = existingToken;
+      let token: string | null = existingToken;
 
       // If no existing token, try to register new user
       if (!token) {
@@ -187,9 +151,10 @@ const BusinessOnboarding = () => {
           { withCredentials: true }
         );
 
-        if (userResponse.data && userResponse.data.accessToken) {
-          token = userResponse.data.accessToken;
-          localStorage.setItem("providerToken", token);
+        if (userResponse.data?.accessToken) {
+          const accessToken = userResponse.data.accessToken as string;
+          token = accessToken;
+          localStorage.setItem("providerToken", accessToken);
         } else {
           throw new Error("Registration failed - no token received");
         }
@@ -220,31 +185,14 @@ const BusinessOnboarding = () => {
         }
       );
 
-      // Step 3: Create services
-      for (const service of formData.services) {
-        if (service.name && service.price > 0) {
-          await axios.post(
-            `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/services`,
-            {
-              name: service.name,
-              description: service.description,
-              basePrice: service.price,
-              durationMinutes: service.duration,
-              categoryId: service.category,
-              serviceType: "appointment",
-              pricingType: "fixed",
-              isActive: true
-            },
-            {
-              headers: { Authorization: `Bearer ${token}` },
-              withCredentials: true
-            }
-          );
-        }
-      }
+      // Get the provider ID from the business response
+      const providerId = businessResponse.data.id;
+      console.log('Created provider with ID:', providerId);
 
       // Success - redirect to dashboard
+      // Services and availability can be set up from the dashboard
       router.push('/provider/dashboard');
+      
     } catch (err: any) {
       console.error('Onboarding error:', err);
       
@@ -471,146 +419,6 @@ const BusinessOnboarding = () => {
   const renderStep3 = () => (
     <div className="space-y-6">
       <div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Add your services and pricing</h3>
-        <div className="space-y-4">
-          {formData.services.map((service, index) => (
-            <div key={index} className="border border-gray-200 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-4">
-                <h4 className="font-medium text-gray-900">Service #{index + 1}</h4>
-                {formData.services.length > 1 && (
-                  <button
-                    type="button"
-                    onClick={() => removeService(index)}
-                    className="text-red-600 hover:text-red-800"
-                  >
-                    Remove
-                  </button>
-                )}
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Service Name *</label>
-                  <input
-                    type="text"
-                    value={service.name}
-                    onChange={(e) => handleServiceChange(index, 'name', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Hair Cut & Style"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Category</label>
-                  <select
-                    value={service.category}
-                    onChange={(e) => handleServiceChange(index, 'category', e.target.value)}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    {categories.map(cat => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Service Description</label>
-                <textarea
-                  value={service.description}
-                  onChange={(e) => handleServiceChange(index, 'description', e.target.value)}
-                  className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  rows={2}
-                  placeholder="Describe your service..."
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Price (AED) *</label>
-                  <input
-                    type="number"
-                    value={service.price}
-                    onChange={(e) => handleServiceChange(index, 'price', parseFloat(e.target.value))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="50"
-                    min="0"
-                    step="0.01"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Duration (minutes) *</label>
-                  <input
-                    type="number"
-                    value={service.duration}
-                    onChange={(e) => handleServiceChange(index, 'duration', parseInt(e.target.value))}
-                    className="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="60"
-                    min="15"
-                    step="15"
-                    required
-                  />
-                </div>
-              </div>
-            </div>
-          ))}
-          <button
-            type="button"
-            onClick={addService}
-            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-lg text-gray-600 hover:border-blue-500 hover:text-blue-500 transition-colors"
-          >
-            + Add Another Service
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderStep4 = () => (
-    <div className="space-y-6">
-      <div>
-        <h3 className="text-xl font-semibold text-gray-900 mb-4">Set your availability</h3>
-        <div className="space-y-4">
-          {Object.entries(formData.workingHours).map(([day, hours]) => (
-            <div key={day} className="flex items-center space-x-4 p-4 border border-gray-200 rounded-lg">
-              <div className="w-24">
-                <label className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={hours.isOpen}
-                    onChange={(e) => handleWorkingHoursChange(day, 'isOpen', e.target.checked)}
-                    className="mr-2"
-                  />
-                  <span className="font-medium capitalize">{day}</span>
-                </label>
-              </div>
-              {hours.isOpen ? (
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="time"
-                    value={hours.start}
-                    onChange={(e) => handleWorkingHoursChange(day, 'start', e.target.value)}
-                    className="p-2 border border-gray-300 rounded"
-                  />
-                  <span>to</span>
-                  <input
-                    type="time"
-                    value={hours.end}
-                    onChange={(e) => handleWorkingHoursChange(day, 'end', e.target.value)}
-                    className="p-2 border border-gray-300 rounded"
-                  />
-                </div>
-              ) : (
-                <span className="text-gray-500">Closed</span>
-              )}
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-
-  const renderStep5 = () => (
-    <div className="space-y-6">
-      <div>
         <h3 className="text-xl font-semibold text-gray-900 mb-4">Review your information</h3>
         <div className="space-y-6 bg-gray-50 p-6 rounded-lg">
           <div>
@@ -620,21 +428,11 @@ const BusinessOnboarding = () => {
             <p><strong>Address:</strong> {formData.address}, {formData.city}, {formData.state ? formData.state + ', ' : ''}{formData.country} {formData.postalCode}</p>
             <p><strong>Contact:</strong> {formData.email} | {formData.phone}</p>
           </div>
-          <div>
-            <h4 className="font-semibold text-gray-900 mb-2">Services ({formData.services.filter(s => s.name).length})</h4>
-            {formData.services.filter(s => s.name).map((service, index) => (
-              <div key={index} className="mb-2">
-                <p><strong>{service.name}</strong> - AED {service.price} ({service.duration} min)</p>
-              </div>
-            ))}
-          </div>
-          <div>
-            <h4 className="font-semibold text-gray-900 mb-2">Working Hours</h4>
-            {Object.entries(formData.workingHours).map(([day, hours]) => (
-              <p key={day} className="capitalize">
-                <strong>{day}:</strong> {hours.isOpen ? `${hours.start} - ${hours.end}` : 'Closed'}
-              </p>
-            ))}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h4 className="font-semibold text-blue-900 mb-2">Next Steps</h4>
+            <p className="text-blue-800 text-sm">
+              After completing setup, you can add your services and set your availability from your dashboard.
+            </p>
           </div>
         </div>
       </div>
@@ -646,8 +444,6 @@ const BusinessOnboarding = () => {
       case 1: return renderStep1();
       case 2: return renderStep2();
       case 3: return renderStep3();
-      case 4: return renderStep4();
-      case 5: return renderStep5();
       default: return renderStep1();
     }
   };
@@ -657,6 +453,14 @@ const BusinessOnboarding = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="text-center mb-8">
+          <div className="flex items-center justify-center mb-6">
+            <div className="bg-gradient-to-br from-orange-500 to-pink-500 rounded-2xl p-3 mr-3">
+              <span className="text-2xl font-bold text-white">W</span>
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-br from-orange-500 to-pink-500 bg-clip-text text-transparent">
+              Wiwihood
+            </span>
+          </div>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Join Wiwihood as a Service Provider</h1>
           <p className="text-gray-600">Set up your business profile in just a few steps</p>
         </div>
@@ -712,7 +516,7 @@ const BusinessOnboarding = () => {
             Previous
           </button>
 
-          {currentStep === 5 ? (
+          {currentStep === 3 ? (
             <button
               onClick={submitOnboarding}
               disabled={loading}

@@ -44,14 +44,20 @@ export default function ProviderLayout({
 }: {
   children: React.ReactNode;
 }) {
+  // All hooks must be called before any conditional logic
+  const pathname = usePathname();
+  const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [notificationOpen, setNotificationOpen] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const router = useRouter();
-  const pathname = usePathname();
+  
+  // If this is the onboarding page, render children without layout
+  if (pathname?.includes('/onboarding')) {
+    return <>{children}</>;
+  }
 
   // Fetch notifications
   useEffect(() => {
@@ -143,6 +149,11 @@ export default function ProviderLayout({
           // Cache user data
           localStorage.setItem('provider', JSON.stringify(userData));
           console.log('✅ QRT: Auth check successful for user:', userData.firstName, userData.lastName);
+          
+          // Check onboarding status if not on onboarding page
+          if (pathname && !pathname.includes('/onboarding')) {
+            await checkOnboardingStatus(token);
+          }
         } else {
           // User is not a provider, redirect to provider login
           localStorage.removeItem('providerToken');
@@ -159,6 +170,11 @@ export default function ProviderLayout({
             const cachedUserData = JSON.parse(cachedProvider);
             setUser(cachedUserData);
             console.log('📋 QRT: Using cached provider data');
+            
+            // Check onboarding status if not on onboarding page
+            if (pathname && !pathname.includes('/onboarding')) {
+              await checkOnboardingStatus(token);
+            }
           } catch (e) {
             console.error('Failed to parse cached provider data');
             // If cached data is corrupted, redirect to login
@@ -177,15 +193,53 @@ export default function ProviderLayout({
       }
     };
 
+    const checkOnboardingStatus = async (token: string) => {
+      try {
+        // Check if provider profile exists and is complete
+        const response = await axios.get(
+          `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000/api/v1'}/providers/me`,
+          {
+            headers: { Authorization: `Bearer ${token}` },
+            withCredentials: true
+          }
+        );
+
+        if (response.data) {
+          const provider = response.data;
+          const requiredFields = ['businessName', 'address', 'city', 'country'];
+          const missingFields = requiredFields.filter(field => !provider[field]);
+
+          if (missingFields.length > 0) {
+            // Onboarding incomplete, redirect to onboarding
+            console.log('Onboarding incomplete, redirecting to onboarding');
+            router.push('/provider/onboarding');
+          }
+        } else {
+          // No provider profile, redirect to onboarding
+          router.push('/provider/onboarding');
+        }
+      } catch (error: any) {
+        // Check if it's a 404 error (no provider profile exists yet)
+        if (error.response?.status === 404) {
+          console.log('No provider profile found, redirecting to onboarding');
+          router.push('/provider/onboarding');
+        } else {
+          // Other errors, redirect to onboarding to be safe
+          console.log('Error checking onboarding, redirecting to onboarding');
+          router.push('/provider/onboarding');
+        }
+      }
+    };
+
     checkAuth();
-  }, [router]);
+  }, [router, pathname]);
 
   const navigationItems = [
     { name: 'Dashboard', href: '/provider/dashboard', icon: LayoutDashboard, current: pathname === '/provider/dashboard' },
     { name: 'Appointments', href: '/provider/appointments', icon: Calendar, current: pathname === '/provider/appointments' },
     { name: 'Services', href: '/provider/services', icon: Scissors, current: pathname === '/provider/services' },
     { name: 'Availability', href: '/provider/availability', icon: Clock, current: pathname === '/provider/availability' },
-    { name: 'Staff', href: '/provider/staff', icon: Users, current: pathname === '/provider/staff' || pathname.startsWith('/provider/staff/') },
+    { name: 'Staff', href: '/provider/staff', icon: Users, current: pathname === '/provider/staff' || (pathname && pathname.startsWith('/provider/staff/')) },
     { name: 'Wallet', href: '/provider/wallet', icon: Wallet, current: pathname === '/provider/wallet' },
     { name: 'Favorites', href: '/provider/favorites', icon: Heart, current: pathname === '/provider/favorites' },
     { name: 'Forms', href: '/provider/forms', icon: FileText, current: pathname === '/provider/forms' },

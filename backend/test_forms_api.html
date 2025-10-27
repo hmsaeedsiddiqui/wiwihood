@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Forms API Tester</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .test-section {
+            border: 1px solid #ddd;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+        }
+        .test-section h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .success {
+            background: #28a745;
+        }
+        .danger {
+            background: #dc3545;
+        }
+        textarea, input {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        .response {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .status {
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 5px 0;
+            font-weight: bold;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .tabs {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+        .tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            border: none;
+            background: #f8f9fa;
+            margin-right: 5px;
+        }
+        .tab.active {
+            background: #007bff;
+            color: white;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Forms API Tester</h1>
+        
+        <!-- Configuration Section -->
+        <div class="test-section">
+            <h3>⚙️ Configuration</h3>
+            <label>API Base URL:</label>
+            <input type="text" id="baseUrl" value="http://localhost:3000/api" />
+            
+            <label>JWT Token (for authenticated requests):</label>
+            <textarea id="authToken" rows="3" placeholder="Enter your JWT token here..."></textarea>
+            
+            <button onclick="testConnection()" class="success">Test Connection</button>
+            <button onclick="getAuthToken()">Get Auth Token</button>
+            
+            <div id="connectionStatus"></div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('templates')">Form Templates</button>
+            <button class="tab" onclick="showTab('submissions')">Form Submissions</button>
+            <button class="tab" onclick="showTab('public')">Public Forms</button>
+            <button class="tab" onclick="showTab('stats')">Statistics</button>
+        </div>
+
+        <!-- Templates Tab -->
+        <div id="templates" class="tab-content active">
+            <div class="test-section">
+                <h3>📝 Form Templates</h3>
+                
+                <button onclick="createSampleTemplate()" class="success">Create Sample Template</button>
+                <button onclick="getTemplates()">Get All Templates</button>
+                <button onclick="getTemplate()">Get Specific Template</button>
+                
+                <label>Template ID (for specific operations):</label>
+                <input type="text" id="templateId" placeholder="Enter template ID..." />
+                
+                <button onclick="updateTemplate()">Update Template</button>
+                <button onclick="deleteTemplate()" class="danger">Delete Template</button>
+                
+                <div id="templatesResponse" class="response"></div>
+            </div>
+        </div>
+
+        <!-- Submissions Tab -->
+        <div id="submissions" class="tab-content">
+            <div class="test-section">
+                <h3>📥 Form Submissions</h3>
+                
+                <button onclick="getSubmissions()">Get All Submissions</button>
+                <button onclick="getSubmission()">Get Specific Submission</button>
+                
+                <label>Submission ID:</label>
+                <input type="text" id="submissionId" placeholder="Enter submission ID..." />
+                
+                <button onclick="updateSubmissionStatus()">Update Status</button>
+                <button onclick="deleteSubmission()" class="danger">Delete Submission</button>
+                
+                <div id="submissionsResponse" class="response"></div>
+            </div>
+        </div>
+
+        <!-- Public Forms Tab -->
+        <div id="public" class="tab-content">
+            <div class="test-section">
+                <h3>🌐 Public Forms</h3>
+                
+                <label>Template ID for public access:</label>
+                <input type="text" id="publicTemplateId" placeholder="Enter template ID..." />
+                
+                <button onclick="getPublicTemplate()">Get Public Template</button>
+                <button onclick="submitSampleForm()" class="success">Submit Sample Form</button>
+                
+                <div id="publicResponse" class="response"></div>
+            </div>
+        </div>
+
+        <!-- Statistics Tab -->
+        <div id="stats" class="tab-content">
+            <div class="test-section">
+                <h3>📊 Statistics</h3>
+                
+                <button onclick="getStatistics()">Get Form Statistics</button>
+                
+                <div id="statsResponse" class="response"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentTemplateId = null;
+        let currentSubmissionId = null;
+
+        function showTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        function getHeaders(includeAuth = true) {
+            const headers = {
+                'Content-Type': 'application/json'
+            };
+            
+            if (includeAuth) {
+                const token = document.getElementById('authToken').value.trim();
+                if (token) {
+                    headers['Authorization'] = `Bearer ${token}`;
+                }
+            }
+            
+            return headers;
+        }
+
+        function getBaseUrl() {
+            return document.getElementById('baseUrl').value.trim();
+        }
+
+        function displayResponse(elementId, response, status) {
+            const element = document.getElementById(elementId);
+            const statusClass = status >= 200 && status < 300 ? 'success' : 'error';
+            
+            element.innerHTML = `
+                <div class="status ${statusClass}">Status: ${status}</div>
+                ${JSON.stringify(response, null, 2)}
+            `;
+        }
+
+        async function makeRequest(url, method = 'GET', body = null, includeAuth = true) {
+            const config = {
+                method,
+                headers: getHeaders(includeAuth)
+            };
+
+            if (body) {
+                config.body = JSON.stringify(body);
+            }
+
+            try {
+                const response = await fetch(url, config);
+                const data = await response.json();
+                return { data, status: response.status };
+            } catch (error) {
+                return { error: error.message, status: 0 };
+            }
+        }
+
+        async function testConnection() {
+            const url = `${getBaseUrl()}/health`;
+            const result = await makeRequest(url, 'GET', null, false);
+            displayResponse('connectionStatus', result.data || result.error, result.status);
+        }
+
+        async function getAuthToken() {
+            const loginData = {
+                email: prompt('Enter your email:') || 'provider@example.com',
+                password: prompt('Enter your password:') || 'password123'
+            };
+
+            const url = `${getBaseUrl()}/auth/login`;
+            const result = await makeRequest(url, 'POST', loginData, false);
+            
+            if (result.data && result.data.access_token) {
+                document.getElementById('authToken').value = result.data.access_token;
+                alert('✅ Login successful! Token has been set.');
+            } else {
+                alert('❌ Login failed: ' + (result.error || 'Unknown error'));
+            }
+            
+            displayResponse('connectionStatus', result.data || result.error, result.status);
+        }
+
+        // Template Functions
+        async function createSampleTemplate() {
+            const sampleTemplate = {
+                title: "Hair Consultation Form",
+                description: "Pre-appointment consultation for hair services",
+                type: "CONSULTATION",
+                fields: [
+                    {
+                        name: "hair_type",
+                        label: "Hair Type",
+                        type: "select",
+                        required: true,
+                        options: ["Straight", "Wavy", "Curly", "Coily"],
+                        orderIndex: 0
+                    },
+                    {
+                        name: "previous_treatments",
+                        label: "Previous Hair Treatments",
+                        type: "textarea",
+                        required: false,
+                        placeholder: "Please describe any previous treatments...",
+                        validation: { maxLength: 500 },
+                        orderIndex: 1
+                    },
+                    {
+                        name: "allergies",
+                        label: "Known Allergies",
+                        type: "textarea",
+                        required: true,
+                        placeholder: "List any known allergies...",
+                        orderIndex: 2
+                    }
+                ],
+                isActive: true
+            };
+
+            const url = `${getBaseUrl()}/forms/templates`;
+            const result = await makeRequest(url, 'POST', sampleTemplate);
+            
+            if (result.data && result.data.id) {
+                currentTemplateId = result.data.id;
+                document.getElementById('templateId').value = currentTemplateId;
+                document.getElementById('publicTemplateId').value = currentTemplateId;
+            }
+            
+            displayResponse('templatesResponse', result.data || result.error, result.status);
+        }
+
+        async function getTemplates() {
+            const url = `${getBaseUrl()}/forms/templates`;
+            const result = await makeRequest(url);
+            displayResponse('templatesResponse', result.data || result.error, result.status);
+        }
+
+        async function getTemplate() {
+            const templateId = document.getElementById('templateId').value.trim();
+            if (!templateId) {
+                alert('Please enter a template ID');
+                return;
+            }
+
+            const url = `${getBaseUrl()}/forms/templates/${templateId}`;
+            const result = await makeRequest(url);
+            displayResponse('templatesResponse', result.data || result.error, result.status);
+        }
+
+        async function updateTemplate() {
+            const templateId = document.getElementById('templateId').value.trim();
+            if (!templateId) {
+                alert('Please enter a template ID');
+                return;
+            }
+
+            const updateData = {
+                title: "Updated Hair Consultation Form",
+                description: "Updated description",
+                isActive: true
+            };
+
+            const url = `${getBaseUrl()}/forms/templates/${templateId}`;
+            const result = await makeRequest(url, 'PUT', updateData);
+            displayResponse('templatesResponse', result.data || result.error, result.status);
+        }
+
+        async function deleteTemplate() {
+            const templateId = document.getElementById('templateId').value.trim();
+            if (!templateId) {
+                alert('Please enter a template ID');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete this template?')) {
+                return;
+            }
+
+            const url = `${getBaseUrl()}/forms/templates/${templateId}`;
+            const result = await makeRequest(url, 'DELETE');
+            displayResponse('templatesResponse', result.data || result.error, result.status);
+        }
+
+        // Public Forms Functions
+        async function getPublicTemplate() {
+            const templateId = document.getElementById('publicTemplateId').value.trim();
+            if (!templateId) {
+                alert('Please enter a template ID');
+                return;
+            }
+
+            const url = `${getBaseUrl()}/forms/public/${templateId}`;
+            const result = await makeRequest(url, 'GET', null, false);
+            displayResponse('publicResponse', result.data || result.error, result.status);
+        }
+
+        async function submitSampleForm() {
+            const templateId = document.getElementById('publicTemplateId').value.trim();
+            if (!templateId) {
+                alert('Please enter a template ID');
+                return;
+            }
+
+            const sampleSubmission = {
+                customerName: "John Doe",
+                customerEmail: "john.doe@example.com",
+                customerPhone: "+971501234567",
+                responses: [
+                    { fieldName: "hair_type", value: "Curly" },
+                    { fieldName: "previous_treatments", value: "Hair coloring 6 months ago" },
+                    { fieldName: "allergies", value: "No known allergies" }
+                ],
+                notes: "Customer prefers morning appointments"
+            };
+
+            const url = `${getBaseUrl()}/forms/templates/${templateId}/submit`;
+            const result = await makeRequest(url, 'POST', sampleSubmission, false);
+            
+            if (result.data && result.data.id) {
+                currentSubmissionId = result.data.id;
+                document.getElementById('submissionId').value = currentSubmissionId;
+            }
+            
+            displayResponse('publicResponse', result.data || result.error, result.status);
+        }
+
+        // Submission Functions
+        async function getSubmissions() {
+            const url = `${getBaseUrl()}/forms/submissions`;
+            const result = await makeRequest(url);
+            displayResponse('submissionsResponse', result.data || result.error, result.status);
+        }
+
+        async function getSubmission() {
+            const submissionId = document.getElementById('submissionId').value.trim();
+            if (!submissionId) {
+                alert('Please enter a submission ID');
+                return;
+            }
+
+            const url = `${getBaseUrl()}/forms/submissions/${submissionId}`;
+            const result = await makeRequest(url);
+            displayResponse('submissionsResponse', result.data || result.error, result.status);
+        }
+
+        async function updateSubmissionStatus() {
+            const submissionId = document.getElementById('submissionId').value.trim();
+            if (!submissionId) {
+                alert('Please enter a submission ID');
+                return;
+            }
+
+            const updateData = {
+                status: 'COMPLETED',
+                notes: 'Reviewed and approved via API tester'
+            };
+
+            const url = `${getBaseUrl()}/forms/submissions/${submissionId}`;
+            const result = await makeRequest(url, 'PUT', updateData);
+            displayResponse('submissionsResponse', result.data || result.error, result.status);
+        }
+
+        async function deleteSubmission() {
+            const submissionId = document.getElementById('submissionId').value.trim();
+            if (!submissionId) {
+                alert('Please enter a submission ID');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete this submission?')) {
+                return;
+            }
+
+            const url = `${getBaseUrl()}/forms/submissions/${submissionId}`;
+            const result = await makeRequest(url, 'DELETE');
+            displayResponse('submissionsResponse', result.data || result.error, result.status);
+        }
+
+        // Statistics Functions
+        async function getStatistics() {
+            const url = `${getBaseUrl()}/forms/statistics`;
+            const result = await makeRequest(url);
+            displayResponse('statsResponse', result.data || result.error, result.status);
+        }
+    </script>
+</body>
+</html>
