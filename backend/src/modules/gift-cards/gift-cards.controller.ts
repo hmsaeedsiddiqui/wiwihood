@@ -21,7 +21,7 @@ import {
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { GiftCardsService } from './gift-cards.service';
 import { CreateGiftCardDto, RedeemGiftCardDto, GiftCardBalanceDto } from './dto/gift-card.dto';
-import { GiftCard } from '../../entities/gift-card.entity';
+import { GiftCard, GiftCardTransaction } from '../../entities/gift-card.entity';
 
 @ApiTags('Gift Cards')
 @Controller('gift-cards')
@@ -111,7 +111,7 @@ export class GiftCardsController {
     description: 'Gift card usage history retrieved successfully',
   })
   async getUsageHistory(@Param('code') code: string) {
-    return await this.giftCardsService.getGiftCardUsageHistory(code);
+    return await this.giftCardsService.getGiftCardTransactionHistory(code);
   }
 
   @Put(':code/transfer')

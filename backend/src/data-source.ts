@@ -15,7 +15,10 @@ export const AppDataSource = new DataSource({
   ssl: process.env.DATABASE_SSL === 'true' ? { rejectUnauthorized: false } : false,
   synchronize: true, // Enable for auto table generation in development
   logging: true,
-  entities: Object.values(entities),
+  // Filter exported module values to only include class constructors (entity classes).
+  // This avoids passing enums or plain objects (like enum exports) to TypeORM which
+  // expects classes / EntitySchema instances.
+  entities: Object.values(entities).filter((e) => typeof e === 'function'),
   migrations: ["src/migrations/**/*.ts"],
   subscribers: ["src/subscribers/**/*.ts"],
 });

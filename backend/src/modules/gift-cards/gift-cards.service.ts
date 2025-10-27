@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, MoreThan } from 'typeorm';
-import { GiftCard, GiftCardUsage, GiftCardStatus } from '../../entities/gift-card.entity';
+import { GiftCard, GiftCardTransaction, GiftCardStatus } from '../../entities/gift-card.entity';
 import { CreateGiftCardDto, RedeemGiftCardDto } from './dto/gift-card.dto';
 
 @Injectable()
@@ -9,8 +9,8 @@ export class GiftCardsService {
   constructor(
     @InjectRepository(GiftCard)
     private readonly giftCardRepository: Repository<GiftCard>,
-    @InjectRepository(GiftCardUsage)
-    private readonly giftCardUsageRepository: Repository<GiftCardUsage>,
+    @InjectRepository(GiftCardTransaction)
+    private readonly giftCardTransactionRepository: Repository<GiftCardTransaction>,
   ) {}
 
   private generateGiftCardCode(): string {
@@ -34,18 +34,19 @@ export class GiftCardsService {
       }
     }
 
-    const expiresAt = createGiftCardDto.expiresAt 
-      ? new Date(createGiftCardDto.expiresAt)
-      : new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year from now
+    const expiryDate = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000); // 1 year from now
 
     const giftCard = this.giftCardRepository.create({
       code,
-      originalAmount: createGiftCardDto.amount,
+      amount: createGiftCardDto.amount,
       currentBalance: createGiftCardDto.amount,
+      purchaserEmail: createGiftCardDto.purchaserEmail,
+      purchaserName: createGiftCardDto.purchaserName,
+      purchaserPhone: createGiftCardDto.purchaserPhone,
       recipientName: createGiftCardDto.recipientName,
       recipientEmail: createGiftCardDto.recipientEmail,
-      message: createGiftCardDto.message,
-      expiresAt,
+      personalMessage: createGiftCardDto.personalMessage,
+      expiryDate,
       purchaserId,
       status: GiftCardStatus.ACTIVE,
     });
@@ -56,7 +57,7 @@ export class GiftCardsService {
   async getGiftCardByCode(code: string): Promise<GiftCard> {
     const giftCard = await this.giftCardRepository.findOne({
       where: { code },
-      relations: ['purchaser', 'recipient', 'usageHistory'],
+      relations: ['purchaser', 'currentOwner', 'transactions'],
     });
 
     if (!giftCard) {
@@ -72,7 +73,7 @@ export class GiftCardsService {
     return {
       balance: giftCard.currentBalance,
       status: giftCard.status,
-      expiresAt: giftCard.expiresAt,
+      expiresAt: giftCard.expiryDate,
     };
   }
 
@@ -80,11 +81,11 @@ export class GiftCardsService {
     const giftCard = await this.getGiftCardByCode(redeemDto.code);
 
     // Validate gift card
-    if (giftCard.status !== GiftCardStatus.ACTIVE) {
+    if (giftCard.status !== GiftCardStatus.ACTIVE && giftCard.status !== GiftCardStatus.PARTIALLY_REDEEMED) {
       throw new BadRequestException('Gift card is not active');
     }
 
-    if (giftCard.expiresAt && new Date() > giftCard.expiresAt) {
+    if (giftCard.expiryDate && new Date() > giftCard.expiryDate) {
       giftCard.status = GiftCardStatus.EXPIRED;
       await this.giftCardRepository.save(giftCard);
       throw new BadRequestException('Gift card has expired');
@@ -94,24 +95,33 @@ export class GiftCardsService {
       throw new BadRequestException('Insufficient gift card balance');
     }
 
-    // Create usage record
-    const usage = this.giftCardUsageRepository.create({
+    // Create transaction record
+    const transaction = this.giftCardTransactionRepository.create({
       giftCardId: giftCard.id,
-      amountUsed: redeemDto.amount,
-      remainingBalance: giftCard.currentBalance - redeemDto.amount,
-      usedInBookingId: redeemDto.bookingId,
-      description: redeemDto.description || 'Gift card redemption',
+      amount: redeemDto.amount,
+      balanceBefore: giftCard.currentBalance,
+      balanceAfter: giftCard.currentBalance - redeemDto.amount,
+      bookingId: redeemDto.bookingId,
+      redeemedByEmail: redeemDto.redeemedByEmail,
+      notes: 'Gift card redemption',
     });
 
-    await this.giftCardUsageRepository.save(usage);
+    await this.giftCardTransactionRepository.save(transaction);
 
     // Update gift card balance
     giftCard.currentBalance -= redeemDto.amount;
     
+    // Update redemption dates
+    if (!giftCard.firstRedemptionDate) {
+      giftCard.firstRedemptionDate = new Date();
+    }
+    giftCard.lastRedemptionDate = new Date();
+    
     // Mark as redeemed if fully used
     if (giftCard.currentBalance === 0) {
       giftCard.status = GiftCardStatus.REDEEMED;
-      giftCard.redeemedAt = new Date();
+    } else {
+      giftCard.status = GiftCardStatus.PARTIALLY_REDEEMED;
     }
 
     return await this.giftCardRepository.save(giftCard);
@@ -121,10 +131,10 @@ export class GiftCardsService {
     return await this.giftCardRepository.find({
       where: [
         { purchaserId: userId },
-        { recipientId: userId },
+        { currentOwnerId: userId },
       ],
-      relations: ['usageHistory'],
-      order: { purchasedAt: 'DESC' },
+      relations: ['transactions'],
+      order: { purchaseDate: 'DESC' },
     });
   }
 
@@ -137,12 +147,12 @@ export class GiftCardsService {
           currentBalance: MoreThan(0),
         },
         { 
-          recipientId: userId, 
+          currentOwnerId: userId,
           status: GiftCardStatus.ACTIVE,
           currentBalance: MoreThan(0),
         },
       ],
-      order: { purchasedAt: 'DESC' },
+      order: { purchaseDate: 'DESC' },
     });
   }
 
@@ -161,21 +171,21 @@ export class GiftCardsService {
   async cancelGiftCard(code: string, reason?: string): Promise<GiftCard> {
     const giftCard = await this.getGiftCardByCode(code);
 
-    if (giftCard.status !== GiftCardStatus.ACTIVE) {
+    if (giftCard.status !== GiftCardStatus.ACTIVE && giftCard.status !== GiftCardStatus.PARTIALLY_REDEEMED) {
       throw new BadRequestException('Only active gift cards can be cancelled');
     }
 
-    giftCard.status = GiftCardStatus.CANCELLED;
+    giftCard.status = GiftCardStatus.CANCELED;
     
     return await this.giftCardRepository.save(giftCard);
   }
 
-  async getGiftCardUsageHistory(code: string): Promise<GiftCardUsage[]> {
+  async getGiftCardTransactionHistory(code: string): Promise<GiftCardTransaction[]> {
     const giftCard = await this.getGiftCardByCode(code);
     
-    return await this.giftCardUsageRepository.find({
+    return await this.giftCardTransactionRepository.find({
       where: { giftCardId: giftCard.id },
-      order: { usedAt: 'DESC' },
+      order: { transactionDate: 'DESC' },
     });
   }
 }

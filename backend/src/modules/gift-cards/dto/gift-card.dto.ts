@@ -152,6 +152,15 @@ export class RedeemGiftCardDto {
   providerId?: string;
 
   @ApiPropertyOptional({ 
+    description: 'Email of person redeeming the gift card'
+  })
+  @IsOptional()
+  @IsEmail()
+  redeemedByEmail?: string;
+  @IsUUID()
+  providerId?: string;
+
+  @ApiPropertyOptional({ 
     description: 'User ID performing the redemption'
   })
   @IsOptional()
