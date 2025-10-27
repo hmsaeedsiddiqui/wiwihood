@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
-import { toast } from 'sonner'
+import { toast } from 'react-hot-toast'
 import { 
   Gift, 
   CreditCard, 
@@ -313,7 +313,7 @@ export default function GiftCardsPage() {
                       id="message"
                       placeholder="Write a personal message..."
                       value={personalMessage}
-                      onChange={(e) => setPersonalMessage(e.target.value)}
+                      onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setPersonalMessage(e.target.value)}
                       className="mt-1"
                       rows={3}
                       maxLength={500}

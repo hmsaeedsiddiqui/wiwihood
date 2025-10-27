@@ -33,8 +33,8 @@ export default function WalletPage() {
   })
   
   const { data: giftCardSales, isLoading: isLoadingSales } = useGetProviderGiftCardSalesQuery({
-    status: statusFilter === 'all' ? undefined : statusFilter,
-    period: dateRange
+    page: 1,
+    limit: 100
   })
 
   const formatCurrency = (amount: number) => {
@@ -257,9 +257,9 @@ export default function WalletPage() {
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
                     <p className="text-gray-500 mt-2">Loading gift card sales...</p>
                   </div>
-                ) : giftCardSales && giftCardSales.length > 0 ? (
+                ) : giftCardSales?.sales && giftCardSales.sales.length > 0 ? (
                   <div className="space-y-4">
-                    {giftCardSales.map((sale: any) => (
+                    {giftCardSales.sales.map((sale: any) => (
                       <div key={sale.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
                         <div className="flex items-center gap-4">
                           <div className="h-12 w-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-lg flex items-center justify-center">

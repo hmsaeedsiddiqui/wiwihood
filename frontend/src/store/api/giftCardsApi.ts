@@ -36,16 +36,23 @@ export interface GiftCardUsage {
 export interface CreateGiftCardRequest {
   amount: number;
   recipientName?: string;
-  recipientEmail?: string;
-  message?: string;
-  expiresAt?: string;
+  recipientEmail: string;
+  personalMessage?: string;
+  deliveryDate?: string;
+  design?: string;
+}
+
+export interface PurchaseGiftCardRequest {
+  amount: number;
+  recipientEmail: string;
+  recipientName?: string;
+  personalMessage?: string;
+  deliveryDate?: string;
+  design?: string;
 }
 
 export interface RedeemGiftCardRequest {
   code: string;
-  amount: number;
-  bookingId?: string;
-  description?: string;
 }
 
 export interface GiftCardBalanceRequest {
@@ -53,17 +60,22 @@ export interface GiftCardBalanceRequest {
 }
 
 export interface GiftCardBalanceResponse {
-  balance: number;
+  currentBalance: number;
+  amount: number;
   status: string;
-  expiresAt: string;
+  expiryDate: string;
 }
 
 export interface TransferGiftCardRequest {
-  recipientEmail: string;
+  newRecipientEmail: string;
 }
 
 export interface CancelGiftCardRequest {
   reason?: string;
+}
+
+export interface ExtendGiftCardExpiryRequest {
+  newExpiryDate: string;
 }
 
 // Gift Card Statistics
@@ -73,6 +85,14 @@ export interface GiftCardStats {
   activeCards: number;
   totalValue: number;
   monthlyGrowth: number;
+  totalCount?: number;
+  activeCount?: number;
+  activeValue?: number;
+  redeemedCount?: number;
+  redeemedValue?: number;
+  conversionRate?: number;
+  partialCount?: number;
+  canceledCount?: number;
 }
 
 export const giftCardsApi = createApi({
@@ -100,6 +120,16 @@ export const giftCardsApi = createApi({
       invalidatesTags: ['GiftCard', 'GiftCardStats'],
     }),
 
+    // Purchase Gift Card (alias for create)
+    purchaseGiftCard: builder.mutation<GiftCard, PurchaseGiftCardRequest>({
+      query: (data) => ({
+        url: '/purchase',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['GiftCard', 'GiftCardStats'],
+    }),
+
     // Get User's Gift Cards
     getMyGiftCards: builder.query<GiftCard[], void>({
       query: () => '/my-cards',
@@ -113,12 +143,8 @@ export const giftCardsApi = createApi({
     }),
 
     // Check Gift Card Balance
-    checkGiftCardBalance: builder.mutation<GiftCardBalanceResponse, GiftCardBalanceRequest>({
-      query: (data) => ({
-        url: '/check-balance',
-        method: 'POST',
-        body: data,
-      }),
+    checkGiftCardBalance: builder.query<GiftCardBalanceResponse, string>({
+      query: (code) => `/balance/${code}`,
     }),
 
     // Redeem Gift Card
@@ -144,11 +170,11 @@ export const giftCardsApi = createApi({
     }),
 
     // Transfer Gift Card
-    transferGiftCard: builder.mutation<GiftCard, { code: string; data: TransferGiftCardRequest }>({
-      query: ({ code, data }) => ({
+    transferGiftCard: builder.mutation<GiftCard, { code: string; newRecipientEmail: string }>({
+      query: ({ code, newRecipientEmail }) => ({
         url: `/${code}/transfer`,
         method: 'PUT',
-        body: data,
+        body: { newRecipientEmail },
       }),
       invalidatesTags: (result, error, { code }) => [
         { type: 'GiftCard', id: code },
@@ -157,11 +183,11 @@ export const giftCardsApi = createApi({
     }),
 
     // Cancel Gift Card
-    cancelGiftCard: builder.mutation<GiftCard, { code: string; data?: CancelGiftCardRequest }>({
-      query: ({ code, data }) => ({
-        url: `/${code}`,
-        method: 'DELETE',
-        body: data,
+    cancelGiftCard: builder.mutation<GiftCard, { code: string; reason?: string }>({
+      query: ({ code, reason }) => ({
+        url: `/${code}/cancel`,
+        method: 'PUT',
+        body: { reason },
       }),
       invalidatesTags: (result, error, { code }) => [
         { type: 'GiftCard', id: code },
@@ -170,9 +196,25 @@ export const giftCardsApi = createApi({
       ],
     }),
 
+    // Extend Gift Card Expiry
+    extendGiftCardExpiry: builder.mutation<GiftCard, { code: string; newExpiryDate: string }>({
+      query: ({ code, newExpiryDate }) => ({
+        url: `/${code}/extend-expiry`,
+        method: 'PUT',
+        body: { newExpiryDate },
+      }),
+      invalidatesTags: (result, error, { code }) => [
+        { type: 'GiftCard', id: code },
+        'GiftCard',
+      ],
+    }),
+
     // Admin: Get Gift Card Statistics
-    getGiftCardStats: builder.query<GiftCardStats, void>({
-      query: () => '/admin/stats',
+    getGiftCardStats: builder.query<GiftCardStats, { period?: string } | void>({
+      query: (params) => ({
+        url: '/admin/stats',
+        params: params || {},
+      }),
       providesTags: ['GiftCardStats'],
     }),
 
@@ -192,15 +234,24 @@ export const giftCardsApi = createApi({
 
     // Provider: Get Gift Card Sales
     getProviderGiftCardSales: builder.query<{ sales: GiftCard[]; stats: any }, {
-      providerId: string;
+      providerId?: string;
       page?: number;
       limit?: number;
     }>({
       query: ({ providerId, page = 1, limit = 10 }) => ({
-        url: `/provider/${providerId}/sales`,
+        url: `/provider/${providerId || 'me'}/sales`,
         params: { page, limit },
       }),
       providesTags: ['GiftCard', 'GiftCardStats'],
+    }),
+
+    // Provider: Get Gift Card Stats
+    getProviderGiftCardStats: builder.query<GiftCardStats, { period?: string }>({
+      query: ({ period }) => ({
+        url: '/provider/stats',
+        params: { period },
+      }),
+      providesTags: ['GiftCardStats'],
     }),
   }),
 });
@@ -208,7 +259,7 @@ export const giftCardsApi = createApi({
 export const {
   // Customer mutations
   useCreateGiftCardMutation,
-  useCheckGiftCardBalanceMutation,
+  usePurchaseGiftCardMutation,
   useRedeemGiftCardMutation,
   useTransferGiftCardMutation,
   useCancelGiftCardMutation,
@@ -218,11 +269,14 @@ export const {
   useGetActiveGiftCardsQuery,
   useGetGiftCardByCodeQuery,
   useGetGiftCardUsageHistoryQuery,
+  useCheckGiftCardBalanceQuery,
 
-  // Admin queries
+  // Admin queries and mutations
   useGetGiftCardStatsQuery,
   useGetAllGiftCardsQuery,
+  useExtendGiftCardExpiryMutation,
 
   // Provider queries
   useGetProviderGiftCardSalesQuery,
+  useGetProviderGiftCardStatsQuery,
 } = giftCardsApi;

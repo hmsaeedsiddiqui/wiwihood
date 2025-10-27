@@ -41,7 +41,15 @@ export { PromotionUsage } from './promotion-usage.entity';
 export { PaymentMethod } from './payment-method.entity';
 
 // New feature entities
-export { GiftCard, GiftCardUsage } from './gift-card.entity';
+export { 
+  GiftCard, 
+  GiftCardTransaction, 
+  GiftCardPromotion, 
+  GiftCardSetting,
+  GiftCardStatus,
+  TransactionType,
+  PromotionType
+} from './gift-card.entity';
 export { LoyaltyAccount, PointTransaction, LoyaltyReward } from './loyalty.entity';
 export { ReferralCode, Referral, ReferralCampaign } from './referral.entity';
 export { ServiceAddon, BookingAddon, AddonPackage } from './service-addon.entity';
