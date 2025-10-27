@@ -43,9 +43,7 @@ const CreateGiftCardModal: React.FC<CreateGiftCardModalProps> = ({ isOpen, onClo
     amount: '',
     recipientEmail: '',
     recipientName: '',
-    personalMessage: '',
-    purchaserEmail: 'provider@wiwihood.com', // Provider's email
-    purchaserName: 'Provider Account'
+    personalMessage: ''
   });
 
   const [createGiftCard, { isLoading: isCreating }] = useCreateGiftCardMutation();
@@ -56,12 +54,9 @@ const CreateGiftCardModal: React.FC<CreateGiftCardModalProps> = ({ isOpen, onClo
     try {
       await createGiftCard({
         amount: parseFloat(formData.amount),
-        purchaserEmail: formData.purchaserEmail,
-        purchaserName: formData.purchaserName,
         recipientEmail: formData.recipientEmail,
         recipientName: formData.recipientName,
-        personalMessage: formData.personalMessage,
-        paymentIntentId: `pi_provider_${Date.now()}` // Mock payment for provider creation
+        personalMessage: formData.personalMessage
       }).unwrap();
       
       toast.success('Gift card created successfully!');
@@ -71,9 +66,7 @@ const CreateGiftCardModal: React.FC<CreateGiftCardModalProps> = ({ isOpen, onClo
         amount: '',
         recipientEmail: '',
         recipientName: '',
-        personalMessage: '',
-        purchaserEmail: 'provider@wiwihood.com',
-        purchaserName: 'Provider Account'
+        personalMessage: ''
       });
     } catch (error: any) {
       toast.error(error?.data?.message || 'Failed to create gift card');
@@ -197,9 +190,33 @@ export default function WalletPage() {
     refetchStats();
     refetchSales();
   };
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount)
+  }
+
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'active': return 'bg-green-100 text-green-800'
+      case 'redeemed': return 'bg-blue-100 text-blue-800'
+      case 'partially_redeemed': return 'bg-yellow-100 text-yellow-800'
       case 'canceled': return 'bg-red-100 text-red-800'
       case 'expired': return 'bg-gray-100 text-gray-800'
       default: return 'bg-gray-100 text-gray-800'
+    }
+  }
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'active': return <CheckCircle className="h-4 w-4" />
+      case 'redeemed': return <CheckCircle className="h-4 w-4" />
+      case 'partially_redeemed': return <Clock className="h-4 w-4" />
+      case 'canceled': return <XCircle className="h-4 w-4" />
+      case 'expired': return <XCircle className="h-4 w-4" />
+      default: return <Clock className="h-4 w-4" />
     }
   }
 
@@ -383,6 +400,10 @@ export default function WalletPage() {
                     </CardDescription>
                   </div>
                   <div className="flex gap-2">
+                    <Button onClick={() => setShowCreateModal(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Gift Card
+                    </Button>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                       <SelectTrigger className="w-32">
                         <SelectValue />
@@ -476,6 +497,13 @@ export default function WalletPage() {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Create Gift Card Modal */}
+      <CreateGiftCardModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onSuccess={handleGiftCardSuccess}
+      />
     </div>
   );
 }
