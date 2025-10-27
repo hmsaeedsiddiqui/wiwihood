@@ -24,7 +24,8 @@ import {
   ChevronDown,
   LogOut,
   Shield,
-  MessageSquare
+  MessageSquare,
+  Gift
 } from 'lucide-react';
 
 interface AdminLayoutProps {
@@ -55,6 +56,7 @@ const adminNavItems = [
     items: [
       { name: 'Payments', href: '/admin/payments', icon: CreditCard },
       { name: 'Payouts', href: '/admin/payouts', icon: CreditCard },
+      { name: 'Gift Cards', href: '/admin/gift-cards', icon: Gift },
     ]
   },
   {

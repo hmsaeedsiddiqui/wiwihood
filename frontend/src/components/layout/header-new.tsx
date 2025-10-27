@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { Search, Menu, X, User, Heart, ShoppingBag, Phone, MapPin, ChevronDown } from 'lucide-react';
+import { Search, Menu, X, User, Heart, ShoppingBag, Phone, MapPin, ChevronDown, Gift } from 'lucide-react';
 
 export function Header() {
   const router = useRouter();
@@ -62,6 +62,14 @@ export function Header() {
 
             {/* Right Side Buttons */}
             <div className="flex items-center space-x-3">
+              {/* Gift Cards Button */}
+              <Link href="/gift-cards">
+                <button className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-full font-medium hover:from-purple-600 hover:to-pink-600 transition-colors text-sm shadow-lg">
+                  <Gift className="h-4 w-4" />
+                  <span className="hidden sm:inline">Gift Cards</span>
+                </button>
+              </Link>
+
               {/* Sign Up/Login Button */}
               <Link href="/auth/login">
                 <button className="flex items-center space-x-2 px-4 py-2 bg-white/90 text-gray-800 rounded-full font-medium hover:bg-white transition-colors text-sm backdrop-blur-sm">
@@ -128,6 +136,18 @@ export function Header() {
                     {item.name}
                   </Link>
                 ))}
+                
+                {/* Gift Cards Link in Menu */}
+                <Link
+                  href="/gift-cards"
+                  className="block py-2 px-3 rounded-lg font-medium transition-colors hover:bg-purple-50 text-purple-600 border border-purple-200"
+                  onClick={() => setIsMobileMenuOpen(false)}
+                >
+                  <div className="flex items-center gap-2">
+                    <Gift className="h-4 w-4" />
+                    Gift Cards
+                  </div>
+                </Link>
               </div>
               
               {/* Categories Section */}
