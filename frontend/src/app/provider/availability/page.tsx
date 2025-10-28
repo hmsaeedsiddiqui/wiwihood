@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Calendar, Clock, Settings, Shield, CheckCircle, AlertCircle, Save, Plus, Trash2 } from 'lucide-react';
+import { Calendar, Clock, Settings, Shield, CheckCircle, AlertCircle, Save, Plus, Trash2, Users } from 'lucide-react';
 import {
   useGetProviderWorkingHoursQuery,
   useCreateOrUpdateWorkingHoursMutation,
@@ -15,12 +15,20 @@ import {
   useGetAvailabilityAnalyticsQuery,
   useGetAvailabilitySettingsQuery,
   useUpdateAvailabilitySettingsMutation,
+  useGetServicesWithAvailabilityQuery,
+  useGetServiceAvailabilitySettingsQuery,
+  useCreateOrUpdateServiceAvailabilitySettingsMutation,
+  useGenerateServiceTimeSlotsMutation,
+  useDeleteServiceAvailabilitySettingsMutation,
   type WorkingHours,
   type BlockedTime,
   type TimeSlot,
   type CreateBlockedTimeRequest,
   type GenerateTimeSlotsRequest,
+  type ServiceWithAvailability,
+  type ServiceAvailabilitySettings,
 } from '../../../store/api/providersApi';
+import { useAvailabilitySocket } from '../../../utils/websocket';
 
 const DAYS_OF_WEEK = [
   'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'
@@ -38,6 +46,8 @@ const DAY_LABELS = {
 
 export default function ProviderAvailabilityPage() {
   const [activeTab, setActiveTab] = useState('schedule');
+  const [selectedService, setSelectedService] = useState<string>('');
+  const [serviceSettings, setServiceSettings] = useState<Partial<ServiceAvailabilitySettings>>({});
   const [blockForm, setBlockForm] = useState<CreateBlockedTimeRequest>({
     blockDate: '',
     startTime: '',
@@ -46,6 +56,9 @@ export default function ProviderAvailabilityPage() {
     blockType: 'personal',
     isAllDay: false,
   });
+
+  // WebSocket connection
+  const socket = useAvailabilitySocket();
 
   // API hooks
   const { 
@@ -67,11 +80,27 @@ export default function ProviderAvailabilityPage() {
     data: settings 
   } = useGetAvailabilitySettingsQuery();
 
+  // Service-specific availability hooks
+  const { 
+    data: servicesWithAvailability = [], 
+    refetch: refetchServicesAvailability 
+  } = useGetServicesWithAvailabilityQuery();
+
+  const { 
+    data: currentServiceSettings, 
+    refetch: refetchServiceSettings 
+  } = useGetServiceAvailabilitySettingsQuery(selectedService, {
+    skip: !selectedService,
+  });
+
   const [createOrUpdateWorkingHours, { isLoading: savingHours }] = useCreateOrUpdateWorkingHoursMutation();
   const [createBlockedTime] = useCreateBlockedTimeMutation();
   const [deleteBlockedTime] = useDeleteBlockedTimeMutation();
   const [generateTimeSlots] = useGenerateTimeSlotsMutation();
   const [updateAvailabilitySettings] = useUpdateAvailabilitySettingsMutation();
+  const [createOrUpdateServiceSettings] = useCreateOrUpdateServiceAvailabilitySettingsMutation();
+  const [generateServiceSlots] = useGenerateServiceTimeSlotsMutation();
+  const [deleteServiceSettings] = useDeleteServiceAvailabilitySettingsMutation();
 
   // Local state for working hours
   const [localWorkingHours, setLocalWorkingHours] = useState<WorkingHours[]>([]);
@@ -97,6 +126,51 @@ export default function ProviderAvailabilityPage() {
       setIsInitialized(true);
     }
   }, [loadingHours, hoursError, isInitialized, workingHours.length]); // Use workingHours.length instead of the whole array
+
+  // Initialize WebSocket connection
+  useEffect(() => {
+    const token = localStorage.getItem('providerToken') || localStorage.getItem('accessToken');
+    if (token && !socket.isConnected) {
+      socket.connect(token).catch(console.error);
+    }
+
+    // Set up real-time listeners
+    socket.on('provider-availability-changed', (data: any) => {
+      console.log('Provider availability changed:', data);
+      // Refetch availability data
+      refetchServicesAvailability();
+    });
+
+    socket.on('service-availability-changed', (data: any) => {
+      console.log('Service availability changed:', data);
+      // Refetch service-specific data
+      if (selectedService) {
+        refetchServiceSettings();
+      }
+      refetchServicesAvailability();
+    });
+
+    socket.on('time-slots-updated', (data: any) => {
+      console.log('Time slots updated:', data);
+      // Could update analytics or other relevant data
+    });
+
+    return () => {
+      socket.off('provider-availability-changed');
+      socket.off('service-availability-changed');
+      socket.off('time-slots-updated');
+    };
+  }, [socket, selectedService, refetchServicesAvailability, refetchServiceSettings]);
+
+  // Load service settings when service is selected
+  useEffect(() => {
+    if (selectedService && currentServiceSettings) {
+      setServiceSettings(currentServiceSettings);
+    } else if (selectedService) {
+      // Reset to empty settings if no custom settings exist
+      setServiceSettings({});
+    }
+  }, [selectedService, currentServiceSettings]);
 
   const updateWorkingHours = (dayIndex: number, field: string, value: string | boolean) => {
     const updatedHours = [...localWorkingHours];
@@ -193,6 +267,74 @@ export default function ProviderAvailabilityPage() {
     }
   };
 
+  // Service-specific availability handlers
+  const handleServiceSelect = (serviceId: string) => {
+    setSelectedService(serviceId);
+    if (serviceId) {
+      socket.subscribeToService(serviceId);
+    }
+  };
+
+  const handleServiceSettingsChange = (field: string, value: any) => {
+    setServiceSettings(prev => ({
+      ...prev,
+      [field]: value,
+    }));
+  };
+
+  const saveServiceSettings = async () => {
+    if (!selectedService) return;
+
+    try {
+      await createOrUpdateServiceSettings({
+        serviceId: selectedService,
+        settings: serviceSettings,
+      }).unwrap();
+      
+      alert('Service availability settings saved successfully!');
+      refetchServicesAvailability();
+    } catch (error: any) {
+      console.error('Error saving service settings:', error);
+      alert('Failed to save service settings. Please try again.');
+    }
+  };
+
+  const generateServiceTimeSlots = async () => {
+    if (!selectedService) return;
+
+    try {
+      const today = new Date();
+      const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, today.getDate());
+      
+      await generateServiceSlots({
+        serviceId: selectedService,
+        fromDate: today.toISOString().split('T')[0],
+        toDate: nextMonth.toISOString().split('T')[0],
+      }).unwrap();
+      
+      alert('Service time slots generated successfully!');
+    } catch (error: any) {
+      console.error('Error generating service slots:', error);
+      alert('Failed to generate service time slots. Please try again.');
+    }
+  };
+
+  const deleteServiceAvailabilitySettings = async () => {
+    if (!selectedService) return;
+
+    if (confirm('Are you sure you want to delete custom availability settings for this service? It will use default provider settings.')) {
+      try {
+        await deleteServiceSettings(selectedService).unwrap();
+        setServiceSettings({});
+        alert('Service availability settings deleted successfully!');
+        refetchServicesAvailability();
+      } catch (error: any) {
+        console.error('Error deleting service settings:', error);
+        alert('Failed to delete service settings. Please try again.');
+      }
+    }
+  };
+
   if (loadingHours) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
@@ -277,7 +419,8 @@ export default function ProviderAvailabilityPage() {
                 { id: 'schedule', label: 'Weekly Schedule', icon: Calendar },
                 { id: 'timeslots', label: 'Time Slots', icon: Clock },
                 { id: 'settings', label: 'Settings', icon: Settings },
-                { id: 'blocked', label: 'Blocked Times', icon: Shield }
+                { id: 'blocked', label: 'Blocked Times', icon: Shield },
+                { id: 'services', label: 'Services', icon: Users }
               ].map((tab) => {
                 const IconComponent = tab.icon;
                 return (
@@ -681,6 +824,150 @@ export default function ProviderAvailabilityPage() {
                         </div>
                       )}
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Services Tab */}
+            {activeTab === 'services' && (
+              <div>
+                <div className="flex justify-between items-center mb-6">
+                  <div>
+                    <h3 className="text-lg font-semibold mb-2">Service Availability</h3>
+                    <p className="text-gray-600">Manage availability settings for individual services</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        if (selectedService) generateServiceTimeSlots();
+                      }}
+                      disabled={!selectedService}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition"
+                    >
+                      <Plus className="mr-2 h-4 w-4" />
+                      Generate Service Slots
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (selectedService) deleteServiceAvailabilitySettings();
+                      }}
+                      disabled={!selectedService}
+                      className="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Delete Custom Settings
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="md:col-span-1">
+                    <h4 className="font-medium mb-3">Your Services</h4>
+                    <div className="space-y-2 bg-white border border-gray-200 rounded-lg p-4">
+                      {servicesWithAvailability.length > 0 ? (
+                        servicesWithAvailability.map((s: ServiceWithAvailability) => (
+                          <button
+                            key={s.serviceId}
+                            onClick={() => handleServiceSelect(s.serviceId)}
+                            className={`w-full text-left p-3 rounded-lg transition ${selectedService === s.serviceId ? 'bg-orange-50 border border-orange-200' : 'hover:bg-gray-50'}`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <div>
+                                <div className="font-medium">{s.serviceName}</div>
+                                <div className="text-xs text-gray-500">Default: {s.defaultSettings.durationMinutes}min</div>
+                              </div>
+                              <div className="text-xs text-gray-600">{s.effectiveSettings.availableDays?.length || 0} days</div>
+                            </div>
+                          </button>
+                        ))
+                      ) : (
+                        <div className="text-center text-sm text-gray-500 py-6">No services found</div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <h4 className="font-medium mb-3">Service Settings</h4>
+                    {!selectedService ? (
+                      <div className="p-6 bg-white border border-gray-200 rounded-lg text-sm text-gray-600">Select a service to edit its availability</div>
+                    ) : (
+                      <div className="bg-white border border-gray-200 rounded-lg p-6 space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Duration (minutes)</label>
+                            <input
+                              type="number"
+                              value={serviceSettings?.customDurationMinutes ?? ''}
+                              onChange={(e) => handleServiceSettingsChange('customDurationMinutes', Number(e.target.value) || undefined)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-1">Buffer Time (minutes)</label>
+                            <input
+                              type="number"
+                              value={serviceSettings?.customBufferTimeMinutes ?? ''}
+                              onChange={(e) => handleServiceSettingsChange('customBufferTimeMinutes', Number(e.target.value) || undefined)}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                            />
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">Available Days</label>
+                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            {DAYS_OF_WEEK.map((d) => (
+                              <label key={d} className="flex items-center gap-2 text-sm">
+                                <input
+                                  type="checkbox"
+                                  checked={(serviceSettings?.availableDays || []).includes(d)}
+                                  onChange={() => {
+                                    const current = new Set(serviceSettings?.availableDays || []);
+                                    if (current.has(d)) current.delete(d); else current.add(d);
+                                    handleServiceSettingsChange('availableDays', Array.from(current));
+                                  }}
+                                  className="h-4 w-4 text-blue-600 rounded"
+                                />
+                                <span className="capitalize">{DAY_LABELS[d]}</span>
+                              </label>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={!!serviceSettings?.allowWeekends}
+                              onChange={(e) => handleServiceSettingsChange('allowWeekends', e.target.checked)}
+                              className="h-4 w-4"
+                            />
+                            <label className="text-sm">Allow Weekends</label>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="checkbox"
+                              checked={!!serviceSettings?.isTemporarilyUnavailable}
+                              onChange={(e) => handleServiceSettingsChange('isTemporarilyUnavailable', e.target.checked)}
+                              className="h-4 w-4"
+                            />
+                            <label className="text-sm">Temporarily Unavailable</label>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3 pt-4">
+                          <button
+                            onClick={saveServiceSettings}
+                            className="px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700"
+                          >
+                            <Save className="mr-2 h-4 w-4" />
+                            Save Service Settings
+                          </button>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

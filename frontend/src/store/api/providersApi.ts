@@ -146,6 +146,61 @@ export interface AvailabilitySettings {
   requireConfirmation: boolean
 }
 
+// Service-specific availability interfaces
+export interface ServiceAvailabilitySettings {
+  id?: string;
+  serviceId: string;
+  providerId: string;
+  customDurationMinutes?: number;
+  customBufferTimeMinutes?: number;
+  customMaxAdvanceBookingDays?: number;
+  customMinAdvanceBookingHours?: number;
+  availableDays?: string[];
+  customTimeSlots?: string[];
+  customWorkingHours?: {
+    [day: string]: {
+      startTime: string;
+      endTime: string;
+      breakStartTime?: string;
+      breakEndTime?: string;
+    };
+  };
+  requiresSpecialScheduling?: boolean;
+  allowWeekends?: boolean;
+  allowBackToBack?: boolean;
+  maxBookingsPerDay?: number;
+  preparationTimeMinutes?: number;
+  cleanupTimeMinutes?: number;
+  priority?: number;
+  availabilityNotes?: string;
+  isTemporarilyUnavailable?: boolean;
+  unavailabilityReason?: string;
+  availableAgainAt?: string;
+  isActive?: boolean;
+}
+
+export interface ServiceWithAvailability {
+  serviceId: string;
+  serviceName: string;
+  defaultSettings: {
+    durationMinutes: number;
+    bufferTimeMinutes: number;
+    maxAdvanceBookingDays: number;
+    minAdvanceBookingHours: number;
+  };
+  customSettings: ServiceAvailabilitySettings | null;
+  effectiveSettings: {
+    durationMinutes: number;
+    bufferTimeMinutes: number;
+    maxAdvanceBookingDays: number;
+    minAdvanceBookingHours: number;
+    availableDays: string[];
+    requiresSpecialScheduling: boolean;
+    allowWeekends: boolean;
+    maxBookingsPerDay?: number;
+  };
+}
+
 // Request types
 export interface CreateBlockedTimeRequest {
   blockDate: string
@@ -275,7 +330,7 @@ export const providersApi = createApi({
       return headers
     },
   }),
-  tagTypes: ['Provider', 'Category'],
+  tagTypes: ['Provider', 'Category', 'ServiceAvailability', 'TimeSlot'],
   endpoints: (builder) => ({
     // Get current provider profile
     getCurrentProvider: builder.query<Provider, void>({
@@ -543,6 +598,86 @@ export const providersApi = createApi({
       invalidatesTags: ['Provider'],
     }),
 
+    // =================== SERVICE-SPECIFIC AVAILABILITY ENDPOINTS ===================
+
+    // Get all services with their availability settings
+    getServicesWithAvailability: builder.query<ServiceWithAvailability[], void>({
+      query: () => 'providers/me/services-availability',
+      providesTags: ['Provider', 'ServiceAvailability'],
+    }),
+
+    // Get service-specific availability settings
+    getServiceAvailabilitySettings: builder.query<ServiceAvailabilitySettings | null, string>({
+      query: (serviceId) => `providers/me/services/${serviceId}/availability`,
+      providesTags: (result, error, serviceId) => [
+        { type: 'ServiceAvailability', id: serviceId },
+      ],
+    }),
+
+    // Create or update service-specific availability settings
+    createOrUpdateServiceAvailabilitySettings: builder.mutation<
+      ServiceAvailabilitySettings,
+      { serviceId: string; settings: Partial<ServiceAvailabilitySettings> }
+    >({
+      query: ({ serviceId, settings }) => ({
+        url: `providers/me/services/${serviceId}/availability`,
+        method: 'POST',
+        body: settings,
+      }),
+      invalidatesTags: (result, error, { serviceId }) => [
+        { type: 'ServiceAvailability', id: serviceId },
+        'Provider',
+      ],
+    }),
+
+    // Generate time slots for a specific service
+    generateServiceTimeSlots: builder.mutation<
+      TimeSlot[],
+      { serviceId: string; fromDate: string; toDate: string }
+    >({
+      query: ({ serviceId, fromDate, toDate }) => ({
+        url: `providers/me/services/${serviceId}/generate-slots`,
+        method: 'POST',
+        body: { fromDate, toDate },
+      }),
+      invalidatesTags: (result, error, { serviceId }) => [
+        { type: 'ServiceAvailability', id: serviceId },
+        'TimeSlot',
+      ],
+    }),
+
+    // Get available time slots for a specific service (public endpoint)
+    getServiceTimeSlots: builder.query<
+      {
+        date: string;
+        serviceId: string;
+        serviceName: string;
+        availableSlots: TimeSlot[];
+        totalSlots: number;
+        bookedSlots: number;
+        customSettings: ServiceAvailabilitySettings | null;
+      },
+      { providerId: string; serviceId: string; date: string }
+    >({
+      query: ({ providerId, serviceId, date }) => 
+        `providers/${providerId}/services/${serviceId}/slots/${date}`,
+      providesTags: (result, error, { serviceId, date }) => [
+        { type: 'ServiceAvailability', id: `${serviceId}-${date}` },
+      ],
+    }),
+
+    // Delete service-specific availability settings
+    deleteServiceAvailabilitySettings: builder.mutation<void, string>({
+      query: (serviceId) => ({
+        url: `providers/me/services/${serviceId}/availability`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: (result, error, serviceId) => [
+        { type: 'ServiceAvailability', id: serviceId },
+        'Provider',
+      ],
+    }),
+
     // Get provider dashboard stats
     getProviderDashboard: builder.query<any, void>({
       query: () => 'dashboard',
@@ -610,4 +745,12 @@ export const {
   useGetAvailabilityAnalyticsQuery,
   useGetAvailabilitySettingsQuery,
   useUpdateAvailabilitySettingsMutation,
+  
+  // Service-specific availability hooks
+  useGetServicesWithAvailabilityQuery,
+  useGetServiceAvailabilitySettingsQuery,
+  useCreateOrUpdateServiceAvailabilitySettingsMutation,
+  useGenerateServiceTimeSlotsMutation,
+  useGetServiceTimeSlotsQuery,
+  useDeleteServiceAvailabilitySettingsMutation,
 } = providersApi

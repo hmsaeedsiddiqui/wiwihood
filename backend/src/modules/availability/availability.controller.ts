@@ -462,4 +462,107 @@ export class AvailabilityController {
       settingsData,
     );
   }
+
+  // =================== SERVICE-SPECIFIC AVAILABILITY ENDPOINTS ===================
+
+  @ApiOperation({ summary: 'Get all services with their availability settings' })
+  @ApiResponse({
+    status: 200,
+    description: 'Services with availability settings retrieved successfully',
+  })
+  @Roles('provider', 'admin')
+  @Get('me/services-availability')
+  async getServicesWithAvailability(@Req() req: any) {
+    const providerId = await this.getProviderIdFromUser(req.user.sub);
+    return await this.availabilityService.getProviderServicesWithAvailability(providerId);
+  }
+
+  @ApiOperation({ summary: 'Get service-specific availability settings' })
+  @ApiResponse({
+    status: 200,
+    description: 'Service availability settings retrieved successfully',
+  })
+  @Roles('provider', 'admin')
+  @Get('me/services/:serviceId/availability')
+  async getServiceAvailabilitySettings(
+    @Param('serviceId') serviceId: string,
+    @Req() req: any,
+  ) {
+    const providerId = await this.getProviderIdFromUser(req.user.sub);
+    return await this.availabilityService.getServiceAvailabilitySettings(providerId, serviceId);
+  }
+
+  @ApiOperation({ summary: 'Create or update service-specific availability settings' })
+  @ApiResponse({
+    status: 200,
+    description: 'Service availability settings updated successfully',
+  })
+  @Roles('provider', 'admin')
+  @Post('me/services/:serviceId/availability')
+  async createOrUpdateServiceAvailabilitySettings(
+    @Param('serviceId') serviceId: string,
+    @Body() settingsData: any,
+    @Req() req: any,
+  ) {
+    const providerId = await this.getProviderIdFromUser(req.user.sub);
+    return await this.availabilityService.createOrUpdateServiceAvailabilitySettings(
+      providerId,
+      serviceId,
+      settingsData,
+    );
+  }
+
+  @ApiOperation({ summary: 'Generate time slots for a specific service' })
+  @ApiResponse({
+    status: 201,
+    description: 'Service-specific time slots generated successfully',
+  })
+  @Roles('provider', 'admin')
+  @Post('me/services/:serviceId/generate-slots')
+  async generateServiceTimeSlots(
+    @Param('serviceId') serviceId: string,
+    @Body() generateData: { fromDate: string; toDate: string },
+    @Req() req: any,
+  ) {
+    const providerId = await this.getProviderIdFromUser(req.user.sub);
+    return await this.availabilityService.generateServiceSpecificTimeSlots(
+      providerId,
+      serviceId,
+      generateData.fromDate,
+      generateData.toDate,
+    );
+  }
+
+  @ApiOperation({ summary: 'Get available time slots for a specific service' })
+  @ApiResponse({
+    status: 200,
+    description: 'Service time slots retrieved successfully',
+  })
+  @Get('providers/:providerId/services/:serviceId/slots/:date')
+  async getServiceTimeSlots(
+    @Param('providerId') providerId: string,
+    @Param('serviceId') serviceId: string,
+    @Param('date') date: string,
+  ) {
+    return await this.availabilityService.getServiceAvailableTimeSlots(
+      providerId,
+      serviceId,
+      date,
+    );
+  }
+
+  @ApiOperation({ summary: 'Delete service-specific availability settings' })
+  @ApiResponse({
+    status: 204,
+    description: 'Service availability settings deleted successfully',
+  })
+  @Roles('provider', 'admin')
+  @Delete('me/services/:serviceId/availability')
+  async deleteServiceAvailabilitySettings(
+    @Param('serviceId') serviceId: string,
+    @Req() req: any,
+  ) {
+    const providerId = await this.getProviderIdFromUser(req.user.sub);
+    await this.availabilityService.deleteServiceAvailabilitySettings(providerId, serviceId);
+  }
 }

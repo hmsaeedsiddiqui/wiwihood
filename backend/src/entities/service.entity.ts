@@ -14,6 +14,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Provider } from './provider.entity';
 import { Category } from './category.entity';
 import { Booking } from './booking.entity';
+import { ServiceAvailabilitySettings } from './service-availability-settings.entity';
 
 export enum ServiceStatus {
   ACTIVE = 'active',
@@ -329,6 +330,9 @@ export class Service {
 
   @OneToMany(() => Booking, (booking) => booking.service)
   bookings: Booking[];
+
+  @OneToMany(() => ServiceAvailabilitySettings, (settings) => settings.service)
+  availabilitySettings: ServiceAvailabilitySettings[];
 
   // @ManyToMany('ServiceAddon', 'compatibleServices')
   // compatibleAddons: any[];

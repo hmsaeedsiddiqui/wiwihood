@@ -6,6 +6,8 @@ import { ProviderBlockedTime, BlockedTimeType } from '../../entities/provider-bl
 import { ProviderTimeSlot, TimeSlotStatus } from '../../entities/provider-time-slot.entity';
 import { Provider } from '../../entities/provider.entity';
 import { Service } from '../../entities/service.entity';
+import { ServiceAvailabilitySettings } from '../../entities/service-availability-settings.entity';
+import { AvailabilityGateway } from '../websocket/websocket-gateway';
 import { CreateWorkingHoursDto } from './dto/create-working-hours.dto';
 import { UpdateWorkingHoursDto } from './dto/update-working-hours.dto';
 import { CreateBlockedTimeDto } from './dto/create-blocked-time.dto';
@@ -25,6 +27,9 @@ export class AvailabilityService {
     private readonly providerRepository: Repository<Provider>,
     @InjectRepository(Service)
     private readonly serviceRepository: Repository<Service>,
+    @InjectRepository(ServiceAvailabilitySettings)
+    private readonly serviceAvailabilityRepository: Repository<ServiceAvailabilitySettings>,
+    private readonly websocketGateway: AvailabilityGateway,
   ) {}
 
   // =================== WORKING HOURS METHODS ===================
@@ -349,7 +354,7 @@ export class AvailabilityService {
         );
 
         // Generate slots for this day
-        const daySlots = await this.generateSlotsForDay(
+        const daySlots = await this.generateProviderSlotsForDay(
           providerId,
           dateString,
           dayWorkingHours,
@@ -893,7 +898,7 @@ export class AvailabilityService {
     });
   }
 
-  private async generateSlotsForDay(
+  private async generateProviderSlotsForDay(
     providerId: string,
     date: string,
     workingHours: ProviderWorkingHours,
@@ -1023,5 +1028,391 @@ export class AvailabilityService {
     }
     
     return grouped;
+  }
+
+  // =================== SERVICE-SPECIFIC AVAILABILITY METHODS ===================
+
+  /**
+   * Get service-specific availability settings
+   */
+  async getServiceAvailabilitySettings(
+    providerId: string, 
+    serviceId: string
+  ): Promise<ServiceAvailabilitySettings | null> {
+    return await this.serviceAvailabilityRepository.findOne({
+      where: { providerId, serviceId },
+      relations: ['service'],
+    });
+  }
+
+  /**
+   * Create or update service-specific availability settings
+   */
+  async createOrUpdateServiceAvailabilitySettings(
+    providerId: string,
+    serviceId: string,
+    settingsData: Partial<ServiceAvailabilitySettings>
+  ): Promise<ServiceAvailabilitySettings> {
+    await this.validateProvider(providerId);
+    
+    // Verify service belongs to provider
+    const service = await this.serviceRepository.findOne({
+      where: { id: serviceId, providerId },
+    });
+    
+    if (!service) {
+      throw new NotFoundException('Service not found for this provider');
+    }
+
+    // Check if settings already exist
+    let settings = await this.serviceAvailabilityRepository.findOne({
+      where: { providerId, serviceId },
+    });
+
+    if (settings) {
+      // Update existing settings
+      Object.assign(settings, settingsData);
+      settings = await this.serviceAvailabilityRepository.save(settings);
+    } else {
+      // Create new settings
+      settings = this.serviceAvailabilityRepository.create({
+        providerId,
+        serviceId,
+        ...settingsData,
+      });
+      settings = await this.serviceAvailabilityRepository.save(settings);
+    }
+
+    // Notify clients about service availability update
+    await this.websocketGateway.notifyServiceAvailabilityUpdate(
+      serviceId, 
+      providerId, 
+      { settings, type: 'service-settings-updated' }
+    );
+
+    return settings;
+  }
+
+  /**
+   * Get all services with their availability settings for a provider
+   */
+  async getProviderServicesWithAvailability(
+    providerId: string
+  ): Promise<{
+    serviceId: string;
+    serviceName: string;
+    defaultSettings: any;
+    customSettings: ServiceAvailabilitySettings | null;
+    effectiveSettings: any;
+  }[]> {
+    await this.validateProvider(providerId);
+
+    // Get all services for this provider
+    const services = await this.serviceRepository.find({
+      where: { providerId },
+      select: ['id', 'name', 'durationMinutes', 'bufferTimeMinutes', 'maxAdvanceBookingDays', 'minAdvanceBookingHours'],
+    });
+
+    // Get custom availability settings for each service
+    const results = [];
+    for (const service of services) {
+      const customSettings = await this.getServiceAvailabilitySettings(providerId, service.id);
+      
+      const defaultSettings = {
+        durationMinutes: service.durationMinutes,
+        bufferTimeMinutes: service.bufferTimeMinutes,
+        maxAdvanceBookingDays: service.maxAdvanceBookingDays,
+        minAdvanceBookingHours: service.minAdvanceBookingHours,
+      };
+
+      const effectiveSettings = {
+        durationMinutes: customSettings?.customDurationMinutes || service.durationMinutes,
+        bufferTimeMinutes: customSettings?.customBufferTimeMinutes || service.bufferTimeMinutes || 15,
+        maxAdvanceBookingDays: customSettings?.customMaxAdvanceBookingDays || service.maxAdvanceBookingDays || 30,
+        minAdvanceBookingHours: customSettings?.customMinAdvanceBookingHours || service.minAdvanceBookingHours || 2,
+        availableDays: customSettings?.availableDays || ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+        requiresSpecialScheduling: customSettings?.requiresSpecialScheduling || false,
+        allowWeekends: customSettings?.allowWeekends ?? true,
+        maxBookingsPerDay: customSettings?.maxBookingsPerDay,
+      };
+
+      results.push({
+        serviceId: service.id,
+        serviceName: service.name,
+        defaultSettings,
+        customSettings,
+        effectiveSettings,
+      });
+    }
+
+    return results;
+  }
+
+  /**
+   * Generate time slots for a specific service based on its availability settings
+   */
+  async generateServiceSpecificTimeSlots(
+    providerId: string,
+    serviceId: string,
+    fromDate: string,
+    toDate: string
+  ): Promise<ProviderTimeSlot[]> {
+    await this.validateProvider(providerId);
+
+    // Get service and its availability settings
+    const service = await this.serviceRepository.findOne({
+      where: { id: serviceId, providerId },
+    });
+
+    if (!service) {
+      throw new NotFoundException('Service not found');
+    }
+
+    const settings = await this.getServiceAvailabilitySettings(providerId, serviceId);
+
+    // Get provider's working hours
+    const workingHours = await this.getWorkingHours(providerId);
+
+    // Get blocked times
+    const blockedTimes = await this.getBlockedTimes(providerId, fromDate, toDate);
+
+    const slots: ProviderTimeSlot[] = [];
+    const currentDate = new Date(fromDate);
+    const endDate = new Date(toDate);
+
+    while (currentDate <= endDate) {
+  const dayOfWeek = this.getDayOfWeekFromDate(currentDate);
+  const dayWorkingHours = workingHours.find(wh => wh.dayOfWeek === dayOfWeek && wh.isActive);
+
+      if (dayWorkingHours) {
+        // Check if service is available on this day
+        const serviceAvailableDays = settings?.availableDays || 
+          ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+        
+        if (serviceAvailableDays.includes(dayOfWeek.toLowerCase())) {
+          // Use custom working hours for this service if available
+          const effectiveWorkingHours = settings?.customWorkingHours?.[dayOfWeek] || {
+            startTime: dayWorkingHours.startTime,
+            endTime: dayWorkingHours.endTime,
+            breakStartTime: dayWorkingHours.breakStartTime,
+            breakEndTime: dayWorkingHours.breakEndTime,
+          };
+
+          // Generate slots for this day
+          const daySlots = await this.generateSlotsForDay(
+            providerId,
+            serviceId,
+            currentDate,
+            effectiveWorkingHours,
+            settings,
+            service,
+            blockedTimes
+          );
+
+          slots.push(...daySlots);
+        }
+      }
+
+      currentDate.setDate(currentDate.getDate() + 1);
+    }
+
+    // Save generated slots
+    if (slots.length > 0) {
+      await this.timeSlotRepository.save(slots);
+      
+      // Notify clients about new time slots
+      await this.websocketGateway.notifyTimeSlotsUpdate(providerId, serviceId, slots);
+    }
+
+    return slots;
+  }
+
+  /**
+   * Get available time slots for a specific service
+   */
+  async getServiceAvailableTimeSlots(
+    providerId: string,
+    serviceId: string,
+    date: string
+  ): Promise<{
+    date: string;
+    serviceId: string;
+    serviceName: string;
+    availableSlots: ProviderTimeSlot[];
+    totalSlots: number;
+    bookedSlots: number;
+    customSettings: ServiceAvailabilitySettings | null;
+  }> {
+    await this.validateProvider(providerId);
+
+    const service = await this.serviceRepository.findOne({
+      where: { id: serviceId, providerId },
+    });
+
+    if (!service) {
+      throw new NotFoundException('Service not found');
+    }
+
+    const customSettings = await this.getServiceAvailabilitySettings(providerId, serviceId);
+
+    // Get time slots for this service and date
+    const allSlots = await this.timeSlotRepository.find({
+      where: {
+        providerId,
+        serviceId,
+        slotDate: date,
+      },
+      order: { startTime: 'ASC' },
+    });
+
+    const availableSlots = allSlots.filter(slot => slot.status === TimeSlotStatus.AVAILABLE);
+    const bookedSlots = allSlots.filter(slot => slot.status === TimeSlotStatus.BOOKED).length;
+
+    return {
+      date,
+      serviceId,
+      serviceName: service.name,
+      availableSlots,
+      totalSlots: allSlots.length,
+      bookedSlots,
+      customSettings,
+    };
+  }
+
+  /**
+   * Delete service-specific availability settings
+   */
+  async deleteServiceAvailabilitySettings(
+    providerId: string,
+    serviceId: string
+  ): Promise<void> {
+    await this.validateProvider(providerId);
+
+    const settings = await this.serviceAvailabilityRepository.findOne({
+      where: { providerId, serviceId },
+    });
+
+    if (settings) {
+      await this.serviceAvailabilityRepository.remove(settings);
+      
+      // Notify clients about settings removal
+      await this.websocketGateway.notifyServiceAvailabilityUpdate(
+        serviceId, 
+        providerId, 
+        { type: 'service-settings-deleted' }
+      );
+    }
+  }
+
+  // =================== HELPER METHODS FOR SERVICE-SPECIFIC AVAILABILITY ===================
+
+  private async generateSlotsForDay(
+    providerId: string,
+    serviceId: string,
+    date: Date,
+    workingHours: any,
+    settings: ServiceAvailabilitySettings | null,
+    service: Service,
+    blockedTimes: ProviderBlockedTime[]
+  ): Promise<ProviderTimeSlot[]> {
+    const slots: ProviderTimeSlot[] = [];
+    const dateStr = date.toISOString().split('T')[0];
+
+    // Check if this date is blocked
+    const isDateBlocked = blockedTimes.some(bt => 
+      bt.blockDate === dateStr && bt.isAllDay
+    );
+
+    if (isDateBlocked) {
+      return slots;
+    }
+
+    // Get effective duration and buffer time
+    const durationMinutes = settings?.customDurationMinutes || service.durationMinutes;
+    const bufferMinutes = settings?.customBufferTimeMinutes || 15;
+    const preparationMinutes = settings?.preparationTimeMinutes || 0;
+    const cleanupMinutes = settings?.cleanupTimeMinutes || 0;
+
+    // Calculate total slot time
+    const totalSlotTime = durationMinutes + bufferMinutes + preparationMinutes + cleanupMinutes;
+
+    // Generate time slots
+    const startTime = workingHours.startTime;
+    const endTime = workingHours.endTime;
+    const breakStart = workingHours.breakStartTime;
+    const breakEnd = workingHours.breakEndTime;
+
+    let currentTime = this.timeStringToMinutes(startTime);
+    const endTimeMinutes = this.timeStringToMinutes(endTime);
+    const breakStartMinutes = breakStart ? this.timeStringToMinutes(breakStart) : null;
+    const breakEndMinutes = breakEnd ? this.timeStringToMinutes(breakEnd) : null;
+
+    while (currentTime + totalSlotTime <= endTimeMinutes) {
+      // Check if slot conflicts with break time
+      if (breakStartMinutes && breakEndMinutes) {
+        if (currentTime < breakEndMinutes && currentTime + totalSlotTime > breakStartMinutes) {
+          // Slot conflicts with break, skip to after break
+          currentTime = breakEndMinutes;
+          continue;
+        }
+      }
+
+      // Check if slot conflicts with blocked times
+      const slotStart = this.minutesToTimeString(currentTime);
+      const slotEnd = this.minutesToTimeString(currentTime + totalSlotTime);
+      
+      const isSlotBlocked = blockedTimes.some(bt => 
+        bt.blockDate === dateStr && 
+        !bt.isAllDay &&
+        bt.startTime &&
+        bt.endTime &&
+        this.timeRangesOverlap(slotStart, slotEnd, bt.startTime, bt.endTime)
+      );
+
+      if (!isSlotBlocked) {
+        // Create time slot
+        const slot = this.timeSlotRepository.create({
+          providerId,
+          serviceId,
+          slotDate: dateStr,
+          startTime: slotStart,
+          endTime: this.minutesToTimeString(currentTime + durationMinutes),
+          durationMinutes,
+          bufferTimeMinutes: bufferMinutes,
+          status: TimeSlotStatus.AVAILABLE,
+          isManuallyCreated: false,
+          isBreakSlot: false,
+          maxBookings: 1,
+          currentBookings: 0,
+          customPrice: service.basePrice,
+        });
+
+        slots.push(slot);
+      }
+
+      currentTime += totalSlotTime;
+    }
+
+    return slots;
+  }
+
+  private timeStringToMinutes(timeString: string): number {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+  }
+
+  private minutesToTimeString(minutes: number): string {
+    const hours = Math.floor(minutes / 60);
+    const mins = minutes % 60;
+    return `${hours.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}`;
+  }
+
+  private timeRangesOverlap(start1: string, end1: string, start2: string, end2: string): boolean {
+    const start1Minutes = this.timeStringToMinutes(start1);
+    const end1Minutes = this.timeStringToMinutes(end1);
+    const start2Minutes = this.timeStringToMinutes(start2);
+    const end2Minutes = this.timeStringToMinutes(end2);
+
+    return start1Minutes < end2Minutes && end1Minutes > start2Minutes;
   }
 }
