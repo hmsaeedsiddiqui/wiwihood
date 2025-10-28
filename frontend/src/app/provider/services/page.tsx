@@ -116,27 +116,7 @@ function ServicesPage() {
     }
   }, [isAuthenticated]);
 
-  // Development helper function
-  const setupDevProvider = () => {
-  if (process.env.NODE_ENV === 'development' && typeof window !== 'undefined') {
-      const devUser = {
-        id: 'bf5eb227-6a77-499f-845e-4db8954f45a4', // Original provider ID
-        email: 'dev@wiwihood.com',
-        firstName: 'Test',
-        lastName: 'Provider',
-        isEmailVerified: true,
-        role: 'provider'
-      };
-      
-      // Store in localStorage for development
-  localStorage.setItem('devUser', JSON.stringify(devUser));
-  localStorage.setItem('accessToken', 'dev-token-123');
-  localStorage.setItem('devProviderId', 'bf5eb227-6a77-499f-845e-4db8954f45a4');
-      
-      console.log('🧪 Development provider setup complete:', devUser);
-      window.location.reload();
-    }
-  };
+
 
   // Helper function for login with redirect
   const handleLoginRedirect = () => {
@@ -147,71 +127,7 @@ function ServicesPage() {
     }
   };
 
-  // Development helper to add test service
-  const addTestService = async () => {
-    if (process.env.NODE_ENV === 'development' && providerId) {
-      try {
-        console.log('🧪 Testing service creation with:', { providerId });
-        
-        const testService: CreateServiceRequest = {
-          name: 'Test Hair Cut',
-          description: 'A professional hair cutting service',
-          shortDescription: 'Hair Cut',
-          categoryId: '618abaa0-b010-4f4b-859f-cddeb35296fb', // Hair Services category UUID
-          serviceType: 'appointment',
-          pricingType: 'fixed',
-          basePrice: 50,
-          durationMinutes: 60,
-          bufferTimeMinutes: 0,
-          maxAdvanceBookingDays: 30,
-          minAdvanceBookingHours: 1,
-          cancellationPolicyHours: 24,
-          requiresDeposit: false,
-          depositAmount: 0,
-          preparationInstructions: '',
-          isActive: true,
-          images: [],
-          tags: [],
-          displayLocation: 'Dubai Marina',
-          providerBusinessName: 'Elite Beauty Studio Dubai',
-          highlightBadge: '',
-          featuredImage: '',
-          availableSlots: ['9:00 AM', '10:00 AM'],
-          promotionText: '',
-          isFeatured: false,
-          difficultyLevel: 'intermediate',
-          specialRequirements: '',
-          includes: ['Deep cleansing', 'Exfoliation'],
-          excludes: ['Hair coloring'],
-          ageRestriction: '',
-          genderPreference: 'any',
-          isPromotional: false,
-          discountPercentage: '',
-          promoCode: '',
-          dealValidUntil: '',
-          dealCategory: '',
-          dealTitle: '',
-          dealDescription: '',
-          originalPrice: undefined,
-          minBookingAmount: undefined,
-          usageLimit: undefined,
-          dealTerms: ''
-        };
-        
-        console.log('🧪 Test service data:', testService);
-        console.log('🧪 CreateService function available:', typeof createService);
-        
-        const result = await createService(providerId, testService);
-        console.log('✅ Test service added successfully:', result);
-        
-        // Refresh services list
-        refetchServices();
-      } catch (error) {
-        console.error('❌ Failed to add test service:', error);
-        console.error('❌ Test service error details:', JSON.stringify(error, null, 2));
-      }
-    }
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -457,16 +373,6 @@ function ServicesPage() {
               >
                 Go to Login
               </button>
-              
-              {/* Development Mode Quick Login */}
-              {process.env.NODE_ENV === 'development' && (
-                <button 
-                  onClick={setupDevProvider}
-                  className="bg-gradient-to-r from-blue-500 to-indigo-600 text-white font-bold py-3 px-8 rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300"
-                >
-                  🧪 Dev Login
-                </button>
-              )}
             </div>
           </div>
         </div>
@@ -501,19 +407,6 @@ function ServicesPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F5F0EF] via-white to-[#E89B8B]/10">
       <div className="max-w-6xl mx-auto p-6 md:p-8">
-        {/* Development Helper */}
-        {process.env.NODE_ENV === 'development' && (
-          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-            <h3 className="text-sm font-bold text-red-800 mb-2">🛠️ Development Tools</h3>
-            <div className="flex gap-2">
-              {/* Removed clearAllCaches button due to missing function */}
-              <span className="text-xs text-red-600 self-center">
-                Use this if you see old image URLs
-              </span>
-            </div>
-          </div>
-        )}
-        
 
         {/* Enhanced Header */}
         <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-10 gap-6">
@@ -1278,7 +1171,6 @@ function ServicesPage() {
 
                       // Prevent duplicates
                       if (formData.images.includes(url)) {
-                        console.warn('Duplicate image ignored:', url);
                         return;
                       }
 
@@ -1326,12 +1218,6 @@ function ServicesPage() {
                       >
                         <X className="w-4 h-4" />
                       </button>
-                      {/* Debug info in development */}
-                      {process.env.NODE_ENV === 'development' && (
-                        <div className="text-xs text-gray-500 mt-1 break-all">
-                          ID: {publicId}
-                        </div>
-                      )}
                     </div>
                   ))}
                 </div>
@@ -1460,21 +1346,9 @@ function ServicesPage() {
                                   height={96}
                                   className="rounded-xl object-cover w-full h-full shadow-lg group-hover/image:shadow-xl transform group-hover/image:scale-110 transition-all duration-300"
                                 />
-                                {/* Debug info in development */}
-                                {process.env.NODE_ENV === 'development' && (
-                                  <div className="text-xs text-gray-500 mt-1 break-all">
-                                    ID: {publicId}
-                                  </div>
-                                )}
                               </div>
                             ))}
                           </div>
-                          {/* Show message if some images were filtered out */}
-                          {process.env.NODE_ENV === 'development' && service.images.length !== cleanImageArray(service.images).length && (
-                            <div className="text-xs text-orange-600 mt-2">
-                              ⚠️ {service.images.length - cleanImageArray(service.images).length} invalid image(s) filtered out
-                            </div>
-                          )}
                         </div>
                       )}
                     </div>

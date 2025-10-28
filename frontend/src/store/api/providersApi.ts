@@ -44,6 +44,147 @@ export interface Provider {
   fullAddress?: string
 }
 
+// Availability types
+export interface WorkingHours {
+  id: string
+  dayOfWeek: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
+  isWorkingDay: boolean
+  startTime?: string
+  endTime?: string
+  breakStartTime?: string
+  breakEndTime?: string
+  maxBookingsPerDay?: number
+  isTemporarilyUnavailable?: boolean
+  timezone?: string
+  notes?: string
+  providerId: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface BlockedTime {
+  id: string
+  blockDate: string
+  startTime?: string
+  endTime?: string
+  isAllDay: boolean
+  blockType: 'vacation' | 'personal' | 'maintenance' | 'holiday' | 'emergency' | 'other'
+  reason: string
+  isActive: boolean
+  isRecurring: boolean
+  recurringPattern?: string
+  recurringEndDate?: string
+  notes?: string
+  providerId: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface TimeSlot {
+  id: string
+  slotDate: string
+  startTime: string
+  endTime: string
+  durationMinutes: number
+  status: 'available' | 'booked' | 'blocked' | 'break'
+  maxBookings: number
+  currentBookings: number
+  bufferTimeMinutes: number
+  isManuallyCreated: boolean
+  isBreakSlot: boolean
+  customPrice?: number
+  notes?: string
+  providerId: string
+  serviceId?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ProviderAvailabilityResponse {
+  date: string
+  isAvailable: boolean
+  workingHours?: WorkingHours
+  availableSlots: TimeSlot[]
+  totalSlots: number
+  bookedSlots: number
+}
+
+export interface AvailabilityAnalytics {
+  period: 'week' | 'month' | 'year'
+  dateRange: { from: string; to: string }
+  slots: {
+    total: number
+    available: number
+    booked: number
+    blocked: number
+    break: number
+  }
+  rates: {
+    utilization: number
+    availability: number
+  }
+  workingSchedule: {
+    workingDays: number
+    totalWorkingHours: number
+    avgHoursPerDay: number
+  }
+  blockedTimes: {
+    total: number
+    active: number
+    byType: { [key: string]: number }
+  }
+}
+
+export interface AvailabilitySettings {
+  defaultSlotDuration: number
+  defaultBufferTime: number
+  maxAdvanceBookingDays: number
+  minAdvanceBookingHours: number
+  autoGenerateSlots: boolean
+  timezone: string
+  allowDoubleBooking: boolean
+  requireConfirmation: boolean
+}
+
+// Request types
+export interface CreateBlockedTimeRequest {
+  blockDate: string
+  startTime?: string
+  endTime?: string
+  isAllDay?: boolean
+  blockType: 'vacation' | 'personal' | 'maintenance' | 'holiday' | 'emergency' | 'other'
+  reason: string
+  isRecurring?: boolean
+  recurringPattern?: string
+  recurringEndDate?: string
+  notes?: string
+}
+
+export interface GenerateTimeSlotsRequest {
+  fromDate: string
+  toDate: string
+  slotDurationMinutes?: number
+  bufferTimeMinutes?: number
+  serviceId?: string
+  maxBookings?: number
+  daysOfWeek?: string[]
+  overrideWorkingHours?: {
+    startTime: string
+    endTime: string
+    breakStartTime?: string
+    breakEndTime?: string
+  }
+  skipExistingSlots?: boolean
+  customPrice?: number
+}
+
+export interface BulkUpdateSlotsRequest {
+  slotIds: string[]
+  status?: string
+  customPrice?: number
+  notes?: string
+}
+
 export interface CreateProviderRequest {
   businessName: string
   providerType: 'individual' | 'business'
@@ -210,18 +351,196 @@ export const providersApi = createApi({
       invalidatesTags: ['Provider'],
     }),
 
-    // Get provider availability
-    getProviderAvailability: builder.query<any, void>({
-      query: () => 'me/availability',
+    // =================== AVAILABILITY ENDPOINTS ===================
+
+    // Get provider working hours
+    getProviderWorkingHours: builder.query<WorkingHours[], void>({
+      query: () => 'providers/me/availability/working-hours',
+      providesTags: ['Provider'],
     }),
 
-    // Update provider availability
-    updateProviderAvailability: builder.mutation<any, any>({
+    // Create or update working hours
+    createOrUpdateWorkingHours: builder.mutation<WorkingHours[], WorkingHours[]>({
       query: (data) => ({
-        url: 'me/availability',
+        url: 'providers/me/availability/working-hours',
         method: 'POST',
         body: data,
       }),
+      invalidatesTags: ['Provider'],
+    }),
+
+    // Update specific working hours
+    updateWorkingHours: builder.mutation<WorkingHours, { id: string; data: Partial<WorkingHours> }>({
+      query: ({ id, data }) => ({
+        url: `providers/me/availability/working-hours/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Provider'],
+    }),
+
+    // Delete working hours
+    deleteWorkingHours: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `providers/me/availability/working-hours/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Provider'],
+    }),
+
+    // Get blocked times
+    getProviderBlockedTimes: builder.query<BlockedTime[], { fromDate?: string; toDate?: string; isActive?: boolean }>({
+      query: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params.fromDate) queryParams.append('fromDate', params.fromDate);
+        if (params.toDate) queryParams.append('toDate', params.toDate);
+        if (params.isActive !== undefined) queryParams.append('isActive', params.isActive.toString());
+        
+        return `providers/me/availability/blocked-times${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      },
+      providesTags: ['Provider'],
+    }),
+
+    // Create blocked time
+    createBlockedTime: builder.mutation<BlockedTime, CreateBlockedTimeRequest>({
+      query: (data) => ({
+        url: 'providers/me/availability/blocked-times',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Provider'],
+    }),
+
+    // Update blocked time
+    updateBlockedTime: builder.mutation<BlockedTime, { id: string; data: Partial<CreateBlockedTimeRequest> }>({
+      query: ({ id, data }) => ({
+        url: `providers/me/availability/blocked-times/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Provider'],
+    }),
+
+    // Delete blocked time
+    deleteBlockedTime: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `providers/me/availability/blocked-times/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Provider'],
+    }),
+
+    // Get time slots
+    getProviderTimeSlots: builder.query<TimeSlot[], { fromDate: string; toDate: string; serviceId?: string; status?: string }>({
+      query: (params) => {
+        const queryParams = new URLSearchParams();
+        queryParams.append('fromDate', params.fromDate);
+        queryParams.append('toDate', params.toDate);
+        if (params.serviceId) queryParams.append('serviceId', params.serviceId);
+        if (params.status) queryParams.append('status', params.status);
+        
+        return `providers/me/availability/time-slots?${queryParams.toString()}`;
+      },
+      providesTags: ['Provider'],
+    }),
+
+    // Generate time slots
+    generateTimeSlots: builder.mutation<TimeSlot[], GenerateTimeSlotsRequest>({
+      query: (data) => ({
+        url: 'providers/me/availability/generate-slots',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Provider'],
+    }),
+
+    // Update time slot
+    updateTimeSlot: builder.mutation<TimeSlot, { id: string; data: Partial<TimeSlot> }>({
+      query: ({ id, data }) => ({
+        url: `providers/me/availability/time-slots/${id}`,
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Provider'],
+    }),
+
+    // Delete time slot
+    deleteTimeSlot: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `providers/me/availability/time-slots/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Provider'],
+    }),
+
+    // Bulk update time slots
+    bulkUpdateTimeSlots: builder.mutation<{ updated: number }, BulkUpdateSlotsRequest>({
+      query: (data) => ({
+        url: 'providers/me/availability/time-slots/bulk-update',
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Provider'],
+    }),
+
+    // Copy working hours
+    copyWorkingHours: builder.mutation<WorkingHours[], { fromDay: string; toDays: string[] }>({
+      query: (data) => ({
+        url: 'providers/me/availability/copy-working-hours',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Provider'],
+    }),
+
+    // Get provider availability for date (public)
+    getProviderAvailabilityForDate: builder.query<ProviderAvailabilityResponse, { providerId: string; date: string; serviceId?: string }>({
+      query: ({ providerId, date, serviceId }) => {
+        const queryParams = new URLSearchParams();
+        queryParams.append('date', date);
+        if (serviceId) queryParams.append('serviceId', serviceId);
+        
+        return `providers/${providerId}/availability?${queryParams.toString()}`;
+      },
+    }),
+
+    // Get provider availability for range (public)
+    getProviderAvailabilityForRange: builder.query<ProviderAvailabilityResponse[], { providerId: string; fromDate: string; toDate: string; serviceId?: string }>({
+      query: ({ providerId, fromDate, toDate, serviceId }) => {
+        const queryParams = new URLSearchParams();
+        queryParams.append('fromDate', fromDate);
+        queryParams.append('toDate', toDate);
+        if (serviceId) queryParams.append('serviceId', serviceId);
+        
+        return `providers/${providerId}/availability/range?${queryParams.toString()}`;
+      },
+    }),
+
+    // Get availability analytics
+    getAvailabilityAnalytics: builder.query<AvailabilityAnalytics, { period?: 'week' | 'month' | 'year' }>({
+      query: (params = {}) => {
+        const queryParams = new URLSearchParams();
+        if (params.period) queryParams.append('period', params.period);
+        
+        return `providers/me/availability/analytics${queryParams.toString() ? `?${queryParams.toString()}` : ''}`;
+      },
+      providesTags: ['Provider'],
+    }),
+
+    // Get availability settings
+    getAvailabilitySettings: builder.query<AvailabilitySettings, void>({
+      query: () => 'providers/me/availability/settings',
+      providesTags: ['Provider'],
+    }),
+
+    // Update availability settings
+    updateAvailabilitySettings: builder.mutation<AvailabilitySettings, Partial<AvailabilitySettings>>({
+      query: (data) => ({
+        url: 'providers/me/availability/settings',
+        method: 'PATCH',
+        body: data,
+      }),
+      invalidatesTags: ['Provider'],
     }),
 
     // Get provider dashboard stats
@@ -267,9 +586,28 @@ export const {
   useUploadProviderCoverMutation,
   useRemoveProviderLogoMutation,
   useRemoveProviderCoverMutation,
-  useGetProviderAvailabilityQuery,
-  useUpdateProviderAvailabilityMutation,
   useGetProviderDashboardQuery,
   useGetCategoriesQuery,
   useGetFeaturedCategoriesQuery,
+  
+  // Availability hooks
+  useGetProviderWorkingHoursQuery,
+  useCreateOrUpdateWorkingHoursMutation,
+  useUpdateWorkingHoursMutation,
+  useDeleteWorkingHoursMutation,
+  useGetProviderBlockedTimesQuery,
+  useCreateBlockedTimeMutation,
+  useUpdateBlockedTimeMutation,
+  useDeleteBlockedTimeMutation,
+  useGetProviderTimeSlotsQuery,
+  useGenerateTimeSlotsMutation,
+  useUpdateTimeSlotMutation,
+  useDeleteTimeSlotMutation,
+  useBulkUpdateTimeSlotsMutation,
+  useCopyWorkingHoursMutation,
+  useGetProviderAvailabilityForDateQuery,
+  useGetProviderAvailabilityForRangeQuery,
+  useGetAvailabilityAnalyticsQuery,
+  useGetAvailabilitySettingsQuery,
+  useUpdateAvailabilitySettingsMutation,
 } = providersApi

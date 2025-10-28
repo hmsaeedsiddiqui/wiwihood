@@ -261,8 +261,12 @@ export default function WalletPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Total Earnings</p>
-                  <p className="text-2xl font-bold text-gray-900">$15,420.50</p>
-                  <p className="text-xs text-green-600 mt-1">+12.5% from last month</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {isLoadingStats ? '...' : formatCurrency(0)}
+                  </p>
+                  <p className="text-xs text-green-600 mt-1">
+                    {isLoadingStats ? '...' : '0% from last month'}
+                  </p>
                 </div>
                 <DollarSign className="h-8 w-8 text-green-600" />
               </div>
@@ -274,8 +278,12 @@ export default function WalletPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">This Month</p>
-                  <p className="text-2xl font-bold text-gray-900">$3,250.75</p>
-                  <p className="text-xs text-blue-600 mt-1">42 appointments</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {isLoadingStats ? '...' : formatCurrency(0)}
+                  </p>
+                  <p className="text-xs text-blue-600 mt-1">
+                    {isLoadingStats ? '...' : '0 appointments'}
+                  </p>
                 </div>
                 <Calendar className="h-8 w-8 text-blue-600" />
               </div>
@@ -304,7 +312,9 @@ export default function WalletPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-gray-600">Available Balance</p>
-                  <p className="text-2xl font-bold text-gray-900">$2,840.25</p>
+                  <p className="text-2xl font-bold text-gray-900">
+                    {isLoadingStats ? '...' : formatCurrency(0)}
+                  </p>
                   <p className="text-xs text-gray-600 mt-1">Ready for payout</p>
                 </div>
                 <Wallet className="h-8 w-8 text-orange-600" />
@@ -346,39 +356,10 @@ export default function WalletPage() {
                   <CardDescription>Latest earnings and transactions</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="h-2 w-2 bg-green-500 rounded-full"></div>
-                        <div>
-                          <p className="font-medium">Service Payment</p>
-                          <p className="text-sm text-gray-600">Hair Cut & Styling</p>
-                        </div>
-                      </div>
-                      <span className="font-bold text-green-600">+$85.00</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="h-2 w-2 bg-purple-500 rounded-full"></div>
-                        <div>
-                          <p className="font-medium">Gift Card Sale</p>
-                          <p className="text-sm text-gray-600">$100 Gift Card</p>
-                        </div>
-                      </div>
-                      <span className="font-bold text-purple-600">+$100.00</span>
-                    </div>
-                    
-                    <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="h-2 w-2 bg-blue-500 rounded-full"></div>
-                        <div>
-                          <p className="font-medium">Gift Card Redemption</p>
-                          <p className="text-sm text-gray-600">Redeemed for service</p>
-                        </div>
-                      </div>
-                      <span className="font-bold text-blue-600">+$50.00</span>
-                    </div>
+                  <div className="text-center py-8">
+                    <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-medium text-gray-900 mb-2">No recent activity</h3>
+                    <p className="text-gray-500">Your recent earnings and transactions will appear here</p>
                   </div>
                 </CardContent>
               </Card>
