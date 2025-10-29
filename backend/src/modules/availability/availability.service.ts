@@ -7,7 +7,7 @@ import { ProviderTimeSlot, TimeSlotStatus } from '../../entities/provider-time-s
 import { Provider } from '../../entities/provider.entity';
 import { Service } from '../../entities/service.entity';
 import { ServiceAvailabilitySettings } from '../../entities/service-availability-settings.entity';
-import { AvailabilityGateway } from '../websocket/websocket-gateway';
+import { AvailabilityGateway } from '../websocket/websocket.gateway';
 import { CreateWorkingHoursDto } from './dto/create-working-hours.dto';
 import { UpdateWorkingHoursDto } from './dto/update-working-hours.dto';
 import { CreateBlockedTimeDto } from './dto/create-blocked-time.dto';
