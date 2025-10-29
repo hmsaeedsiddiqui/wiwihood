@@ -50,7 +50,10 @@ import {
   RecurringBookingException,
   Staff,
   StaffAvailability,
-  ExternalCalendarIntegration
+  ExternalCalendarIntegration,
+  ServiceAvailabilitySettings,
+  ProviderBlockedTime,
+  ProviderTimeSlot
 } from '../entities';
 
 export default registerAs(
@@ -71,7 +74,8 @@ export default registerAs(
   PaymentMethod, GiftCard, GiftCardTransaction, GiftCardPromotion, GiftCardSetting, LoyaltyAccount, PointTransaction, LoyaltyReward,
       ReferralCode, Referral, ReferralCampaign, ServiceAddon, BookingAddon,
       AddonPackage, RecurringBooking, RecurringBookingException, Staff,
-      StaffAvailability, ExternalCalendarIntegration
+      StaffAvailability, ExternalCalendarIntegration, ServiceAvailabilitySettings,
+      ProviderBlockedTime, ProviderTimeSlot
     ],
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     synchronize: true, // Re-enable for clean database

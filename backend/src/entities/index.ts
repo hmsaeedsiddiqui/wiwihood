@@ -63,3 +63,8 @@ export { FormTemplate } from './form-template.entity';
 export { FormField } from './form-field.entity';
 export { FormSubmission } from './form-submission.entity';
 export { FormResponse } from './form-response.entity';
+
+// Availability entities
+export { ServiceAvailabilitySettings } from './service-availability-settings.entity';
+export { ProviderBlockedTime } from './provider-blocked-time.entity';
+export { ProviderTimeSlot } from './provider-time-slot.entity';

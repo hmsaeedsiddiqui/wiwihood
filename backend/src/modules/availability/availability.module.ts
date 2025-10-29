@@ -8,7 +8,7 @@ import { ProviderTimeSlot } from '../../entities/provider-time-slot.entity';
 import { ServiceAvailabilitySettings } from '../../entities/service-availability-settings.entity';
 import { Provider } from '../../entities/provider.entity';
 import { Service } from '../../entities/service.entity';
-import { WebSocketModule } from '../websocket/websocket.cleaned.module';
+import { WebSocketModule } from '../websocket/websocket.module';
 
 @Module({
   imports: [
